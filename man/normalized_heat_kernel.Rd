@@ -2,6 +2,7 @@
 % Please edit documentation in R/knn_weights.R
 \name{normalized_heat_kernel}
 \alias{normalized_heat_kernel}
+\title{normalized_heat_kernel}
 \usage{
 normalized_heat_kernel(x, sigma = 1, len)
 }
@@ -11,5 +12,8 @@ normalized_heat_kernel(x, sigma = 1, len)
 \item{sigma}{the bandwidth}
 
 \item{len}{the normalization factor (e.g. the length of the feature vectors)}
+}
+\description{
+normalized_heat_kernel
 }
 

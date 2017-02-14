@@ -34,7 +34,10 @@ temporal_adjacency <- function(time, weight_mode = c("heat", "binary"), sigma=1,
 }
 
 #' temporal_laplacian
-#' @inheritParams temporal_adjacency
+#' @param time
+#' @param weight_mode
+#' @param sigma
+#' @param window
 #' @export
 temporal_laplacian <- function(time, weight_mode = c("heat", "binary"), sigma=1, window=2) {
   adj <- temporal_adjacency(time, weight_mode, sigma, window)
