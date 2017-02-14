@@ -85,26 +85,27 @@ construct_weight_matrix <- function(X, neighbor_mode=c("knn", "supervised"),
 #' sim_knn_from_adj
 #'
 #' @param A adjacency matrix
-#' @param k numbe rof neighbors
+#' @param k number of neighbors
 #' @param type normal or mutual nearest neighbors
 #' @param ncores number of cores to use
+#' @importFrom parallel mclapply
 #' @export
 sim_knn_from_adj <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
-  assert_that(k > 0 && k <= nrow(X))
+  assert_that(k > 0 && k <= nrow(A))
 
   type <- match.arg(type)
 
-  jind <- 1:nrow(X)
-  A2 <- do.call(rbind, mclapply(1:nrow(A), function(i) {
+  jind <- 1:nrow(A)
+  A2 <- do.call(rbind, parallel::mclapply(1:nrow(A), function(i) {
     ord <- order(A[i,], decreasing=TRUE)
     cbind(i=i, j=jind[ord[1:k]],x=A[i, ord[1:k]])
   }, mc.cores=ncores))
 
   m <- sparseMatrix(i=A2[,1], j=A2[,2], x=A2[,3], dims=c(nrow(A), nrow(A)))
   m <- if (type == "normal") {
-    pmax.sparse(m, t(m))
+    psparse(m, pmax)
   } else {
-    pmin.sparse(m, t(m))
+    psparse(m, pmin)
   }
 }
 
