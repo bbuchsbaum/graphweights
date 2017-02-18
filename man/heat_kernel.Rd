@@ -2,6 +2,7 @@
 % Please edit documentation in R/knn_weights.R
 \name{heat_kernel}
 \alias{heat_kernel}
+\title{heat_kernel}
 \usage{
 heat_kernel(x, sigma = 1)
 }
@@ -9,5 +10,8 @@ heat_kernel(x, sigma = 1)
 \item{x}{the distances}
 
 \item{sigma}{the bandwidth}
+}
+\description{
+heat_kernel
 }
 

@@ -15,7 +15,8 @@ indices_to_sparse <- function(nn.index, hval, return_triplet=FALSE) {
   }
 }
 
-
+#' heat_kernel
+#'
 #' @param x the distances
 #' @param sigma the bandwidth
 #' @export
@@ -23,6 +24,9 @@ heat_kernel <- function(x, sigma=1) {
   exp(-x/(2*sigma^2))
 }
 
+
+#' normalized_heat_kernel
+#'
 #' @param x the distances
 #' @param sigma the bandwidth
 #' @param len the normalization factor (e.g. the length of the feature vectors)
@@ -97,6 +101,7 @@ sim_knn_from_adj <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
 
   jind <- 1:nrow(A)
   A2 <- do.call(rbind, parallel::mclapply(1:nrow(A), function(i) {
+
     ord <- order(A[i,], decreasing=TRUE)
     cbind(i=i, j=jind[ord[1:k]],x=A[i, ord[1:k]])
   }, mc.cores=ncores))

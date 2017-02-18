@@ -2,6 +2,7 @@
 % Please edit documentation in R/knn_weights.R
 \name{construct_weight_matrix}
 \alias{construct_weight_matrix}
+\title{construct_weight_matrix}
 \usage{
 construct_weight_matrix(X, neighbor_mode = c("knn", "supervised"),
   weight_mode = c("heat", "normalized", "binary"), k = 5, sigma = 1,
@@ -15,5 +16,8 @@ construct_weight_matrix(X, neighbor_mode = c("knn", "supervised"),
 \item{sigma}{parameter for heat kernel \code{exp(-dist/(2*sigma^2))}}
 
 \item{labels}{the class of the categories when \code{weight_mode} is \code{supervised}, supplied as a \code{factor} with \code{nrow(labels) == nrow(X)}}
+}
+\description{
+construct_weight_matrix
 }
 
