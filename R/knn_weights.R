@@ -90,7 +90,7 @@ construct_weight_matrix <- function(X, neighbor_mode=c("knn", "supervised"),
 #'
 #' @param A adjacency matrix
 #' @param k number of neighbors
-#' @param type normal or mutual nearest neighbors
+#' @param type 'normal' or 'mutual' nearest neighbors
 #' @param ncores number of cores to use
 #' @importFrom parallel mclapply
 #' @importFrom Matrix which sparseMatrix
@@ -109,6 +109,7 @@ sim_knn_from_adj <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
   }, mc.cores=ncores))
 
   m <- sparseMatrix(i=A2[,1], j=A2[,2], x=A2[,3], dims=c(nrow(A), nrow(A)))
+
   m <- if (type == "normal") {
     psparse2(m, pmax)
   } else {
