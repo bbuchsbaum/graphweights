@@ -9,7 +9,7 @@ sim_knn_from_adj(A, k = 5, type = c("normal", "mutual"), ncores = 1)
 \arguments{
 \item{A}{adjacency matrix}
 
-\item{k}{numbe rof neighbors}
+\item{k}{number of neighbors}
 
 \item{type}{normal or mutual nearest neighbors}
 

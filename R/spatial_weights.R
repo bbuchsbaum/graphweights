@@ -7,6 +7,9 @@ spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27) {
   Diagonal(x=rowSums(adj))  - adj
 }
 
+
+#' spatial_adjacency
+#'
 #' @importFrom FNN get.knnx
 #' @importFrom Matrix sparseMatrix
 #' @export

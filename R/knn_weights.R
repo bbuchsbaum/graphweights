@@ -93,6 +93,8 @@ construct_weight_matrix <- function(X, neighbor_mode=c("knn", "supervised"),
 #' @param type normal or mutual nearest neighbors
 #' @param ncores number of cores to use
 #' @importFrom parallel mclapply
+#' @importFrom Matrix which sparseMatrix
+#' @importFrom assertthat assert_that
 #' @export
 sim_knn_from_adj <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
   assert_that(k > 0 && k <= nrow(A))
@@ -108,9 +110,9 @@ sim_knn_from_adj <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
 
   m <- sparseMatrix(i=A2[,1], j=A2[,2], x=A2[,3], dims=c(nrow(A), nrow(A)))
   m <- if (type == "normal") {
-    psparse(m, pmax)
+    psparse2(m, pmax)
   } else {
-    psparse(m, pmin)
+    psparse2(m, pmin)
   }
 }
 
@@ -145,15 +147,15 @@ weighted_knn <- function(X, k=5, FUN=heat_kernel, type=c("normal", "mutual"), re
   }
 }
 
-psparse2 <- function(W, FUN, return_triplet=FALSE) {
-  ind <- which(W != 0, arr.ind=TRUE)
-  x1 <- W[ind]
-  x2 <- W[cbind(ind[,2], ind[,1])]
+psparse2 <- function(M, FUN, return_triplet=FALSE) {
+  ind <- which(M != 0, arr.ind=TRUE)
+  x1 <- M[ind]
+  x2 <- M[cbind(ind[,2], ind[,1])]
 
   if (return_triplet) {
     cbind(i=c(ind[,1],ind[,2]), j=c(ind[,2],ind[,1]), x=rep(FUN(x1,x2),2))
   } else {
-    sm <- sparseMatrix(i=c(ind[,1],ind[,2]), j=c(ind[,2],ind[,1]), x=rep(FUN(x1,x2),2), dims=dim(W), use.last.ij=TRUE)
+    sm <- sparseMatrix(i=c(ind[,1],ind[,2]), j=c(ind[,2],ind[,1]), x=rep(FUN(x1,x2),2), dims=dim(M), use.last.ij=TRUE)
     #sm <- sparseMatrix(i=ind[,1], j=ind[,2], x=FUN(x1,x2), dims=dim(W), symmetric=TRUE)
     #as(sm, "dgTMatrix")
     sm
