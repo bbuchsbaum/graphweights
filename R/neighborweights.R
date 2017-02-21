@@ -1,2 +1,3 @@
-#'@importFrom Rcpp evalCpp
-#'@useDynLib neighborweights
+#' @importFrom Rcpp evalCpp
+#' @useDynLib neighborweights
+NULL

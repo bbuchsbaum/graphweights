@@ -1,4 +1,47 @@
 
+#' pairwise_adjacency
+#' @export
+pairwise_adjacency <- function(Xcoords, Xfeats, fself, fbetween) {
+  assertthat::assert_that(length(Xcoords) == length(Xfeats))
+  ninstances <- unlist(lapply(Xcoords, nrow))
+  assertthat::assert_that(
+    all(ninstances ==  unlist(lapply(Xfeats, nrow)))
+  )
+
+  assertthat::assert_that(is.function(fself))
+  assertthat::assert_that(is.function(fbetween))
+
+  nsets <- length(Xcoords)
+
+  offsets <- cumsum(c(0, ninstances[1:(nsets-1)]))
+
+  block_indices <- sapply(1:length(ninstances), function(i) {
+    seq(offsets[i] + 1, offsets[i] + ninstances[i])
+  })
+
+  cmb <- t(combn(1:length(Xcoords), 2))
+
+  bet <- do.call(rbind, lapply(1:nrow(cmb), function(i) {
+    a <- cmb[i,1]
+    b <- cmb[i,2]
+    sm <- fbetween(Xcoords[[a]], Xcoords[[b]], Xfeats[[a]], Xfeats[[b]])
+    sm_nc <- as (sm, "dgTMatrix")
+    r1 <- cbind (i = sm_nc@i + 1 + offsets[a], j = sm_nc@j + 1 + offsets[b], x = sm_nc@x)
+    r2 <- cbind (i = sm_nc@j + 1 + offsets[b], j = sm_nc@i + 1 + offsets[a], x = sm_nc@x)
+    rbind(r1,r2)
+  }))
+
+  w <- do.call(rbind, lapply(1:length(Xcoords), function(i) {
+    sm <- fself(Xcoords[[i]], Xfeats[[i]])
+    sm_nc <- as (sm, "dgTMatrix")
+    cbind (i = sm_nc@i + 1 + offsets[i], j = sm_nc@j + 1 + offsets[i], x = sm_nc@x)
+  }))
+
+  tot <- rbind(w,bet)
+  ret <- sparseMatrix(i=tot[,1], j=tot[,2], x=tot[,3])
+  ret
+
+}
 
 #' spatial_laplacian
 #'
@@ -30,9 +73,21 @@ spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27,weight_mode=c("bin
 spatial_adjacency <- function(coord_mat, dthresh=1.42, nnk=27, weight_mode=c("binary", "heat"), sigma=dthresh/2,
                               include_diagonal=TRUE, normalized=TRUE, stochastic=FALSE) {
 
-  cross_spatial_adjacency(coord_mat, coord_mat, dthresh=dthresh, weight_mode=weight_mode, sigma=sigma,
-                          include_diagonal=include_diagonal, normalized=normalized, stochastic=stochastic)
+  sm <- cross_spatial_adjacency(coord_mat, coord_mat, dthresh=dthresh, weight_mode=weight_mode, sigma=sigma, normalized=FALSE)
 
+  if (!include_diagonal) {
+    diag(sm) <- rep(1, nrow(sm))
+  }
+
+  if (normalized) {
+    sm <- normalize_adjacency(sm)
+    if (stochastic) {
+      ## make doubly stochastic (row and columns sum to 1)
+      sm <- make_doubly_stochastic(sm)
+    }
+  }
+
+  sm
 }
 
 
@@ -52,8 +107,9 @@ make_doubly_stochastic <- function(sm, tol=nrow(sm) * .01) {
 
 }
 
+#' @importFrom Matrix rowSums
 normalize_adjacency <- function(sm, symmetric=TRUE) {
-  D <- rowSums(sm)
+  D <- Matrix::rowSums(sm)
 
   D1 <- 1/sqrt(D)
   sm <- D1 * sm * D1
@@ -76,6 +132,7 @@ normalize_adjacency <- function(sm, symmetric=TRUE) {
 #' @param dthresh the threshold for the spatial distance
 #' @param normalized whether to normalize the rows to sum to 1
 #' @importFrom assertthat assert_that
+#' @export
 cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
                                              feature_mat1, feature_mat2,
                                              wsigma=.73, alpha=.5,
@@ -124,6 +181,7 @@ cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
 #' @param feature_mat the feature matrix, where: (\code{nrow(feature_mat) == nrow(coord_mat)})
 #' @inheritParams cross_weighted_spatial_adjacency
 #' @importFrom assertthat assert_that
+#' @export
 weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha=.5,
                                        nnk=27,
                                        weight_mode=c("binary", "heat"),

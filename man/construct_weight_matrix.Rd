@@ -9,6 +9,8 @@ construct_weight_matrix(X, neighbor_mode = c("knn", "supervised"),
   labels = NULL)
 }
 \arguments{
+\item{neighbor_mode}{the method for assigning wieghts to neighbors}
+
 \item{weight_mode}{binary (1 if neighbor, 0 otherwise), heat kernel, normalized heat kernel}
 
 \item{k}{number of neighbors}
