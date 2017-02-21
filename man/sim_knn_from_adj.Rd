@@ -11,7 +11,7 @@ sim_knn_from_adj(A, k = 5, type = c("normal", "mutual"), ncores = 1)
 
 \item{k}{number of neighbors}
 
-\item{type}{normal or mutual nearest neighbors}
+\item{type}{'normal' or 'mutual' nearest neighbors}
 
 \item{ncores}{number of cores to use}
 }

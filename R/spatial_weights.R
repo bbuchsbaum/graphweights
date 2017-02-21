@@ -1,10 +1,38 @@
 
 
+#' spatial_laplacian
+#'
 #' @importFrom Matrix Diagonal
 #' @export
-spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27) {
-  adj <- spatial_adjacency(coord_mat=coord_mat, dthresh=dthresh, nnk=nnk)
+#' @inheritParams spatial_adjacency
+spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27,weight_mode=c("binary", "heat"), sigma=dthresh/2,
+                              include_diagonal=TRUE, normalized=TRUE, stochastic=FALSE) {
+
+  adj <- spatial_adjacency(coord_mat, dthresh, nnk,weight_mode, sigma,
+                           include_diagonal, normalized, stochastic)
   Diagonal(x=rowSums(adj))  - adj
+}
+
+
+#' spatial_adjacency
+#'
+#' @param coord_mat the matrix of spatial coordinates
+#' @param dthresh the distance threshold
+#' @param nnk the maximum number of neighbors to include
+#' @param weight_mode
+#' @param sigma the bandwidth of the heat kernel if weight_mode == "heat"
+#' @param include_diagonal diagonal elements assigned 1
+#' @param normalized make row elements sum to 1
+#' @param stochastic make column elements also sum to 1 (only relevant if \code{normalized == TRUE})
+#' @importFrom rflann RadiusSearch
+#' @importFrom Matrix sparseMatrix
+#' @export
+spatial_adjacency <- function(coord_mat, dthresh=1.42, nnk=27, weight_mode=c("binary", "heat"), sigma=dthresh/2,
+                              include_diagonal=TRUE, normalized=TRUE, stochastic=FALSE) {
+
+  cross_spatial_adjacency(coord_mat, coord_mat, dthresh=dthresh, weight_mode=weight_mode, sigma=sigma,
+                          include_diagonal=include_diagonal, normalized=normalized, stochastic=stochastic)
+
 }
 
 
@@ -43,8 +71,8 @@ normalize_adjacency <- function(sm, symmetric=TRUE) {
 #' @param coord_mat2 the second coordinate matrix (the reference)
 #' @param feature_mat1 the first feature matrix
 #' @param feature_mat2 the second feature matrix
-#' @param wsigma the sigma for the feature kernel
-#' @param alpha the weightinf or the spatial distance (1=all spatial, 0=all feature)
+#' @param wsigma the sigma for the feature heat kernel
+#' @param alpha the mixing weight for the spatial distance (1=all spatial, 0=all feature)
 #' @param dthresh the threshold for the spatial distance
 #' @param normalized whether to normalize the rows to sum to 1
 #' @importFrom assertthat assert_that
@@ -92,17 +120,11 @@ cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
 
 #' weighted_spatial_adjacency
 #'
-#' @param coord_mat
-#' @param feature_mat
-#' @param wfun
-#' @param wsigma
-#' @param alpha
-#' @param dthresh
-#' @param include_diagonal
-#' @param normalized
-#' @param stochastic
+#' @param coord_mat the coordinate matrix
+#' @param feature_mat the feature matrix, where: (\code{nrow(feature_mat) == nrow(coord_mat)})
+#' @inheritParams cross_weighted_spatial_adjacency
 #' @importFrom assertthat assert_that
-weighted_spatial_adjacency <- function(coord_mat, feature_mat, wfun=NULL, wsigma=.73, alpha=.5,
+weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha=.5,
                                        nnk=27,
                                        weight_mode=c("binary", "heat"),
                                        sigma=1,
@@ -145,26 +167,17 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wfun=NULL, wsigma
 
 
 
-#' spatial_adjacency
-#'
-#' @importFrom rflann RadiusSearch
-#' @importFrom Matrix sparseMatrix
-#' @export
-spatial_adjacency <- function(coord_mat, dthresh=1.42, nnk=27, weight_mode=c("binary", "heat"), sigma=dthresh/2,
-                              include_diagonal=TRUE, normalized=TRUE, stochastic=FALSE) {
-
-  cross_spatial_adjacency(coord_mat, coord_mat, dthresh=dthresh, weight_mode=weight_mode, sigma=sigma,
-                          include_diagonal=include_diagonal, normalized=normalized, stochastic=stochastic)
-
-}
-
 #' cross_spatial_adjacency
 #'
+#' @param coord_mat1 the first coordinate matrix
+#' @param coord_mat2 the second coordinate matrix
+#' @inheritParams spatial_adjacency
 #' @importFrom rflann RadiusSearch
 #' @importFrom Matrix sparseMatrix
 #' @export
-cross_spatial_adjacency <- function(coord_mat1, coord_mat2, dthresh=1.42, nnk=27, weight_mode=c("binary", "heat"), sigma=dthresh/2,
-                              include_diagonal=TRUE, normalized=TRUE, stochastic=FALSE) {
+cross_spatial_adjacency <- function(coord_mat1, coord_mat2, dthresh=1.42, nnk=27, weight_mode=c("binary", "heat"),
+                                    sigma=dthresh/2,
+                                    normalized=TRUE) {
 
 
   full_nn <- rflann::RadiusSearch(coord_mat1, coord_mat2, radius=dthresh^2, max_neighbour=nnk)
@@ -176,44 +189,12 @@ cross_spatial_adjacency <- function(coord_mat1, coord_mat2, dthresh=1.42, nnk=27
 
   sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3], dims=c(nrow(coord_mat1), nrow(coord_mat2)))
 
-  if (!include_diagonal) {
-    diag(sm) <- rep(0,nrow(sm))
-  }
-
   if (normalized) {
-    sm <- normalize_adjacency(sm)
-    if (stochastic) {
-      ## make doubly stochastic (row and columns sum to 1)
-      sm <- make_doubly_stochastic(sm)
-    }
+    D <- 1/rowSums(sm)
+    sm <- D * sm
   }
-
 
   sm
 
 }
 
-
-
-
-#' #' spatial_adjacency
-#' #'
-#' #' @importFrom FNN get.knnx
-#' #' @importFrom Matrix sparseMatrix
-#' #' @export
-#' spatial_adjacency <- function(coord_mat, dthresh=1.42, nnk=27) {
-#'   full_nn <- FNN::get.knnx(coord_mat, coord_mat, nnk)
-#'
-#'   triplet <- do.call(rbind, lapply(1:nrow(coord_mat), function(i) {
-#'     dvals <- full_nn$nn.dist[i,1:nnk]
-#'     keep <- dvals > 0 & dvals < dthresh
-#'     if (keep[2]) {
-#'       cbind(i,full_nn$nn.index[i,keep], 1)
-#'     } else {
-#'       NULL
-#'     }
-#'   }))
-#'
-#'   sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3])
-#'
-#' }

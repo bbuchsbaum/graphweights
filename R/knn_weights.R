@@ -38,7 +38,9 @@ normalized_heat_kernel <- function(x, sigma=1, len) {
 
 
 #' construct_weight_matrix
-#' @param neighbor_mode
+#'
+#' @param X
+#' @param neighbor_mode the method for assigning wieghts to neighbors
 #' @param weight_mode binary (1 if neighbor, 0 otherwise), heat kernel, normalized heat kernel
 #' @param k number of neighbors
 #' @param sigma parameter for heat kernel \code{exp(-dist/(2*sigma^2))}
