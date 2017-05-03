@@ -19,7 +19,7 @@ using namespace Rcpp;
 //  return exp(-dist / (2*(pow(sigma,2))));
 //}
 
-
+// [[Rcpp::export]]
 double norm_heat_kernel(NumericVector x1, NumericVector x2, double sigma) {
   double norm_dist = sum(pow((x1-x2),2))/(2*x1.length());
   return exp(-norm_dist/(2*pow(sigma,2)));
