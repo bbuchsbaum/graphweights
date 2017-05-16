@@ -206,7 +206,7 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
   alpha2 <- 1-alpha
 
   nels <- sum(sapply(full_nn$indices, length))
-  triplet <- fspatial_weights(full_nn$indices, full_nn$distances, feature_mat, nels, sigma, wsigma, alpha, weight_mode == weight_mode)
+  triplet <- fspatial_weights(full_nn$indices, full_nn$distances, feature_mat, nels, sigma, wsigma, alpha, weight_mode == "binary")
 
   sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3], dims=c(nrow(coord_mat), nrow(coord_mat)))
 
