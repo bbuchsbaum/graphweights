@@ -56,9 +56,37 @@ pairwise_adjacency <- function(Xcoords, Xfeats, fself, fbetween) {
 spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27,weight_mode=c("binary", "heat"), sigma=dthresh/2,
                               include_diagonal=TRUE, normalized=TRUE, stochastic=FALSE) {
 
+  weight_mode <- match.arg(weight_mode)
   adj <- spatial_adjacency(coord_mat, dthresh, nnk,weight_mode, sigma,
                            include_diagonal, normalized, stochastic)
   Diagonal(x=rowSums(adj))  - adj
+}
+
+
+#' spatial_lap_of_gauss
+#'
+#' @param coord_mat the matrix of coordinates
+#' @param sigma the standard deviation of the spatial smoother
+spatial_lap_of_gauss <- function(coord_mat, sigma=2) {
+  lap <- spatial_laplacian(coord_mat, weight_mode="binary", normalized=FALSE, nnk=ncol(coord_mat)^3, dthresh=sigma*2.5)
+  #lap <- spatial_laplacian(coord_mat, weight_mode="binary", nnk=ncol(coord_mat)^3)
+  adj <- spatial_smoother(coord_mat,  sigma=sigma)
+  lap %*% adj
+}
+
+
+#' spatial_smoother
+#'
+#' @param coord_mat the matrix of coordinates
+#' @param sigma the standard deviation of the smoother
+#' @param nnk the number of neighbors in the kernel
+#' @export
+spatial_smoother <- function(coord_mat, sigma=5, nnk=3^(ncol(coord_mat))) {
+  adj <- spatial_adjacency(coord_mat, dthresh=sigma*2.5, nnk=nnk,weight_mode="heat", sigma,
+                           include_diagonal=TRUE, normalized=FALSE, stochastic=FALSE)
+
+  D <- Matrix::rowSums(adj)
+  adj * 1/D
 }
 
 
@@ -67,7 +95,7 @@ spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27,weight_mode=c("bin
 #' @param coord_mat the matrix of spatial coordinates
 #' @param dthresh the distance threshold
 #' @param nnk the maximum number of neighbors to include
-#' @param weight_mode
+#' @param weight_mode a binary or heat kernel
 #' @param sigma the bandwidth of the heat kernel if weight_mode == "heat"
 #' @param include_diagonal diagonal elements assigned 1
 #' @param normalized make row elements sum to 1
@@ -78,7 +106,7 @@ spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27,weight_mode=c("bin
 spatial_adjacency <- function(coord_mat, dthresh=1.42, nnk=27, weight_mode=c("binary", "heat"), sigma=dthresh/2,
                               include_diagonal=TRUE, normalized=TRUE, stochastic=FALSE) {
 
-  sm <- cross_spatial_adjacency(coord_mat, coord_mat, dthresh=dthresh, weight_mode=weight_mode, sigma=sigma, normalized=FALSE)
+  sm <- cross_spatial_adjacency(coord_mat, coord_mat, dthresh=dthresh, nnk=nnk, weight_mode=weight_mode, sigma=sigma, normalized=FALSE)
 
   if (!include_diagonal) {
     diag(sm) <- rep(1, nrow(sm))
@@ -99,8 +127,8 @@ spatial_adjacency <- function(coord_mat, dthresh=1.42, nnk=27, weight_mode=c("bi
 make_doubly_stochastic <- function(sm, tol=nrow(sm) * .01) {
   e <- 100000
 
-  while (e > tol) {
 
+  while (e > tol) {
     D <- rowSums(sm)
     D1 <- 1/sqrt(D)
     sm <- D1 * sm * D1
