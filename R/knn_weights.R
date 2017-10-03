@@ -1,8 +1,6 @@
 
 
 
-
-
 indices_to_sparse <- function(nn.index, hval, return_triplet=FALSE) {
   M <- do.call(rbind, lapply(1:nrow(nn.index), function(i) {
     cbind(i, nn.index[i,], hval[i,])
@@ -37,18 +35,18 @@ normalized_heat_kernel <- function(x, sigma=1, len) {
 }
 
 
-#' construct_weight_matrix
+#' similarity_matrix
 #'
-#' @param X
-#' @param neighbor_mode the method for assigning wieghts to neighbors
+#' @param X the data matrix, where each row is an instance and each column is a variable.
+#' @param neighbor_mode the method for assigning weights to neighbors, either "supervised" or "knn".
 #' @param weight_mode binary (1 if neighbor, 0 otherwise), heat kernel, normalized heat kernel
 #' @param k number of neighbors
 #' @param sigma parameter for heat kernel \code{exp(-dist/(2*sigma^2))}
 #' @param labels the class of the categories when \code{weight_mode} is \code{supervised}, supplied as a \code{factor} with \code{nrow(labels) == nrow(X)}
 #' @export
-construct_weight_matrix <- function(X, neighbor_mode=c("knn", "supervised"),
-                                    weight_mode=c("heat", "normalized", "binary"),
-                                    k=5, sigma=1, labels=NULL) {
+similarity_matrix <- function(X, neighbor_mode=c("knn", "supervised"),
+                                  weight_mode=c("heat", "normalized", "binary"),
+                                  k=5, sigma=1, labels=NULL) {
   neighbor_mode = match.arg(neighbor_mode)
   weight_mode = match.arg(weight_mode)
 
@@ -88,7 +86,9 @@ construct_weight_matrix <- function(X, neighbor_mode=c("knn", "supervised"),
 
 
 
-#' sim_knn_from_adj
+#' sim_from_adj
+#'
+#' extract the k-nearest neighbors from an existing adjacency matrix
 #'
 #' @param A adjacency matrix
 #' @param k number of neighbors
@@ -98,7 +98,7 @@ construct_weight_matrix <- function(X, neighbor_mode=c("knn", "supervised"),
 #' @importFrom Matrix which sparseMatrix
 #' @importFrom assertthat assert_that
 #' @export
-sim_knn_from_adj <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
+sim_from_adj <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
   assert_that(k > 0 && k <= nrow(A))
 
   type <- match.arg(type)

@@ -15,6 +15,8 @@ spatial_adjacency(coord_mat, dthresh = 1.42, nnk = 27,
 
 \item{nnk}{the maximum number of neighbors to include}
 
+\item{weight_mode}{a binary or heat kernel}
+
 \item{sigma}{the bandwidth of the heat kernel if weight_mode == "heat"}
 
 \item{include_diagonal}{diagonal elements assigned 1}
@@ -26,4 +28,3 @@ spatial_adjacency(coord_mat, dthresh = 1.42, nnk = 27,
 \description{
 spatial_adjacency
 }
-

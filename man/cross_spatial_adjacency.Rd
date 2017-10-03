@@ -16,6 +16,8 @@ cross_spatial_adjacency(coord_mat1, coord_mat2, dthresh = 1.42, nnk = 27,
 
 \item{nnk}{the maximum number of neighbors to include}
 
+\item{weight_mode}{a binary or heat kernel}
+
 \item{sigma}{the bandwidth of the heat kernel if weight_mode == "heat"}
 
 \item{normalized}{make row elements sum to 1}
@@ -23,4 +25,3 @@ cross_spatial_adjacency(coord_mat1, coord_mat2, dthresh = 1.42, nnk = 27,
 \description{
 cross_spatial_adjacency
 }
-

@@ -20,26 +20,35 @@ convolve_matrix <- function(X, Kern, normalize=FALSE) {
 
 }
 
-#' label_sim_matrix
+
+
+#' label_matrix
 #'
 #' @param a the first categorical label vector
 #' @param b the second categorical label vector
 #' @param type construct a a similarity ('s') or distance ('d') matrix.
 #' @param return_matrix return as a sparse matrix or a triplet.
+#' @param the length of the first dimension
+#' @param the length of the second dimension
 #' @importFrom Matrix sparseMatrix
-label_sim_matrix <- function(a, b, type=c("s", "d"), return_matrix=TRUE) {
+#' @importFrom Matrix sparseMatrix
+label_matrix <- function(a, b, type=c("s", "d"), return_matrix=TRUE, simfun=NULL , dim1=length(a), dim2=length(b)) {
   type <- match.arg(type)
 
   a.idx <- which(!is.na(a))
   b.idx <- which(!is.na(b))
 
-  sfun <- function(x, y) {
-    if (is.na(x) || is.na(y)) {
-      0
-    } else if (x == y) {
-      1
-    } else {
-      0
+  sfun <- if (!is.null(simfun)) {
+    simfun
+  } else {
+    function(x, y) {
+      if (is.na(x) || is.na(y)) {
+        0
+      } else if (x == y) {
+        1
+      } else {
+        0
+      }
     }
   }
 
@@ -70,8 +79,10 @@ label_sim_matrix <- function(a, b, type=c("s", "d"), return_matrix=TRUE) {
   out <- do.call(rbind, out)
 
   if (return_matrix) {
-    sparseMatrix(i=out[,1], j=out[,2], x=out[,3], dims=c(length(a), length(b)))
+    sparseMatrix(i=out[,1], j=out[,2], x=out[,3], dims=c(dim1, dim2))
   } else {
     out
   }
 }
+
+

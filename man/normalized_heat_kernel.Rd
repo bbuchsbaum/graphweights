@@ -16,4 +16,3 @@ normalized_heat_kernel(x, sigma = 1, len)
 \description{
 normalized_heat_kernel
 }
-
