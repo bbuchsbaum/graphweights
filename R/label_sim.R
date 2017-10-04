@@ -1,4 +1,26 @@
 
+label_matrix2 <- function(a, b, type=c("s", "d"), return_matrix=TRUE, simfun=NULL , dim1=length(a), dim2=length(b)) {
+  type <- match.arg(type)
+
+  if (type == "s") {
+    out <- outer(a,b, "==")
+    ret <- Matrix(out, sparse = TRUE)
+    ret[which(is.na(ret), arr.ind=TRUE)] <-FALSE
+    ret <- ret * 1
+
+    ret
+  } else if (type == "d") {
+    out <- outer(a,b, "!=")
+    ret <- Matrix(out, sparse = TRUE)
+    ret[which(is.na(ret), arr.ind=TRUE)] <-FALSE
+    ret <- ret * 1
+    #ret[which(is.na(ret), arr.ind=TRUE)] <- 0
+    ret
+
+  }
+}
+
+
 
 #' convolve_matrix
 #'
