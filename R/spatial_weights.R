@@ -67,6 +67,7 @@ spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27,weight_mode=c("bin
 #'
 #' @param coord_mat the matrix of coordinates
 #' @param sigma the standard deviation of the spatial smoother
+#' @export
 spatial_lap_of_gauss <- function(coord_mat, sigma=2) {
   lap <- spatial_laplacian(coord_mat, weight_mode="binary", normalized=FALSE, nnk=ncol(coord_mat)^3, dthresh=sigma*2.5)
   #lap <- spatial_laplacian(coord_mat, weight_mode="binary", nnk=ncol(coord_mat)^3)
@@ -81,12 +82,17 @@ spatial_lap_of_gauss <- function(coord_mat, sigma=2) {
 #' @param sigma the standard deviation of the smoother
 #' @param nnk the number of neighbors in the kernel
 #' @export
-spatial_smoother <- function(coord_mat, sigma=5, nnk=3^(ncol(coord_mat))) {
-  adj <- spatial_adjacency(coord_mat, dthresh=sigma*2.5, nnk=nnk,weight_mode="heat", sigma,
+spatial_smoother <- function(coord_mat, sigma=5, nnk=3^(ncol(coord_mat)), stochastic=TRUE) {
+  adj <- spatial_adjacency(coord_mat, dthresh=sigma*1, nnk=nnk,weight_mode="heat", sigma,
                            include_diagonal=TRUE, normalized=FALSE, stochastic=FALSE)
 
   D <- Matrix::rowSums(adj)
-  adj * 1/D
+
+  adj <- 1/D * adj
+  if (stochastic) {
+    adj <- make_doubly_stochastic(adj)
+    adj <- (adj + t(adj))/2
+  }
 }
 
 
@@ -106,39 +112,53 @@ spatial_smoother <- function(coord_mat, sigma=5, nnk=3^(ncol(coord_mat))) {
 spatial_adjacency <- function(coord_mat, dthresh=1.42, nnk=27, weight_mode=c("binary", "heat"), sigma=dthresh/2,
                               include_diagonal=TRUE, normalized=TRUE, stochastic=FALSE) {
 
-  sm <- cross_spatial_adjacency(coord_mat, coord_mat, dthresh=dthresh, nnk=nnk, weight_mode=weight_mode, sigma=sigma, normalized=FALSE)
+  sm <- cross_spatial_adjacency(coord_mat, coord_mat, dthresh=dthresh,
+                                nnk=nnk, weight_mode=weight_mode,
+                                sigma=sigma, normalized=FALSE)
 
-  if (!include_diagonal) {
+  if (include_diagonal) {
     diag(sm) <- rep(1, nrow(sm))
   }
 
   if (normalized) {
     sm <- normalize_adjacency(sm)
-    if (stochastic) {
-      ## make doubly stochastic (row and columns sum to 1)
-      sm <- make_doubly_stochastic(sm)
-    }
+  }
+
+  if (stochastic) {
+    ## make doubly stochastic (row and columns sum to 1)
+    sm <- make_doubly_stochastic(sm)
   }
 
   sm
 }
 
 
-make_doubly_stochastic <- function(sm, tol=nrow(sm) * .01) {
-  e <- 100000
 
-
-  while (e > tol) {
-    D <- rowSums(sm)
-    D1 <- 1/sqrt(D)
-    sm <- D1 * sm * D1
-    sm <- (sm + t(sm))/2
-    e <- sum(abs(rowSums(sm) -1) + abs(colSums(sm) -1))
-    print(paste("e = ", e))
+make_doubly_stochastic <- function(A, iter=10) {
+  r <- rep(1, nrow(A))
+  #Given A, let (n, n) = size(A) and initialize r = ones(n, 1);
+  for (k in 1:iter) {
+    c <- 1/t(A) %*% r
+    r <- 1/(A %*% c);
   }
-  sm
-
+  C <- Diagonal(x=c[,1])
+  R <- Diagonal(x=r[,1])
+  Ab <- R %*% A %*% C
 }
+
+# make_doubly_stochastic <- function(A, iter=8) {
+#   e <- 100000
+#
+#  for (i in 1:iter) {
+#     D <- rowSums(A)
+#     D1 <- 1/sqrt(D)
+#     A <- D1 * A * D1
+#     A <- (A + t(A))/2
+#
+#   }
+#   A
+#
+# }
 
 #' @importFrom Matrix rowSums
 normalize_adjacency <- function(sm, symmetric=TRUE) {
@@ -183,22 +203,24 @@ cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
   assert_that(alpha >= 0 && alpha <=1)
   assert_that(dthresh > 0)
 
-
-
-  full_nn <- rflann::RadiusSearch(coord_mat1, coord_mat2, radius=dthresh^2, max_neighbour=nnk)
+  full_nn <- rflann::RadiusSearch(coord_mat1, coord_mat2, radius=dthresh^2,
+                                  max_neighbour=nnk)
   weight_mode <- match.arg(weight_mode)
 
   nels <- sum(sapply(full_nn$indices, length))
 
 
-  triplet <- cross_fspatial_weights(full_nn$indices, full_nn$distances, feature_mat1, feature_mat2,
-                                    nels, sigma, wsigma, alpha, weight_mode == "binary")
+  triplet <- cross_fspatial_weights(full_nn$indices, full_nn$distances,
+                                    feature_mat1, feature_mat2,
+                                    nels, sigma, wsigma, alpha,
+                                    weight_mode == "binary")
 
-  sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3], dims=c(nrow(coord_mat1), nrow(coord_mat2)))
+  sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3],
+                     dims=c(nrow(coord_mat1), nrow(coord_mat2)))
 
   if (normalized) {
-    D <- 1/rowSums(sm)
-    sm <- D * sm
+    D <- Diagonal(x=1/rowSums(sm))
+    sm <- D %*% sm
   }
 
 
@@ -234,7 +256,9 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
   alpha2 <- 1-alpha
 
   nels <- sum(sapply(full_nn$indices, length))
-  triplet <- fspatial_weights(full_nn$indices, full_nn$distances, feature_mat, nels, sigma, wsigma, alpha, weight_mode == "binary")
+  triplet <- fspatial_weights(full_nn$indices, full_nn$distances,
+                              feature_mat, nels, sigma, wsigma, alpha,
+                              weight_mode == "binary")
 
   sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3], dims=c(nrow(coord_mat), nrow(coord_mat)))
 
@@ -266,23 +290,27 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
 #' @importFrom rflann RadiusSearch
 #' @importFrom Matrix sparseMatrix
 #' @export
-cross_spatial_adjacency <- function(coord_mat1, coord_mat2, dthresh=1.42, nnk=27, weight_mode=c("binary", "heat"),
+cross_spatial_adjacency <- function(coord_mat1, coord_mat2, dthresh=1.42,
+                                    nnk=27, weight_mode=c("binary", "heat"),
                                     sigma=dthresh/2,
                                     normalized=TRUE) {
 
 
-  full_nn <- rflann::RadiusSearch(coord_mat1, coord_mat2, radius=dthresh^2, max_neighbour=nnk)
+  full_nn <- rflann::RadiusSearch(coord_mat1, coord_mat2, radius=dthresh^2,
+                                  max_neighbour=nnk)
   weight_mode <- match.arg(weight_mode)
 
   nels <- sum(sapply(full_nn$indices, length))
 
-  triplet <- spatial_weights(full_nn$indices, full_nn$distances, nels, sigma, weight_mode == "binary")
+  triplet <- spatial_weights(full_nn$indices, full_nn$distances, nels, sigma,
+                             weight_mode == "binary")
 
-  sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3], dims=c(nrow(coord_mat1), nrow(coord_mat2)))
+  sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3],
+                     dims=c(nrow(coord_mat1), nrow(coord_mat2)))
 
   if (normalized) {
-    D <- 1/rowSums(sm)
-    sm <- D * sm
+    D <- Diagonal(x=1/rowSums(sm))
+    sm <- D %*% sm
   }
 
   sm
