@@ -16,5 +16,5 @@ sim_from_adj(A, k = 5, type = c("normal", "mutual"), ncores = 1)
 \item{ncores}{number of cores to use}
 }
 \description{
-construct a knn-similarity matrix from an existing adjacency matrix
+extract the k-nearest neighbors from an existing adjacency matrix
 }
