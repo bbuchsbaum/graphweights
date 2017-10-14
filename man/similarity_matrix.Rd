@@ -9,11 +9,11 @@ similarity_matrix(X, neighbor_mode = c("knn", "supervised"),
   labels = NULL)
 }
 \arguments{
-\item{X}{the data matrix, where each row is an instance and each column is a variable.}
+\item{X}{the data matrix, where each row is an instance and each column is a variable. Similarity is compute over instances.}
 
-\item{neighbor_mode}{the method for assigning weights to neighbors}
+\item{neighbor_mode}{the method for assigning weights to neighbors, either "supervised" or "knn".}
 
-\item{weight_mode}{binary (1 if neighbor, 0 otherwise), heat kernel, normalized heat kernel}
+\item{weight_mode}{binary (1 if neighbor, 0 otherwise), heat kernel, or normalized heat kernel}
 
 \item{k}{number of neighbors}
 
