@@ -1,6 +1,6 @@
 
 
-
+#' internal function
 indices_to_sparse <- function(nn.index, hval, return_triplet=FALSE) {
   M <- do.call(rbind, lapply(1:nrow(nn.index), function(i) {
     cbind(i, nn.index[i,], hval[i,])
