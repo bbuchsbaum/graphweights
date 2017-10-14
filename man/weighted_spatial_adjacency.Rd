@@ -25,3 +25,4 @@ weighted_spatial_adjacency(coord_mat, feature_mat, wsigma = 0.73,
 \description{
 weighted_spatial_adjacency
 }
+

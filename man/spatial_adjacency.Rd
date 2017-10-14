@@ -28,3 +28,4 @@ spatial_adjacency(coord_mat, dthresh = 1.42, nnk = 27,
 \description{
 spatial_adjacency
 }
+

@@ -25,3 +25,4 @@ cross_spatial_adjacency(coord_mat1, coord_mat2, dthresh = 1.42, nnk = 27,
 \description{
 cross_spatial_adjacency
 }
+

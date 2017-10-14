@@ -150,6 +150,8 @@ weighted_knn <- function(X, k=5, FUN=heat_kernel, type=c("normal", "mutual"), re
   }
 }
 
+
+#' @export
 psparse <- function(M, FUN, return_triplet=FALSE) {
   ind <- which(M != 0, arr.ind=TRUE)
   x1 <- M[ind]

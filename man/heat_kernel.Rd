@@ -14,3 +14,4 @@ heat_kernel(x, sigma = 1)
 \description{
 heat_kernel
 }
+
