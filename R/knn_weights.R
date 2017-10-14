@@ -44,9 +44,9 @@ normalized_heat_kernel <- function(x, sigma=1, len) {
 #' @param sigma parameter for heat kernel \code{exp(-dist/(2*sigma^2))}
 #' @param labels the class of the categories when \code{weight_mode} is \code{supervised}, supplied as a \code{factor} with \code{nrow(labels) == nrow(X)}
 #' @export
-similarity_matrix <- function(X, neighbor_mode=c("knn", "supervised"),
-                                  weight_mode=c("heat", "normalized", "binary"),
-                                  k=5, sigma=1, labels=NULL) {
+similarity_matrix <- function(X, neighbor_mode=c("knn", "supervised", "epsilon"),
+                                 weight_mode=c("heat", "normalized", "binary"),
+                                 k=5, sigma=1, labels=NULL) {
   neighbor_mode = match.arg(neighbor_mode)
   weight_mode = match.arg(weight_mode)
 
@@ -79,8 +79,9 @@ similarity_matrix <- function(X, neighbor_mode=c("knn", "supervised"),
 
       Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)))
 
+    } else if (neighbor_mode == "epsilon") {
+      stop("epsilon not implemented")
     }
-
   }
 }
 
