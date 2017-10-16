@@ -19,7 +19,7 @@ indices_to_sparse <- function(nn.index, hval, return_triplet=FALSE) {
 #' @param sigma the bandwidth
 #' @export
 heat_kernel <- function(x, sigma=1) {
-  exp(-x/(2*sigma^2))
+  exp((-x^2)/(2*sigma^2))
 }
 
 
@@ -46,13 +46,29 @@ normalized_heat_kernel <- function(x, sigma=1, len) {
 #' @export
 similarity_matrix <- function(X, neighbor_mode=c("knn", "supervised"),
                                   weight_mode=c("heat", "normalized", "binary"),
-                                  k=5, sigma=1, labels=NULL) {
+                                  k=5, sigma, labels=NULL) {
   neighbor_mode = match.arg(neighbor_mode)
   weight_mode = match.arg(weight_mode)
+
 
   if (weight_mode == "normalized") {
     X <- t(scale(t(X), center=TRUE, scale=TRUE))
   }
+
+  if (missing(sigma)) {
+    ## estimate sigma
+    if (nrow(X) <= 100) {
+      nsamples <- 100
+    } else {
+      nsamples <- max(min(100, .25*nrow(X)), 100)
+
+    }
+
+    sam <- sample(1:nrow(X), nsamples)
+    d <- dist(X[sam,])
+    sigma <- 2 * min(d)
+  }
+
 
 
   wfun <- if (weight_mode == "heat") {
@@ -150,6 +166,10 @@ weighted_knn <- function(X, k=5, FUN=heat_kernel, type=c("normal", "mutual"), re
   }
 }
 
+#' psparse
+#'
+#' apply a function (e.g. max) to each pair of nonzero elements in a \code{sparseMatrix}
+#' @export
 psparse <- function(M, FUN, return_triplet=FALSE) {
   ind <- which(M != 0, arr.ind=TRUE)
   x1 <- M[ind]
