@@ -19,3 +19,4 @@ weighted_knn(X, k = 5, FUN = heat_kernel, type = c("normal", "mutual"),
 \description{
 weighted_knn
 }
+

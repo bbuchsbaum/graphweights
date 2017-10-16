@@ -14,3 +14,4 @@ spatial_lap_of_gauss(coord_mat, sigma = 2)
 \description{
 spatial_lap_of_gauss
 }
+

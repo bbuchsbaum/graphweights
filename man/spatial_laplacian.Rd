@@ -28,3 +28,4 @@ spatial_laplacian(coord_mat, dthresh = 1.42, nnk = 27,
 \description{
 spatial_laplacian
 }
+

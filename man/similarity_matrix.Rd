@@ -24,3 +24,4 @@ similarity_matrix(X, neighbor_mode = c("knn", "supervised"),
 \description{
 similarity_matrix
 }
+
