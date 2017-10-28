@@ -35,6 +35,21 @@ normalized_heat_kernel <- function(x, sigma=1, len) {
 }
 
 
+#' factor_sim
+#'
+#' compute similarity matrix from a set of \code{factor}s in a \code{data.frame}
+#' @param des
+#' @param method
+#' @export
+factor_sim <- function(des, method=c("Jaccard", "Rogers", "simple matching", "Dice")) {
+  Fmat <- do.call(cbind, lapply(names(Xdes), function(nam) {
+    model.matrix(as.formula(paste("~ ", nam, " -1")), data=Xdes)
+  }))
+
+  proxy::simil(Fmat, method=method)
+}
+
+
 #' similarity_matrix
 #'
 #' @param X the data matrix, where each row is an instance and each column is a variable. Similarity is compute over instances.
@@ -46,7 +61,7 @@ normalized_heat_kernel <- function(x, sigma=1, len) {
 #' @export
 similarity_matrix <- function(X, neighbor_mode=c("knn", "supervised", "epsilon"),
                                  weight_mode=c("heat", "normalized", "binary"),
-                                 k=5, sigma=1, labels=NULL) {
+                                 k=5, eps=NULL, sigma=1, labels=NULL) {
   neighbor_mode = match.arg(neighbor_mode)
   weight_mode = match.arg(weight_mode)
 
@@ -120,6 +135,38 @@ sim_from_adj <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
   }
 }
 
+
+#' weighted_knn
+#'
+#' @param X the data matrix, where rows are instances and columns are features
+#' @param eps the e-radius used to threshold neighbor inclusion
+#' @param FUN the function used to convert euclidean distances to similarities
+#' @importFrom assertthat assert_that
+#' @importFrom FNN get.knn
+#' @importFrom Matrix t
+#' @export
+# weighted_radius <- function(X, eps, FUN=heat_kernel, max_neighbour=.5*nrow(X), return_triplet=FALSE) {
+#
+#   if (missing(eps)) {
+#     k <- round(.1 * nrow(X))
+#     nn <- FNN::get.knn(X, k=k)
+#     eps <- 2* min(nn$nn.dist[,2]^2)
+#   }
+#
+#
+#
+#   browser()
+#   res <- rflann::RadiusSearch(X, X, radius=eps, max_neighbour=max_neighbour)
+#   hval <- lapply(res$distances, function(x) FUN(sqrt(x))
+#
+#   W <- indices_to_sparse(nn$nn.index, hval)
+#
+#   if (type == "normal") {
+#     psparse(W, pmax, return_triplet=return_triplet)
+#   } else {
+#     psparse(W, pmin, return_triplet=return_triplet)
+#   }
+# }
 
 
 #' weighted_knn
