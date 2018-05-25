@@ -48,11 +48,16 @@ pairwise_adjacency <- function(Xcoords, Xfeats, fself, fbetween) {
 
 }
 
-#' spatial_laplacian
+#' construct a laplacian matrix in a local spatial neighborhood
 #'
 #' @importFrom Matrix Diagonal
 #' @export
 #' @inheritParams spatial_adjacency
+#' @examples
+#'
+#' coord_mat <- as.matrix(expand.grid(x=1:3, y=1:3, z=1:3))
+#' lp <- spatial_laplacian(coord_mat)
+#' all(dim(lp) == c(27,27))
 spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27,weight_mode=c("binary", "heat"), sigma=dthresh/2,
                               include_diagonal=TRUE, normalized=TRUE, stochastic=FALSE) {
 
@@ -63,11 +68,16 @@ spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27,weight_mode=c("bin
 }
 
 
-#' spatial_lap_of_gauss
+#' construct a laplacian-of-gaussian matrix in a local spatial neighborhood
 #'
 #' @param coord_mat the matrix of coordinates
 #' @param sigma the standard deviation of the spatial smoother
 #' @export
+#' @examples
+#'
+#' coord_mat <- as.matrix(expand.grid(x=1:10, y=1:10))
+#' lp <- spatial_lap_of_gauss(coord_mat)
+#' all(dim(lp) == c(100,100))
 spatial_lap_of_gauss <- function(coord_mat, sigma=2) {
   lap <- spatial_laplacian(coord_mat, weight_mode="binary", normalized=FALSE, nnk=ncol(coord_mat)^3, dthresh=sigma*2.5)
   #lap <- spatial_laplacian(coord_mat, weight_mode="binary", nnk=ncol(coord_mat)^3)
@@ -81,7 +91,13 @@ spatial_lap_of_gauss <- function(coord_mat, sigma=2) {
 #' @param coord_mat the matrix of coordinates
 #' @param sigma the standard deviation of the smoother
 #' @param nnk the number of neighbors in the kernel
+#' @param stochastic make doubly stochastic
 #' @export
+#'
+#' @examples
+#' coord_mat <- as.matrix(expand.grid(x=1:10, y=1:10))
+#' sm <- spatial_smoother(coord_mat, sigma=3)
+#' sm2 <- spatial_smoother(coord_mat, sigma=6, stochastic=FALSE,nnk=50)
 spatial_smoother <- function(coord_mat, sigma=5, nnk=3^(ncol(coord_mat)), stochastic=TRUE) {
   adj <- spatial_adjacency(coord_mat, dthresh=sigma*1, nnk=nnk,weight_mode="heat", sigma,
                            include_diagonal=TRUE, normalized=FALSE, stochastic=FALSE)
@@ -93,14 +109,16 @@ spatial_smoother <- function(coord_mat, sigma=5, nnk=3^(ncol(coord_mat)), stocha
     adj <- make_doubly_stochastic(adj)
     adj <- (adj + t(adj))/2
   }
+
+  adj
 }
 
 
 #' spatial_adjacency
 #'
 #' @param coord_mat the matrix of spatial coordinates
-#' @param dthresh the distance threshold
-#' @param nnk the maximum number of neighbors to include
+#' @param dthresh the distance threshold defining the radius of the neighborhood
+#' @param nnk the maximum number of neighbors to include in each spatial neighborhood
 #' @param weight_mode a binary or heat kernel
 #' @param sigma the bandwidth of the heat kernel if weight_mode == "heat"
 #' @param include_diagonal diagonal elements assigned 1
@@ -109,6 +127,11 @@ spatial_smoother <- function(coord_mat, sigma=5, nnk=3^(ncol(coord_mat)), stocha
 #' @importFrom rflann RadiusSearch
 #' @importFrom Matrix sparseMatrix
 #' @export
+#'
+#' @examples
+#'
+#' coord_mat = as.matrix(expand.grid(x=1:6, y=1:6))
+#' sa <- spatial_adjacency(coord_mat)
 spatial_adjacency <- function(coord_mat, dthresh=1.42, nnk=27, weight_mode=c("binary", "heat"), sigma=dthresh/2,
                               include_diagonal=TRUE, normalized=TRUE, stochastic=FALSE) {
 
@@ -230,13 +253,22 @@ cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
 
 
 
-#' weighted_spatial_adjacency
+#' construct a spatial adjacency matrix weighted by a secondary feature matrix
 #'
 #' @param coord_mat the coordinate matrix
 #' @param feature_mat the feature matrix, where: (\code{nrow(feature_mat) == nrow(coord_mat)})
 #' @inheritParams cross_weighted_spatial_adjacency
 #' @importFrom assertthat assert_that
 #' @export
+#'
+#' @examples
+#'
+#' coord_mat <- as.matrix(expand.grid(x=1:3, y=1:3))
+#' fmat <- matrix(rnorm(9*3), 9, 3)
+#' wsa1 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, weight_mode="binary", alpha=1, stochastic=TRUE)
+#' wsa2 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, weight_mode="binary", alpha=0, stochastic=TRUE)
+#'
+#'
 weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha=.5,
                                        nnk=27,
                                        weight_mode=c("binary", "heat"),
@@ -251,9 +283,11 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
   assert_that(alpha >= 0 && alpha <=1)
   assert_that(dthresh > 0)
 
+  ## find the set of spatial nearest neighbors
   full_nn <- rflann::RadiusSearch(coord_mat, coord_mat, radius=dthresh^2, max_neighbour=nnk)
   weight_mode <- match.arg(weight_mode)
   alpha2 <- 1-alpha
+
 
   nels <- sum(sapply(full_nn$indices, length))
   triplet <- fspatial_weights(full_nn$indices, full_nn$distances,
@@ -314,6 +348,5 @@ cross_spatial_adjacency <- function(coord_mat1, coord_mat2, dthresh=1.42,
   }
 
   sm
-
 }
 

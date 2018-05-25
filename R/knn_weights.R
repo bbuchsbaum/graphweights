@@ -38,31 +38,35 @@ normalized_heat_kernel <- function(x, sigma=1, len) {
 #' factor_sim
 #'
 #' compute similarity matrix from a set of \code{factor}s in a \code{data.frame}
+#'
 #' @param des
 #' @param method
 #' @export
 factor_sim <- function(des, method=c("Jaccard", "Rogers", "simple matching", "Dice")) {
-  Fmat <- do.call(cbind, lapply(names(Xdes), function(nam) {
-    model.matrix(as.formula(paste("~ ", nam, " -1")), data=Xdes)
+  Fmat <- do.call(cbind, lapply(names(des), function(nam) {
+    model.matrix(as.formula(paste("~ ", nam, " -1")), data=des)
   }))
 
   proxy::simil(Fmat, method=method)
 }
 
 
-#' similarity_matrix
+#' Convert a data matrix to a sparse similarity matrix
 #'
 #' @param X the data matrix, where each row is an instance and each column is a variable. Similarity is compute over instances.
-#' @param neighbor_mode the method for assigning weights to neighbors, either "supervised" or "knn".
+#' @param neighbor_mode the method for assigning weights to neighbors, either "supervised", "knn", or "epsilon"
 #' @param weight_mode binary (1 if neighbor, 0 otherwise), heat kernel, or normalized heat kernel
 #' @param k number of neighbors
 #' @param sigma parameter for heat kernel \code{exp(-dist/(2*sigma^2))}
 #' @param labels the class of the categories when \code{weight_mode} is \code{supervised}, supplied as a \code{factor} with \code{nrow(labels) == nrow(X)}
 #' @export
-
+#' @examples
+#'
+#' X <- matrix(rnorm(20*10), 20, 10)
+#' sm <- similarity_matrix(X, neighbor_mode="knn",k=3)
 similarity_matrix <- function(X, neighbor_mode=c("knn", "supervised", "epsilon"),
                                  weight_mode=c("heat", "normalized", "binary"),
-                                 k=5, eps=NULL, sigma=1, labels=NULL) {
+                                 k=5, sigma,eps=NULL, labels=NULL) {
 
   neighbor_mode = match.arg(neighbor_mode)
   weight_mode = match.arg(weight_mode)
@@ -75,7 +79,7 @@ similarity_matrix <- function(X, neighbor_mode=c("knn", "supervised", "epsilon")
   if (missing(sigma)) {
     ## estimate sigma
     if (nrow(X) <= 100) {
-      nsamples <- 100
+      nsamples <- nrow(X)
     } else {
       nsamples <- max(min(100, .25*nrow(X)), 100)
 
@@ -219,6 +223,8 @@ weighted_knn <- function(X, k=5, FUN=heat_kernel, type=c("normal", "mutual"), re
 #' psparse
 #'
 #' apply a function (e.g. max) to each pair of nonzero elements in a \code{sparseMatrix}
+#'
+#' @importFrom Matrix which
 #' @export
 psparse <- function(M, FUN, return_triplet=FALSE) {
   ind <- which(M != 0, arr.ind=TRUE)
