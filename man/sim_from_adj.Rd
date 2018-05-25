@@ -18,4 +18,3 @@ sim_from_adj(A, k = 5, type = c("normal", "mutual"), ncores = 1)
 \description{
 extract the k-nearest neighbors from an existing adjacency matrix
 }
-

@@ -11,9 +11,9 @@ spatial_adjacency(coord_mat, dthresh = 1.42, nnk = 27,
 \arguments{
 \item{coord_mat}{the matrix of spatial coordinates}
 
-\item{dthresh}{the distance threshold}
+\item{dthresh}{the distance threshold defining the radius of the neighborhood}
 
-\item{nnk}{the maximum number of neighbors to include}
+\item{nnk}{the maximum number of neighbors to include in each spatial neighborhood}
 
 \item{weight_mode}{a binary or heat kernel}
 
@@ -28,4 +28,8 @@ spatial_adjacency(coord_mat, dthresh = 1.42, nnk = 27,
 \description{
 spatial_adjacency
 }
+\examples{
 
+coord_mat = as.matrix(expand.grid(x=1:6, y=1:6))
+sa <- spatial_adjacency(coord_mat)
+}

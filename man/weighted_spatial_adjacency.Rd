@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{weighted_spatial_adjacency}
 \alias{weighted_spatial_adjacency}
-\title{weighted_spatial_adjacency}
+\title{construct a spatial adjacency matrix weighted by a secondary feature matrix}
 \usage{
 weighted_spatial_adjacency(coord_mat, feature_mat, wsigma = 0.73,
   alpha = 0.5, nnk = 27, weight_mode = c("binary", "heat"), sigma = 1,
@@ -23,6 +23,14 @@ weighted_spatial_adjacency(coord_mat, feature_mat, wsigma = 0.73,
 \item{normalized}{whether to normalize the rows to sum to 1}
 }
 \description{
-weighted_spatial_adjacency
+construct a spatial adjacency matrix weighted by a secondary feature matrix
 }
+\examples{
 
+coord_mat <- as.matrix(expand.grid(x=1:3, y=1:3))
+fmat <- matrix(rnorm(9*3), 9, 3)
+wsa1 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, weight_mode="binary", alpha=1, stochastic=TRUE)
+wsa2 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, weight_mode="binary", alpha=0, stochastic=TRUE)
+
+
+}

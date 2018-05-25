@@ -29,4 +29,3 @@ cross_weighted_spatial_adjacency(coord_mat1, coord_mat2, feature_mat1,
 \description{
 cross_weighted_spatial_adjacency
 }
-

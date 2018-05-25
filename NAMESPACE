@@ -2,6 +2,7 @@
 
 export(cross_spatial_adjacency)
 export(cross_weighted_spatial_adjacency)
+export(factor_sim)
 export(heat_kernel)
 export(normalized_heat_kernel)
 export(pairwise_adjacency)

@@ -9,4 +9,3 @@ pairwise_adjacency(Xcoords, Xfeats, fself, fbetween)
 \description{
 pairwise_adjacency
 }
-

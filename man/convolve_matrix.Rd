@@ -14,4 +14,3 @@ convolve_matrix(X, Kern, normalize = FALSE)
 \description{
 convolve_matrix
 }
-

@@ -15,8 +15,13 @@ weighted_knn(X, k = 5, FUN = heat_kernel, type = c("normal", "mutual"),
 \item{FUN}{the function used to convert euclidean distances to similarities}
 
 \item{type}{whether to compute 'normal' or 'mutual' k-nearest neighbors}
+
+\item{eps}{the e-radius used to threshold neighbor inclusion}
+
+\item{X}{the data matrix, where rows are instances and columns are features}
+
+\item{FUN}{the function used to convert euclidean distances to similarities}
 }
 \description{
 weighted_knn
 }
-

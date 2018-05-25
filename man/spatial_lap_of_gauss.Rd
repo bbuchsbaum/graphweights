@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{spatial_lap_of_gauss}
 \alias{spatial_lap_of_gauss}
-\title{spatial_lap_of_gauss}
+\title{construct a laplacian-of-gaussian matrix in a local spatial neighborhood}
 \usage{
 spatial_lap_of_gauss(coord_mat, sigma = 2)
 }
@@ -12,6 +12,11 @@ spatial_lap_of_gauss(coord_mat, sigma = 2)
 \item{sigma}{the standard deviation of the spatial smoother}
 }
 \description{
-spatial_lap_of_gauss
+construct a laplacian-of-gaussian matrix in a local spatial neighborhood
 }
+\examples{
 
+coord_mat <- as.matrix(expand.grid(x=1:10, y=1:10))
+lp <- spatial_lap_of_gauss(coord_mat)
+all(dim(lp) == c(100,100))
+}

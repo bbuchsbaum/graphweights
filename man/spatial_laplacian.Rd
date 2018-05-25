@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{spatial_laplacian}
 \alias{spatial_laplacian}
-\title{spatial_laplacian}
+\title{construct a laplacian matrix in a local spatial neighborhood}
 \usage{
 spatial_laplacian(coord_mat, dthresh = 1.42, nnk = 27,
   weight_mode = c("binary", "heat"), sigma = dthresh/2,
@@ -11,9 +11,9 @@ spatial_laplacian(coord_mat, dthresh = 1.42, nnk = 27,
 \arguments{
 \item{coord_mat}{the matrix of spatial coordinates}
 
-\item{dthresh}{the distance threshold}
+\item{dthresh}{the distance threshold defining the radius of the neighborhood}
 
-\item{nnk}{the maximum number of neighbors to include}
+\item{nnk}{the maximum number of neighbors to include in each spatial neighborhood}
 
 \item{weight_mode}{a binary or heat kernel}
 
@@ -26,6 +26,11 @@ spatial_laplacian(coord_mat, dthresh = 1.42, nnk = 27,
 \item{stochastic}{make column elements also sum to 1 (only relevant if \code{normalized == TRUE})}
 }
 \description{
-spatial_laplacian
+construct a laplacian matrix in a local spatial neighborhood
 }
+\examples{
 
+coord_mat <- as.matrix(expand.grid(x=1:3, y=1:3, z=1:3))
+lp <- spatial_laplacian(coord_mat)
+all(dim(lp) == c(27,27))
+}

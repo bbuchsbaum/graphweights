@@ -23,4 +23,3 @@ label_matrix(a, b, type = c("s", "d"), return_matrix = TRUE,
 \description{
 label_matrix
 }
-

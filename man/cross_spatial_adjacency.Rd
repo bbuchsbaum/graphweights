@@ -12,9 +12,9 @@ cross_spatial_adjacency(coord_mat1, coord_mat2, dthresh = 1.42, nnk = 27,
 
 \item{coord_mat2}{the second coordinate matrix}
 
-\item{dthresh}{the distance threshold}
+\item{dthresh}{the distance threshold defining the radius of the neighborhood}
 
-\item{nnk}{the maximum number of neighbors to include}
+\item{nnk}{the maximum number of neighbors to include in each spatial neighborhood}
 
 \item{weight_mode}{a binary or heat kernel}
 
@@ -25,4 +25,3 @@ cross_spatial_adjacency(coord_mat1, coord_mat2, dthresh = 1.42, nnk = 27,
 \description{
 cross_spatial_adjacency
 }
-

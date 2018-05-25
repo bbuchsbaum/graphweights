@@ -224,6 +224,9 @@ weighted_knn <- function(X, k=5, FUN=heat_kernel, type=c("normal", "mutual"), re
 #'
 #' apply a function (e.g. max) to each pair of nonzero elements in a \code{sparseMatrix}
 #'
+#' @param M
+#' @param FUN
+#' @param return_triplet
 #' @importFrom Matrix which
 #' @export
 psparse <- function(M, FUN, return_triplet=FALSE) {

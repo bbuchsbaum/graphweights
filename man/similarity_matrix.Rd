@@ -2,16 +2,16 @@
 % Please edit documentation in R/knn_weights.R
 \name{similarity_matrix}
 \alias{similarity_matrix}
-\title{similarity_matrix}
+\title{Convert a data matrix to a sparse similarity matrix}
 \usage{
-similarity_matrix(X, neighbor_mode = c("knn", "supervised"),
-  weight_mode = c("heat", "normalized", "binary"), k = 5, sigma = 1,
-  labels = NULL)
+similarity_matrix(X, neighbor_mode = c("knn", "supervised", "epsilon"),
+  weight_mode = c("heat", "normalized", "binary"), k = 5, sigma,
+  eps = NULL, labels = NULL)
 }
 \arguments{
 \item{X}{the data matrix, where each row is an instance and each column is a variable. Similarity is compute over instances.}
 
-\item{neighbor_mode}{the method for assigning weights to neighbors, either "supervised" or "knn".}
+\item{neighbor_mode}{the method for assigning weights to neighbors, either "supervised", "knn", or "epsilon"}
 
 \item{weight_mode}{binary (1 if neighbor, 0 otherwise), heat kernel, or normalized heat kernel}
 
@@ -22,6 +22,10 @@ similarity_matrix(X, neighbor_mode = c("knn", "supervised"),
 \item{labels}{the class of the categories when \code{weight_mode} is \code{supervised}, supplied as a \code{factor} with \code{nrow(labels) == nrow(X)}}
 }
 \description{
-similarity_matrix
+Convert a data matrix to a sparse similarity matrix
 }
+\examples{
 
+X <- matrix(rnorm(20*10), 20, 10)
+sm <- similarity_matrix(X, neighbor_mode="knn",k=3)
+}

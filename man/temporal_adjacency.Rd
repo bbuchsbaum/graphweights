@@ -19,4 +19,3 @@ temporal_adjacency(time, weight_mode = c("heat", "binary"), sigma = 1,
 \description{
 temporal_adjacency
 }
-
