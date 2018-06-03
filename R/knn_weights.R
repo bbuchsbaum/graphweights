@@ -54,7 +54,7 @@ factor_sim <- function(des, method=c("Jaccard", "Rogers", "simple matching", "Di
 #' Convert a data matrix to a sparse similarity matrix
 #'
 #' @param X the data matrix, where each row is an instance and each column is a variable. Similarity is compute over instances.
-#' @param neighbor_mode the method for assigning weights to neighbors, either "supervised", "knn", or "epsilon"
+#' @param neighbor_mode the method for assigning weights to neighbors, either "supervised", "knn", "knearest_misses", or "epsilon"
 #' @param weight_mode binary (1 if neighbor, 0 otherwise), heat kernel, or normalized heat kernel
 #' @param k number of neighbors
 #' @param sigma parameter for heat kernel \code{exp(-dist/(2*sigma^2))}
@@ -64,7 +64,12 @@ factor_sim <- function(des, method=c("Jaccard", "Rogers", "simple matching", "Di
 #'
 #' X <- matrix(rnorm(20*10), 20, 10)
 #' sm <- similarity_matrix(X, neighbor_mode="knn",k=3)
-similarity_matrix <- function(X, neighbor_mode=c("knn", "supervised", "epsilon"),
+#'
+#' labels <- factor(rep(letters[1:4],5))
+#' sm2 <- similarity_matrix(X, neighbor_mode="supervised",k=3, labels=labels)
+#'
+#' sm3 <- similarity_matrix(X, neighbor_mode="knearest_misses",k=3, labels=labels, weight_mode="binary")
+similarity_matrix <- function(X, neighbor_mode=c("knn", "supervised", "knearest_misses", "epsilon"),
                                  weight_mode=c("heat", "normalized", "binary"),
                                  k=5, sigma,eps=NULL, labels=NULL) {
 
@@ -90,8 +95,6 @@ similarity_matrix <- function(X, neighbor_mode=c("knn", "supervised", "epsilon")
     sigma <- 2 * min(d)
   }
 
-
-
   wfun <- if (weight_mode == "heat") {
     function(x) heat_kernel(x, sigma)
   } else if (weight_mode == "binary") {
@@ -103,22 +106,39 @@ similarity_matrix <- function(X, neighbor_mode=c("knn", "supervised", "epsilon")
   if (neighbor_mode == "knn") {
     W <- weighted_knn(X, k, FUN=wfun)
   } else if (neighbor_mode == "supervised") {
-    assertthat::assert_that(!is.null(labels))
+      assertthat::assert_that(!is.null(labels))
+      labels <- as.factor(labels)
+      if (k == 0) {
+        W <- label_matrix2(labels, labels)
+      } else if (k > 0) {
+
+        M <- do.call(rbind, lapply(levels(labels), function(lev) {
+          idx <- which(labels == lev)
+          M <- weighted_knn(X[idx,], k, FUN=wfun)
+          Mind <- which(M > 0, arr.ind=TRUE)
+          cbind(idx[Mind[,1]], idx[Mind[,2]], M[Mind])
+        }))
+
+        Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)))
+      }
+
+  } else if (neighbor_mode == "knearest_misses") {
+    assertthat::assert_that(!is.null(labels) && k > 0,
+                            msg="when 'neighbor_mode' is 'knearest_misses',
+                            k must be greater than 0 and labels cannot be NULL")
     labels <- as.factor(labels)
-    if (k == 0) {
-      W <- label_matrix(labels, labels)
-    } else if (k > 0) {
-      M <- do.call(rbind, lapply(levels(labels), function(lev) {
-        idx <- which(labels == lev)
-        M <- weighted_knn(X[idx,], k, FUN=wfun, return_triplet=TRUE)
-        cbind(idx[M[,1]], idx[M[,2]], M[,3])
-      }))
+    M <- do.call(rbind, lapply(levels(labels), function(lev) {
+      browser()
+      idx <- which(labels != lev)
+      M <- weighted_knn(X[idx,], k, FUN=wfun)
+      Mind <- which(M > 0, arr.ind=TRUE)
+      cbind(idx[Mind[,1]], idx[Mind[,2]], M[Mind])
+    }))
 
-      Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)))
+    Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)), use.last.ij = TRUE)
 
-    } else if (neighbor_mode == "epsilon") {
+  } else if (neighbor_mode == "epsilon") {
       stop("epsilon not implemented")
-    }
   }
 }
 
@@ -201,7 +221,7 @@ sim_from_adj <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
 #' @importFrom FNN get.knn
 #' @importFrom Matrix t
 #' @export
-weighted_knn <- function(X, k=5, FUN=heat_kernel, type=c("normal", "mutual"), return_triplet=FALSE) {
+weighted_knn <- function(X, k=5, FUN=heat_kernel, type=c("normal", "mutual", "asym"), return_triplet=FALSE) {
   assert_that(k > 0 && k <= nrow(X))
 
   type <- match.arg(type)
@@ -215,8 +235,10 @@ weighted_knn <- function(X, k=5, FUN=heat_kernel, type=c("normal", "mutual"), re
 
   if (type == "normal") {
     psparse(W, pmax, return_triplet=return_triplet)
-  } else {
+  } else if (type == "mutual") {
     psparse(W, pmin, return_triplet=return_triplet)
+  } else if (type == "asym") {
+    W
   }
 }
 
