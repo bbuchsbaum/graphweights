@@ -69,7 +69,7 @@ factor_sim <- function(des, method=c("Jaccard", "Rogers", "simple matching", "Di
 #' sm2 <- edge_weights(X, neighbor_mode="supervised",k=3, labels=labels)
 #'
 #' sm3 <- edge_weights(X, neighbor_mode="knearest_misses",k=3, labels=labels, weight_mode="binary")
-graph_sim <- function(X, neighbor_mode=c("knn", "supervised", "knearest_misses", "epsilon"),
+edge_weights <- function(X, neighbor_mode=c("knn", "supervised", "knearest_misses", "epsilon"),
                                  weight_mode=c("heat", "normalized", "binary"),
                                  type=c("normal", "mutual", "asym"),
                                  k=5, sigma,eps=NULL, labels=NULL) {
