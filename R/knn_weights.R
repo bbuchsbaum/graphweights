@@ -105,7 +105,7 @@ edge_weights <- function(X, neighbor_mode=c("knn", "supervised", "knearest_misse
   }
 
   if (neighbor_mode == "knn") {
-    W <- weighted_knn(X, k, FUN=wfun)
+    W <- weighted_knn(X, k, FUN=wfun, type=type)
   } else if (neighbor_mode == "supervised") {
       assertthat::assert_that(!is.null(labels))
       labels <- as.factor(labels)
@@ -115,7 +115,7 @@ edge_weights <- function(X, neighbor_mode=c("knn", "supervised", "knearest_misse
 
         M <- do.call(rbind, lapply(levels(labels), function(lev) {
           idx <- which(labels == lev)
-          M <- weighted_knn(X[idx,], k, FUN=wfun)
+          M <- weighted_knn(X[idx,], k, FUN=wfun, type=type)
           Mind <- which(M > 0, arr.ind=TRUE)
           cbind(idx[Mind[,1]], idx[Mind[,2]], M[Mind])
         }))
@@ -137,7 +137,15 @@ edge_weights <- function(X, neighbor_mode=c("knn", "supervised", "knearest_misse
       cbind(idx2[Mind[,1]], idx1[Mind[,2]], M[Mind])
     }))
 
-    m <- Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)), use.last.ij = TRUE)
+    W <- Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)), use.last.ij = TRUE)
+
+    if (type == "normal") {
+      psparse(W, pmax, return_triplet=return_triplet)
+    } else if (type == "mutual") {
+      psparse(W, pmin, return_triplet=return_triplet)
+    } else if (type == "asym") {
+      W
+    }
 
   } else if (neighbor_mode == "epsilon") {
       stop("epsilon not implemented")
