@@ -4,7 +4,8 @@
 \alias{indices_to_sparse}
 \title{internal function}
 \usage{
-indices_to_sparse(nn.index, hval, return_triplet = FALSE)
+indices_to_sparse(nn.index, hval, return_triplet = FALSE,
+  idim = nrow(nn.index), jdim = nrow(nn.index))
 }
 \description{
 internal function

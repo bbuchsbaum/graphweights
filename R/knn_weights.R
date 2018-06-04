@@ -1,7 +1,7 @@
 
 
 #' internal function
-indices_to_sparse <- function(nn.index, hval, return_triplet=FALSE) {
+indices_to_sparse <- function(nn.index, hval, return_triplet=FALSE, idim=nrow(nn.index), jdim=nrow(nn.index)) {
   M <- do.call(rbind, lapply(1:nrow(nn.index), function(i) {
     cbind(i, nn.index[i,], hval[i,])
   }))
@@ -9,7 +9,7 @@ indices_to_sparse <- function(nn.index, hval, return_triplet=FALSE) {
   if (return_triplet) {
     M
   } else {
-    Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(nn.index), nrow(nn.index)))
+    Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(idim, jdim))
   }
 }
 
@@ -51,9 +51,9 @@ factor_sim <- function(des, method=c("Jaccard", "Rogers", "simple matching", "Di
 }
 
 
-#' Convert a data matrix to a sparse similarity matrix
+#' Convert a data matrix with n instances and p features to an n-by-n adjacency matrix
 #'
-#' @param X the data matrix, where each row is an instance and each column is a variable. Similarity is compute over instances.
+#' @param X the data matrix, where each row is an instance and each column is a variable. Similarity is computed over instances.
 #' @param neighbor_mode the method for assigning weights to neighbors, either "supervised", "knn", "knearest_misses", or "epsilon"
 #' @param weight_mode binary (1 if neighbor, 0 otherwise), heat kernel, or normalized heat kernel
 #' @param k number of neighbors
@@ -63,14 +63,15 @@ factor_sim <- function(des, method=c("Jaccard", "Rogers", "simple matching", "Di
 #' @examples
 #'
 #' X <- matrix(rnorm(20*10), 20, 10)
-#' sm <- similarity_matrix(X, neighbor_mode="knn",k=3)
+#' sm <- edge_weights(X, neighbor_mode="knn",k=3)
 #'
 #' labels <- factor(rep(letters[1:4],5))
-#' sm2 <- similarity_matrix(X, neighbor_mode="supervised",k=3, labels=labels)
+#' sm2 <- edge_weights(X, neighbor_mode="supervised",k=3, labels=labels)
 #'
-#' sm3 <- similarity_matrix(X, neighbor_mode="knearest_misses",k=3, labels=labels, weight_mode="binary")
-similarity_matrix <- function(X, neighbor_mode=c("knn", "supervised", "knearest_misses", "epsilon"),
+#' sm3 <- edge_weights(X, neighbor_mode="knearest_misses",k=3, labels=labels, weight_mode="binary")
+graph_sim <- function(X, neighbor_mode=c("knn", "supervised", "knearest_misses", "epsilon"),
                                  weight_mode=c("heat", "normalized", "binary"),
+                                 type=c("normal", "mutual", "asym"),
                                  k=5, sigma,eps=NULL, labels=NULL) {
 
   neighbor_mode = match.arg(neighbor_mode)
@@ -128,14 +129,15 @@ similarity_matrix <- function(X, neighbor_mode=c("knn", "supervised", "knearest_
                             k must be greater than 0 and labels cannot be NULL")
     labels <- as.factor(labels)
     M <- do.call(rbind, lapply(levels(labels), function(lev) {
-      browser()
-      idx <- which(labels != lev)
-      M <- weighted_knn(X[idx,], k, FUN=wfun)
+      idx1 <- which(labels != lev)
+      idx2 <- which(labels == lev)
+
+      M <- weighted_knnx(X[idx1,,drop=FALSE], X[idx2,,drop=FALSE], k=k, FUN=wfun, type="asym")
       Mind <- which(M > 0, arr.ind=TRUE)
-      cbind(idx[Mind[,1]], idx[Mind[,2]], M[Mind])
+      cbind(idx2[Mind[,1]], idx1[Mind[,2]], M[Mind])
     }))
 
-    Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)), use.last.ij = TRUE)
+    m <- Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)), use.last.ij = TRUE)
 
   } else if (neighbor_mode == "epsilon") {
       stop("epsilon not implemented")
@@ -210,6 +212,26 @@ sim_from_adj <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
 #   }
 # }
 
+weighted_knnx <- function(X, query, k=5, FUN=heat_kernel, type=c("normal", "mutual", "asym"), return_triplet=FALSE) {
+  assert_that(k > 0 && k <= nrow(X))
+
+  type <- match.arg(type)
+  nn <- FNN::get.knnx(X, query, k=k)
+
+  nnd <- nn$nn.dist
+
+  hval <- FUN(nnd)
+
+  W <- indices_to_sparse(nn$nn.index, hval, idim=nrow(nn$nn.index), jdim=nrow(X), return_triplet=return_triplet)
+
+  if (type == "normal") {
+    psparse(W, pmax, return_triplet=return_triplet)
+  } else if (type == "mutual") {
+    psparse(W, pmin, return_triplet=return_triplet)
+  } else if (type == "asym") {
+    W
+  }
+}
 
 #' weighted_knn
 #'
