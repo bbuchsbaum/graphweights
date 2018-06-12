@@ -156,16 +156,21 @@ spatial_adjacency <- function(coord_mat, dthresh=1.42, nnk=27, weight_mode=c("bi
 }
 
 
-
-make_doubly_stochastic <- function(A, iter=10) {
+#' make_doubly_stochastic
+#'
+#' @param A
+#' @param iter
+#' @export
+make_doubly_stochastic <- function(A, iter=15) {
   r <- rep(1, nrow(A))
   #Given A, let (n, n) = size(A) and initialize r = ones(n, 1);
   for (k in 1:iter) {
     c <- 1/t(A) %*% r
-    r <- 1/(A %*% c);
+    r <- 1/(A %*% c)
   }
   C <- Diagonal(x=c[,1])
   R <- Diagonal(x=r[,1])
+
   Ab <- R %*% A %*% C
 }
 
