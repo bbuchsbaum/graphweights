@@ -188,15 +188,15 @@ sim_from_adj <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
 }
 
 
-#' weighted_knn
-#'
-#' @param X the data matrix, where rows are instances and columns are features
-#' @param eps the e-radius used to threshold neighbor inclusion
-#' @param FUN the function used to convert euclidean distances to similarities
-#' @importFrom assertthat assert_that
-#' @importFrom FNN get.knn
-#' @importFrom Matrix t
-#' @export
+# weighted_knn
+#
+# @param X the data matrix, where rows are instances and columns are features
+# @param eps the e-radius used to threshold neighbor inclusion
+# @param FUN the function used to convert euclidean distances to similarities
+# @importFrom assertthat assert_that
+# @importFrom FNN get.knn
+# @importFrom Matrix t
+# @export
 # weighted_radius <- function(X, eps, FUN=heat_kernel, max_neighbour=.5*nrow(X), return_triplet=FALSE) {
 #
 #   if (missing(eps)) {
