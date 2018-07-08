@@ -272,8 +272,6 @@ cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
 #' fmat <- matrix(rnorm(9*3), 9, 3)
 #' wsa1 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, weight_mode="binary", alpha=1, stochastic=TRUE)
 #' wsa2 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, weight_mode="binary", alpha=0, stochastic=TRUE)
-#'
-#'
 weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha=.5,
                                        nnk=27,
                                        weight_mode=c("binary", "heat"),
@@ -295,6 +293,7 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
 
 
   nels <- sum(sapply(full_nn$indices, length))
+
   triplet <- fspatial_weights(full_nn$indices, full_nn$distances,
                               feature_mat, nels, sigma, wsigma, alpha,
                               weight_mode == "binary")
@@ -312,8 +311,6 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
       sm <- make_doubly_stochastic(sm)
     }
   }
-
-
 
   sm
 

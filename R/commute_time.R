@@ -16,10 +16,10 @@ commute_time <- function(A, ncomp=nrow(A)-1) {
   gap <- decomp$values[1] - decomp$values[2]
 
   cds <- sweep(v, 2, sqrt(1 - ev), "/")
-  cds <- sweep(cds, 1, 1/pii, "*")
+  cds <- sweep(cds, 1, 1/sqrt(pii), "*")
   cds
 
-  ret <- list(vectors=v, values=ev, cds=cds, gap=gap)
+  ret <- list(vectors=decomp$vectors, values=decomp$values, cds=cds, gap=gap)
   class(ret) <- c("commute_time", "list")
   ret
 }

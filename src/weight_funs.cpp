@@ -96,7 +96,7 @@ NumericMatrix fspatial_weights(List indices, List distances, NumericMatrix featu
   for(int i = 0; i < n; ++i) {
     SEXP ll = indices[i];
     IntegerVector ind(ll);
-
+    // first compute spatial similarity
     if (ind.size() > 0) {
       NumericVector vals;
       if (binary) {
@@ -136,6 +136,7 @@ NumericMatrix spatial_weights(List indices, List distances, double nels, double 
     IntegerVector ind(ll);
 
     if (ind.size() > 0) {
+      // compute coordinate distances
       NumericVector vals;
       if (binary) {
         vals = rep(1.0, ind.size());
