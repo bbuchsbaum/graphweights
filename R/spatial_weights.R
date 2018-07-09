@@ -209,6 +209,7 @@ normalize_adjacency <- function(sm, symmetric=TRUE) {
 #' @param feature_mat1 the first feature matrix
 #' @param feature_mat2 the second feature matrix
 #' @param wsigma the sigma for the feature heat kernel
+#' @param nnk the maximum number of spatial nearest neighbors to include
 #' @param alpha the mixing weight for the spatial distance (1=all spatial, 0=all feature)
 #' @param dthresh the threshold for the spatial distance
 #' @param normalized whether to normalize the rows to sum to 1
@@ -238,7 +239,7 @@ cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
   nels <- sum(sapply(full_nn$indices, length))
 
 
-  triplet <- cross_fspatial_weights(full_nn$indices, full_nn$distances,
+  triplet <- cross_fspatial_weights(full_nn$indices, sqrt(full_nn$distances),
                                     feature_mat1, feature_mat2,
                                     nels, sigma, wsigma, alpha,
                                     weight_mode == "binary")
@@ -294,7 +295,7 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
 
   nels <- sum(sapply(full_nn$indices, length))
 
-  triplet <- fspatial_weights(full_nn$indices, full_nn$distances,
+  triplet <- fspatial_weights(full_nn$indices, sqrt(full_nn$distances),
                               feature_mat, nels, sigma, wsigma, alpha,
                               weight_mode == "binary")
 
@@ -338,7 +339,7 @@ cross_spatial_adjacency <- function(coord_mat1, coord_mat2, dthresh=1.42,
 
   nels <- sum(sapply(full_nn$indices, length))
 
-  triplet <- spatial_weights(full_nn$indices, full_nn$distances, nels, sigma,
+  triplet <- spatial_weights(full_nn$indices, sqrt(full_nn$distances), nels, sigma,
                              weight_mode == "binary")
 
   sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3],
