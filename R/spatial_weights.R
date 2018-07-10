@@ -239,7 +239,7 @@ cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
   nels <- sum(sapply(full_nn$indices, length))
 
 
-  triplet <- cross_fspatial_weights(full_nn$indices, sqrt(full_nn$distances),
+  triplet <- cross_fspatial_weights(full_nn$indices, lapply(full_nn$distances, sqrt),
                                     feature_mat1, feature_mat2,
                                     nels, sigma, wsigma, alpha,
                                     weight_mode == "binary")
@@ -295,7 +295,7 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
 
   nels <- sum(sapply(full_nn$indices, length))
 
-  triplet <- fspatial_weights(full_nn$indices, sqrt(full_nn$distances),
+  triplet <- fspatial_weights(full_nn$indices, lapply(full_nn$distances, sqrt),
                               feature_mat, nels, sigma, wsigma, alpha,
                               weight_mode == "binary")
 
@@ -339,7 +339,7 @@ cross_spatial_adjacency <- function(coord_mat1, coord_mat2, dthresh=1.42,
 
   nels <- sum(sapply(full_nn$indices, length))
 
-  triplet <- spatial_weights(full_nn$indices, sqrt(full_nn$distances), nels, sigma,
+  triplet <- spatial_weights(full_nn$indices, lapply(full_nn$distances, sqrt), nels, sigma,
                              weight_mode == "binary")
 
   sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3],
