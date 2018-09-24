@@ -94,6 +94,7 @@ edge_weights <- function(X, neighbor_mode=c("knn", "supervised", "knearest_misse
     sam <- sample(1:nrow(X), nsamples)
     d <- dist(X[sam,])
     sigma <- 2 * min(d)
+    message("sigma is ", sigma)
   }
 
   wfun <- if (weight_mode == "heat") {
@@ -140,9 +141,11 @@ edge_weights <- function(X, neighbor_mode=c("knn", "supervised", "knearest_misse
     W <- Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)), use.last.ij = TRUE)
 
     if (type == "normal") {
-      psparse(W, pmax, return_triplet=return_triplet)
+      #psparse(W, pmax, return_triplet=return_triplet)
+      psparse(W, pmax)
     } else if (type == "mutual") {
-      psparse(W, pmin, return_triplet=return_triplet)
+      #psparse(W, pmin, return_triplet=return_triplet)
+      psparse(W, pmin)
     } else if (type == "asym") {
       W
     }
