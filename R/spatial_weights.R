@@ -192,8 +192,8 @@ make_doubly_stochastic <- function(A, iter=15) {
 normalize_adjacency <- function(sm, symmetric=TRUE) {
   D <- Matrix::rowSums(sm)
 
-  D1 <- 1/sqrt(D)
-  sm <- D1 * sm * D1
+  D1 <- Diagonal(length(D), x=1/sqrt(D))
+  sm <- D1 %*% sm %*% D1
 
   if (symmetric) {
     sm <- (sm + t(sm))/2
@@ -248,10 +248,8 @@ cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
                      dims=c(nrow(coord_mat1), nrow(coord_mat2)))
 
   if (normalized) {
-    D <- Diagonal(x=1/rowSums(sm))
-    sm <- D %*% sm
+    sm <- normalize_adjacency(sm)
   }
-
 
   sm
 

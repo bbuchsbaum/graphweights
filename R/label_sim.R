@@ -1,18 +1,30 @@
-
-label_matrix2 <- function(a, b, type=c("s", "d"), return_matrix=TRUE, simfun=NULL , dim1=length(a), dim2=length(b)) {
+#' @export
+label_matrix2 <- function(a, b, type=c("s", "d"), simfun=NULL, dim1=length(a), dim2=length(b)) {
   type <- match.arg(type)
 
-  if (type == "s") {
-    out <- outer(a,b, "==")
-    ret <- Matrix(out, sparse = TRUE)
-    ret[which(is.na(ret), arr.ind=TRUE)] <-FALSE
-    ret <- ret * 1
+  if (is.null(simfun) && type == "s") {
+    simfun <- "=="
+  } else if (is.null(simfun) && type == "d") {
+    simfun <- "!="
+  }
 
+
+  if (type == "s") {
+    out <- outer(a,b, simfun)
+    ret <- Matrix(out, sparse = TRUE)
+    if (any(is.na(ret))) {
+      ret[which(is.na(ret), arr.ind=TRUE)] <- 0
+    }
+
+    ret <- ret * 1
     ret
   } else if (type == "d") {
-    out <- outer(a,b, "!=")
+    out <- outer(a,b, simfun)
     ret <- Matrix(out, sparse = TRUE)
-    ret[which(is.na(ret), arr.ind=TRUE)] <-FALSE
+    if (any(is.na(ret))) {
+      ret[which(is.na(ret), arr.ind=TRUE)] <- 0
+    }
+
     ret <- ret * 1
     #ret[which(is.na(ret), arr.ind=TRUE)] <- 0
     ret
@@ -74,13 +86,17 @@ label_matrix <- function(a, b, type=c("s", "d"), return_matrix=TRUE, simfun=NULL
     }
   }
 
-  dfun <- function(x, y) {
-    if (is.na(x) || is.na(y)) {
-      0
-    } else if (x == y) {
-      0
-    } else {
-      1
+  dfun <- if (!is.null(simfun)) {
+    simfun
+  } else {
+    function(x, y) {
+      if (is.na(x) || is.na(y)) {
+        0
+      } else if (x == y) {
+        0
+      } else {
+        1
+      }
     }
   }
 
@@ -88,12 +104,12 @@ label_matrix <- function(a, b, type=c("s", "d"), return_matrix=TRUE, simfun=NULL
 
   out <- lapply(a.idx, function(i) {
     ret <- lapply(b.idx, function(j) {
-      if (fun(a[i], b[j])) {
-        c(i,j,1)
-      } else {
-        NULL
+      v <- fun(a[i], b[j])
+      if (v != 0) {
+        c(i,j,v)
       }
     })
+
     ret[sapply(ret, function(x) !is.null(x))]
   })
 
