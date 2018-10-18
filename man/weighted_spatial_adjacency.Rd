@@ -18,6 +18,8 @@ weighted_spatial_adjacency(coord_mat, feature_mat, wsigma = 0.73,
 
 \item{alpha}{the mixing weight for the spatial distance (1=all spatial, 0=all feature)}
 
+\item{nnk}{the maximum number of spatial nearest neighbors to include}
+
 \item{dthresh}{the threshold for the spatial distance}
 
 \item{normalized}{whether to normalize the rows to sum to 1}
@@ -31,6 +33,4 @@ coord_mat <- as.matrix(expand.grid(x=1:3, y=1:3))
 fmat <- matrix(rnorm(9*3), 9, 3)
 wsa1 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, weight_mode="binary", alpha=1, stochastic=TRUE)
 wsa2 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, weight_mode="binary", alpha=0, stochastic=TRUE)
-
-
 }

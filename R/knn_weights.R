@@ -23,6 +23,8 @@ heat_kernel <- function(x, sigma=1) {
 }
 
 
+
+
 #' normalized_heat_kernel
 #'
 #' @param x the distances
@@ -50,13 +52,27 @@ factor_sim <- function(des, method=c("Jaccard", "Rogers", "simple matching", "Di
   proxy::simil(Fmat, method=method)
 }
 
+#' @inheritParams edge_weights
+#' @export
+within_class_weights <- function(X, k=1, labels, weight_mode=c("heat", "normalized", "binary", "euclidean"),...) {
+  labels <- as.factor(labels)
+  Sw <- edge_weights(X, k=k, weight_mode=weight_mode, neighbor_mode="supervised", labels=labels,...)
+}
+
+#' @export
+between_class_weights <- function(X, k=1, labels, weight_mode=c("heat", "normalized", "binary", "euclidean"), ...) {
+  labels <- as.factor(labels)
+  Sb <- edge_weights(X, k=k, weight_mode=weight_mode, neighbor_mode="knearest_misses", labels=labels,...)
+}
+
+
 
 #' Convert a data matrix with n instances and p features to an n-by-n adjacency matrix
 #'
 #' @param X the data matrix, where each row is an instance and each column is a variable. Similarity is computed over instances.
-#' @param neighbor_mode the method for assigning weights to neighbors, either "supervised", "knn", "knearest_misses", or "epsilon"
-#' @param weight_mode binary (1 if neighbor, 0 otherwise), heat kernel, or normalized heat kernel
 #' @param k number of neighbors
+#' @param neighbor_mode the method for assigning weights to neighbors, either "supervised", "knn", "knearest_misses", or "epsilon"
+#' @param weight_mode binary (1 if neighbor, 0 otherwise),'heat', 'normalized', or 'euclidean'
 #' @param sigma parameter for heat kernel \code{exp(-dist/(2*sigma^2))}
 #' @param labels the class of the categories when \code{weight_mode} is \code{supervised}, supplied as a \code{factor} with \code{nrow(labels) == nrow(X)}
 #' @export
@@ -69,13 +85,14 @@ factor_sim <- function(des, method=c("Jaccard", "Rogers", "simple matching", "Di
 #' sm2 <- edge_weights(X, neighbor_mode="supervised",k=3, labels=labels)
 #'
 #' sm3 <- edge_weights(X, neighbor_mode="knearest_misses",k=3, labels=labels, weight_mode="binary")
-edge_weights <- function(X, neighbor_mode=c("knn", "supervised", "knearest_misses", "epsilon"),
-                                 weight_mode=c("heat", "normalized", "binary"),
+edge_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest_misses", "epsilon"),
+                                 weight_mode=c("heat", "normalized", "binary", "euclidean"),
                                  type=c("normal", "mutual", "asym"),
-                                 k=5, sigma,eps=NULL, labels=NULL) {
+                                 sigma,eps=NULL, labels=NULL) {
 
   neighbor_mode = match.arg(neighbor_mode)
   weight_mode = match.arg(weight_mode)
+  type <- match.arg(type)
 
 
   if (weight_mode == "normalized") {
@@ -102,26 +119,28 @@ edge_weights <- function(X, neighbor_mode=c("knn", "supervised", "knearest_misse
     function(x) (x>0) * 1
   } else if (weight_mode == "normalized") {
     function(x) normalized_heat_kernel(x,sigma,ncol(X))
+  } else if (weight_mode == "euclidean") {
+    function(x) x
   }
 
   if (neighbor_mode == "knn") {
     W <- weighted_knn(X, k, FUN=wfun, type=type)
   } else if (neighbor_mode == "supervised") {
-      assertthat::assert_that(!is.null(labels))
-      labels <- as.factor(labels)
-      if (k == 0) {
-        W <- label_matrix2(labels, labels)
-      } else if (k > 0) {
+    assertthat::assert_that(!is.null(labels))
+    labels <- as.factor(labels)
+    if (k == 0) {
+      W <- label_matrix2(labels, labels)
+    } else if (k > 0) {
 
-        M <- do.call(rbind, lapply(levels(labels), function(lev) {
-          idx <- which(labels == lev)
-          M <- weighted_knn(X[idx,], k, FUN=wfun, type=type)
-          Mind <- which(M > 0, arr.ind=TRUE)
-          cbind(idx[Mind[,1]], idx[Mind[,2]], M[Mind])
-        }))
+      M <- do.call(rbind, lapply(levels(labels), function(lev) {
+        idx <- which(labels == lev)
+        M <- weighted_knn(X[idx,], k=k, FUN=wfun, type=type)
+        Mind <- which(M > 0, arr.ind=TRUE)
+        cbind(idx[Mind[,1]], idx[Mind[,2]], M[Mind])
+      }))
 
-        Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)))
-      }
+      Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)))
+    }
 
   } else if (neighbor_mode == "knearest_misses") {
     assertthat::assert_that(!is.null(labels) && k > 0,
@@ -137,18 +156,19 @@ edge_weights <- function(X, neighbor_mode=c("knn", "supervised", "knearest_misse
       cbind(idx2[Mind[,1]], idx1[Mind[,2]], M[Mind])
     }))
 
+
     W <- Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)), use.last.ij = TRUE)
 
     if (type == "normal") {
-      psparse(W, pmax, return_triplet=return_triplet)
+      psparse(W, pmax)
     } else if (type == "mutual") {
-      psparse(W, pmin, return_triplet=return_triplet)
+      psparse(W, pmin)
     } else if (type == "asym") {
       W
     }
 
   } else if (neighbor_mode == "epsilon") {
-      stop("epsilon not implemented")
+    stop("epsilon not implemented")
   }
 }
 
@@ -257,7 +277,7 @@ weighted_knn <- function(X, k=5, FUN=heat_kernel, type=c("normal", "mutual", "as
   type <- match.arg(type)
   nn <- FNN::get.knn(X, k=k)
 
-  nnd <- nn$nn.dist
+  nnd <- nn$nn.dist + 1e-16
 
   hval <- FUN(nnd)
 

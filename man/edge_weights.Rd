@@ -5,7 +5,7 @@
 \title{Convert a data matrix with n instances and p features to an n-by-n adjacency matrix}
 \usage{
 edge_weights(X, neighbor_mode = c("knn", "supervised", "knearest_misses",
-  "epsilon"), weight_mode = c("heat", "normalized", "binary"),
+  "epsilon"), weight_mode = c("heat", "normalized", "binary", "euclidean"),
   type = c("normal", "mutual", "asym"), k = 5, sigma, eps = NULL,
   labels = NULL)
 }
@@ -14,13 +14,15 @@ edge_weights(X, neighbor_mode = c("knn", "supervised", "knearest_misses",
 
 \item{neighbor_mode}{the method for assigning weights to neighbors, either "supervised", "knn", "knearest_misses", or "epsilon"}
 
-\item{weight_mode}{binary (1 if neighbor, 0 otherwise), heat kernel, or normalized heat kernel}
+\item{weight_mode}{binary (1 if neighbor, 0 otherwise),'heat', 'normalized', or 'euclidean'}
 
 \item{k}{number of neighbors}
 
 \item{sigma}{parameter for heat kernel \code{exp(-dist/(2*sigma^2))}}
 
 \item{labels}{the class of the categories when \code{weight_mode} is \code{supervised}, supplied as a \code{factor} with \code{nrow(labels) == nrow(X)}}
+
+\item{subind}{the row indices to consider in the search}
 }
 \description{
 Convert a data matrix with n instances and p features to an n-by-n adjacency matrix

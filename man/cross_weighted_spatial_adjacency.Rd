@@ -22,6 +22,8 @@ cross_weighted_spatial_adjacency(coord_mat1, coord_mat2, feature_mat1,
 
 \item{alpha}{the mixing weight for the spatial distance (1=all spatial, 0=all feature)}
 
+\item{nnk}{the maximum number of spatial nearest neighbors to include}
+
 \item{dthresh}{the threshold for the spatial distance}
 
 \item{normalized}{whether to normalize the rows to sum to 1}
