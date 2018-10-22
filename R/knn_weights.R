@@ -52,6 +52,31 @@ factor_sim <- function(des, method=c("Jaccard", "Rogers", "simple matching", "Di
   proxy::simil(Fmat, method=method)
 }
 
+discriminating_simililarity <- function(X, k=length(labels)/2, sigma,labels) {
+  Wknn <- edge_weights(X)
+
+  if (missing(sigma)) {
+    sigma <- estimate_sigma(X, prop=.1)
+  }
+
+  Wall <- edge_weights(X, k=k, weight_mode="euclidean", neighbor_mode="knn")
+  Ww <- label_matrix2(labels, labels)
+  Wb <- label_matrix2(labels, labels, type="d")
+
+  Ww2 <- Wall * Ww
+  Wb2 <- Wall * Wb
+
+  wind <- which(Ww2 >0)
+  bind <- which(Wb2 >0)
+  hw <- heat_kernel(Wall[wind], sigma)
+  hb <- heat_kernel(Wall[bind], sigma)
+
+  Wall[wind] <- hw * (1+hw)
+  Wall[bind] <- hb * (1-hb)
+  Wall
+}
+
+
 #' @inheritParams edge_weights
 #' @export
 within_class_weights <- function(X, k=1, labels, weight_mode=c("heat", "normalized", "binary", "euclidean"),...) {
@@ -65,7 +90,20 @@ between_class_weights <- function(X, k=1, labels, weight_mode=c("heat", "normali
   Sb <- edge_weights(X, k=k, weight_mode=weight_mode, neighbor_mode="knearest_misses", labels=labels,...)
 }
 
+#' @export
+estimate_sigma <- function(X, prop=.1) {
+  ## estimate sigma
+  if (nrow(X) <= 500) {
+    nsamples <- nrow(X)
+  } else {
+    nsamples <- min(500, nrow(X))
+  }
 
+  sam <- sample(1:nrow(X), nsamples)
+  d <- dist(X[sam,])
+  quantile(d,prop)
+
+}
 
 #' Convert a data matrix with n instances and p features to an n-by-n adjacency matrix
 #'
@@ -99,18 +137,8 @@ edge_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest_
     X <- t(scale(t(X), center=TRUE, scale=TRUE))
   }
 
-  if (missing(sigma)) {
-    ## estimate sigma
-    if (nrow(X) <= 100) {
-      nsamples <- nrow(X)
-    } else {
-      nsamples <- max(min(100, .25*nrow(X)), 100)
-
-    }
-
-    sam <- sample(1:nrow(X), nsamples)
-    d <- dist(X[sam,])
-    sigma <- 2 * min(d)
+  if (missing(sigma) || is.null(sigma)) {
+    sigma <- estimate_sigma(X)
     message("sigma is ", sigma)
   }
 
@@ -134,7 +162,10 @@ edge_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest_
     } else if (k > 0) {
 
       M <- do.call(rbind, lapply(levels(labels), function(lev) {
+
+
         idx <- which(labels == lev)
+        k <- min(k, length(idx)-1)
         M <- weighted_knn(X[idx,], k=k, FUN=wfun, type=type)
         Mind <- which(M > 0, arr.ind=TRUE)
         cbind(idx[Mind[,1]], idx[Mind[,2]], M[Mind])
