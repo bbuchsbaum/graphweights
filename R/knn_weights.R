@@ -95,11 +95,13 @@ estimate_sigma <- function(X, prop=.1) {
   ## estimate sigma
   if (nrow(X) <= 500) {
     nsamples <- nrow(X)
+    sam <- 1:nrow(X)
   } else {
     nsamples <- min(500, nrow(X))
+    sam <- sample(1:nrow(X), nsamples)
   }
 
-  sam <- sample(1:nrow(X), nsamples)
+
   d <- dist(X[sam,])
   quantile(d,prop)
 
