@@ -31,9 +31,13 @@ heat_kernel <- function(x, sigma=1) {
 #' @param sigma the bandwidth
 #' @param len the normalization factor (e.g. the length of the feature vectors)
 #' @export
-normalized_heat_kernel <- function(x, sigma=1, len) {
+normalized_heat_kernel <- function(x, sigma=.68, len) {
   norm_dist <- (x^2)/(2*len)
   exp(-norm_dist/(2*sigma^2))
+}
+
+cosine_kernel <- function(x, sigma=1) {
+  1 - (x^2)/2
 }
 
 
@@ -52,14 +56,17 @@ factor_sim <- function(des, method=c("Jaccard", "Rogers", "simple matching", "Di
   proxy::simil(Fmat, method=method)
 }
 
+
+#'
+#' @export
 discriminating_simililarity <- function(X, k=length(labels)/2, sigma,labels) {
-  Wknn <- edge_weights(X)
+  Wknn <- graph_weights(X)
 
   if (missing(sigma)) {
     sigma <- estimate_sigma(X, prop=.1)
   }
 
-  Wall <- edge_weights(X, k=k, weight_mode="euclidean", neighbor_mode="knn")
+  Wall <- graph_weights(X, k=k, weight_mode="euclidean", neighbor_mode="knn")
   Ww <- label_matrix2(labels, labels)
   Wb <- label_matrix2(labels, labels, type="d")
 
@@ -77,33 +84,33 @@ discriminating_simililarity <- function(X, k=length(labels)/2, sigma,labels) {
 }
 
 
-#' @inheritParams edge_weights
+#' @inheritParams graph_weights
 #' @export
 within_class_weights <- function(X, k=1, labels, weight_mode=c("heat", "normalized", "binary", "euclidean"),...) {
   labels <- as.factor(labels)
-  Sw <- edge_weights(X, k=k, weight_mode=weight_mode, neighbor_mode="supervised", labels=labels,...)
+  Sw <- graph_weights(X, k=k, weight_mode=weight_mode, neighbor_mode="supervised", labels=labels,...)
 }
 
 #' @export
 between_class_weights <- function(X, k=1, labels, weight_mode=c("heat", "normalized", "binary", "euclidean"), ...) {
   labels <- as.factor(labels)
-  Sb <- edge_weights(X, k=k, weight_mode=weight_mode, neighbor_mode="knearest_misses", labels=labels,...)
+  Sb <- graph_weights(X, k=k, weight_mode=weight_mode, neighbor_mode="knearest_misses", labels=labels,...)
 }
 
 #' @export
-estimate_sigma <- function(X, prop=.1) {
+estimate_sigma <- function(X, prop=.1, nsamples=500) {
   ## estimate sigma
   if (nrow(X) <= 500) {
     nsamples <- nrow(X)
     sam <- 1:nrow(X)
   } else {
-    nsamples <- min(500, nrow(X))
+    nsamples <- min(nsamples, nrow(X))
     sam <- sample(1:nrow(X), nsamples)
   }
 
 
   d <- dist(X[sam,])
-  quantile(d,prop)
+  quantile(d[d!=0],prop)
 
 }
 
@@ -119,14 +126,14 @@ estimate_sigma <- function(X, prop=.1) {
 #' @examples
 #'
 #' X <- matrix(rnorm(20*10), 20, 10)
-#' sm <- edge_weights(X, neighbor_mode="knn",k=3)
+#' sm <- graph_weights(X, neighbor_mode="knn",k=3)
 #'
 #' labels <- factor(rep(letters[1:4],5))
-#' sm2 <- edge_weights(X, neighbor_mode="supervised",k=3, labels=labels)
+#' sm2 <- graph_weights(X, neighbor_mode="supervised",k=3, labels=labels)
 #'
-#' sm3 <- edge_weights(X, neighbor_mode="knearest_misses",k=3, labels=labels, weight_mode="binary")
-edge_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest_misses", "epsilon"),
-                                 weight_mode=c("heat", "normalized", "binary", "euclidean"),
+#' sm3 <- graph_weights(X, neighbor_mode="knearest_misses",k=3, labels=labels, weight_mode="binary")
+graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest_misses", "epsilon"),
+                                 weight_mode=c("heat", "normalized", "binary", "euclidean", "cosine"),
                                  type=c("normal", "mutual", "asym"),
                                  sigma,eps=NULL, labels=NULL) {
 
@@ -137,6 +144,8 @@ edge_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest_
 
   if (weight_mode == "normalized") {
     X <- t(scale(t(X), center=TRUE, scale=TRUE))
+  } else if (weight_mode == "cosine") {
+    X <- t(apply(X, 1, function(x) x/sqrt(sum(x^2))))
   }
 
   if (missing(sigma) || is.null(sigma)) {
@@ -152,6 +161,8 @@ edge_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest_
     function(x) normalized_heat_kernel(x,sigma,ncol(X))
   } else if (weight_mode == "euclidean") {
     function(x) x
+  } else if (weight_mode == "cosine") {
+    function(x) cosine_kernel(x)
   }
 
   if (neighbor_mode == "knn") {
@@ -164,8 +175,6 @@ edge_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest_
     } else if (k > 0) {
 
       M <- do.call(rbind, lapply(levels(labels), function(lev) {
-
-
         idx <- which(labels == lev)
         k <- min(k, length(idx)-1)
         M <- weighted_knn(X[idx,], k=k, FUN=wfun, type=type)
