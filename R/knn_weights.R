@@ -119,7 +119,7 @@ estimate_sigma <- function(X, prop=.1, nsamples=500) {
 #' @param X the data matrix, where each row is an instance and each column is a variable. Similarity is computed over instances.
 #' @param k number of neighbors
 #' @param neighbor_mode the method for assigning weights to neighbors, either "supervised", "knn", "knearest_misses", or "epsilon"
-#' @param weight_mode binary (1 if neighbor, 0 otherwise),'heat', 'normalized', or 'euclidean'
+#' @param weight_mode binary (1 if neighbor, 0 otherwise),'heat', 'normalized', 'euclidean', or 'cosine'
 #' @param sigma parameter for heat kernel \code{exp(-dist/(2*sigma^2))}
 #' @param labels the class of the categories when \code{weight_mode} is \code{supervised}, supplied as a \code{factor} with \code{nrow(labels) == nrow(X)}
 #' @export
