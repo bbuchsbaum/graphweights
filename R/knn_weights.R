@@ -86,13 +86,16 @@ discriminating_simililarity <- function(X, k=length(labels)/2, sigma,labels) {
 
 #' @inheritParams graph_weights
 #' @export
-within_class_weights <- function(X, k=1, labels, weight_mode=c("heat", "normalized", "binary", "euclidean"),...) {
+within_class_weights <- function(X, k=1, labels,
+                                 weight_mode=c("heat", "normalized", "binary", "euclidean"),...) {
   labels <- as.factor(labels)
   Sw <- graph_weights(X, k=k, weight_mode=weight_mode, neighbor_mode="supervised", labels=labels,...)
 }
 
+#' @inheritParams graph_weights
 #' @export
-between_class_weights <- function(X, k=1, labels, weight_mode=c("heat", "normalized", "binary", "euclidean"), ...) {
+between_class_weights <- function(X, k=1, labels,
+                                  weight_mode=c("heat", "normalized", "binary", "euclidean"), ...) {
   labels <- as.factor(labels)
   Sb <- graph_weights(X, k=k, weight_mode=weight_mode, neighbor_mode="knearest_misses", labels=labels,...)
 }
@@ -108,10 +111,8 @@ estimate_sigma <- function(X, prop=.1, nsamples=500) {
     sam <- sample(1:nrow(X), nsamples)
   }
 
-
   d <- dist(X[sam,])
   quantile(d[d!=0],prop)
-
 }
 
 #' Convert a data matrix with n instances and p features to an n-by-n adjacency matrix
@@ -120,7 +121,9 @@ estimate_sigma <- function(X, prop=.1, nsamples=500) {
 #' @param k number of neighbors
 #' @param neighbor_mode the method for assigning weights to neighbors, either "supervised", "knn", "knearest_misses", or "epsilon"
 #' @param weight_mode binary (1 if neighbor, 0 otherwise),'heat', 'normalized', 'euclidean', or 'cosine'
+#' @param type the nearest neighbor policy, one of: normal, mutual, asym.
 #' @param sigma parameter for heat kernel \code{exp(-dist/(2*sigma^2))}
+#' @param eps the neighborhood radius when neighbor_mode is `epsilon`
 #' @param labels the class of the categories when \code{weight_mode} is \code{supervised}, supplied as a \code{factor} with \code{nrow(labels) == nrow(X)}
 #' @export
 #' @examples
@@ -168,7 +171,8 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest
   if (neighbor_mode == "knn") {
     W <- weighted_knn(X, k, FUN=wfun, type=type)
   } else if (neighbor_mode == "supervised") {
-    assertthat::assert_that(!is.null(labels))
+    assertthat::assert_that(!is.null(labels),
+                            msg="when `neighbor_mode` is `supervised` must supply vector of `labels`")
     labels <- as.factor(labels)
     if (k == 0) {
       W <- label_matrix2(labels, labels)
@@ -203,10 +207,6 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest
     W <- Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)), use.last.ij = TRUE)
 
     if (type == "normal") {
-      psparse(W, pmax)
-    } else if (type == "mutual") {
-
-      #psparse(W, pmax, return_triplet=return_triplet)
       psparse(W, pmax)
     } else if (type == "mutual") {
       #psparse(W, pmin, return_triplet=return_triplet)
