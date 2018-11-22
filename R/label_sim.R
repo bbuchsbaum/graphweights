@@ -1,3 +1,39 @@
+
+
+#' @export
+binary_label_matrix <- function(a, b, type=c("s", "d"), dim1=length(a), dim2=length(b)) {
+  assert_that(length(a) == length(b))
+
+  levs <- unique(a)
+
+  mlist <- list()
+  for (i in seq_along(levs)) {
+    lev <- levs[i]
+
+    if (type == "s") {
+      idx1 <- which(a == lev)
+      idx2 <- which(b == lev)
+    } else {
+      idx1 <- which(a != lev)
+      idx2 <- which(b != lev)
+    }
+    if (length(idx1) > 0 && length(idx2) > 0) {
+      sv1=sparseVector(rep(1, length(idx1)), idx1, length(a))
+      sv2=sparseVector(rep(1, length(idx2)), idx2, length(a))
+      mlist[[i]] <- tcrossprod(sv1,sv2)
+    }
+  }
+
+  mlist <- mlist[!sapply(mlist, is.null)]
+
+  if (length(mlist) == 0) {
+    stop("no overlapping levels in 'a' and 'b'")
+  }
+
+  Reduce("+", mlist)
+}
+
+
 #' @export
 label_matrix2 <- function(a, b, type=c("s", "d"), simfun=NULL, dim1=length(a), dim2=length(b)) {
   type <- match.arg(type)
