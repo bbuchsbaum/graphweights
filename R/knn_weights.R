@@ -49,12 +49,26 @@ cosine_kernel <- function(x, sigma=1) {
 #' @param method
 #' @export
 factor_sim <- function(des, method=c("Jaccard", "Rogers", "simple matching", "Dice")) {
-  Fmat <- do.call(cbind, lapply(names(des), function(nam) {
+  Fmat <- do.call(cbind, lapply(1:ncol(des), function(i) {
+    nam <- colnames(des)[i]
     model.matrix(as.formula(paste("~ ", nam, " -1")), data=des)
   }))
 
   proxy::simil(Fmat, method=method)
 }
+
+
+weighted_factor_sim <- function(des, wts=rep(1,ncol(des))/ncol(des)) {
+  wts <- wts/sum(wts)
+  Fmat <- lapply(1:ncol(des), function(i) {
+    nam <- colnames(des)[i]
+    labs <- des[[nam]]
+    label_matrix(labs, labs) * wts[i]
+  })
+
+  Reduce("+", Fmat)
+}
+
 
 
 #'
