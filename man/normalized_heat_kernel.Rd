@@ -4,7 +4,7 @@
 \alias{normalized_heat_kernel}
 \title{normalized_heat_kernel}
 \usage{
-normalized_heat_kernel(x, sigma = 1, len)
+normalized_heat_kernel(x, sigma = 0.68, len)
 }
 \arguments{
 \item{x}{the distances}
