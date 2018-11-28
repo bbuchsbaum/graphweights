@@ -132,7 +132,7 @@ spatial_smoother <- function(coord_mat, sigma=5, nnk=3^(ncol(coord_mat)), stocha
 #'
 #' coord_mat = as.matrix(expand.grid(x=1:6, y=1:6))
 #' sa <- spatial_adjacency(coord_mat)
-spatial_adjacency <- function(coord_mat, dthresh=1.42, nnk=27, weight_mode=c("binary", "heat"), sigma=dthresh/2,
+spatial_adjacency <- function(coord_mat, dthresh=sigma*3, nnk=27, weight_mode=c("binary", "heat"), sigma=5,
                               include_diagonal=TRUE, normalized=TRUE, stochastic=FALSE) {
 
   sm <- cross_spatial_adjacency(coord_mat, coord_mat, dthresh=dthresh,
@@ -325,14 +325,15 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
 #' @importFrom rflann RadiusSearch
 #' @importFrom Matrix sparseMatrix
 #' @export
-cross_spatial_adjacency <- function(coord_mat1, coord_mat2, dthresh=1.42,
+cross_spatial_adjacency <- function(coord_mat1, coord_mat2, dthresh=sigma*3,
                                     nnk=27, weight_mode=c("binary", "heat"),
-                                    sigma=dthresh/2,
+                                    sigma=5,
                                     normalized=TRUE) {
 
 
   full_nn <- rflann::RadiusSearch(coord_mat1, coord_mat2, radius=dthresh^2,
                                   max_neighbour=nnk)
+
   weight_mode <- match.arg(weight_mode)
 
   nels <- sum(sapply(full_nn$indices, length))
