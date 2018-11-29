@@ -141,6 +141,8 @@ spatial_adjacency <- function(coord_mat, dthresh=sigma*3, nnk=27, weight_mode=c(
 
   if (include_diagonal) {
     diag(sm) <- rep(1, nrow(sm))
+  } else {
+    diag(sm) <- rep(0, nrow(sm))
   }
 
   if (normalized) {
@@ -158,8 +160,8 @@ spatial_adjacency <- function(coord_mat, dthresh=sigma*3, nnk=27, weight_mode=c(
 
 #' make_doubly_stochastic
 #'
-#' @param A
-#' @param iter
+#' @param A the smoothing matrix
+#' @param iter number of iterations
 #' @export
 make_doubly_stochastic <- function(A, iter=15) {
   r <- rep(1, nrow(A))
@@ -190,7 +192,12 @@ make_doubly_stochastic <- function(A, iter=15) {
 #
 # }
 
+#' normalize an adjacency matrix
+#'
+#' @param sm the adjacency matrix
+#' @param symmetric whether to symmetrize after normalizing
 #' @importFrom Matrix rowSums
+#' @export
 normalize_adjacency <- function(sm, symmetric=TRUE) {
   D <- Matrix::rowSums(sm)
 
@@ -204,7 +211,7 @@ normalize_adjacency <- function(sm, symmetric=TRUE) {
   sm
 }
 
-#' cross_weighted_spatial_adjacency
+#' Compute the adjacency between two adjacency matrices weighted by two corresponding feature matrices.
 #'
 #' @param coord_mat1 the first coordinate matrix (the query)
 #' @param coord_mat2 the second coordinate matrix (the reference)
@@ -212,7 +219,7 @@ normalize_adjacency <- function(sm, symmetric=TRUE) {
 #' @param feature_mat2 the second feature matrix
 #' @param wsigma the sigma for the feature heat kernel
 #' @param nnk the maximum number of spatial nearest neighbors to include
-#' @param alpha the mixing weight for the spatial distance (1=all spatial, 0=all feature)
+#' @param alpha the mixing weight for the spatial distance (1=all spatial weighting, 0=all feature weighting)
 #' @param dthresh the threshold for the spatial distance
 #' @param normalized whether to normalize the rows to sum to 1
 #' @importFrom assertthat assert_that
