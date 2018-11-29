@@ -1,7 +1,9 @@
 
 
 #' @export
-binary_label_matrix <- function(a, b, type=c("s", "d"), dim1=length(a), dim2=length(b)) {
+#' @inheritParams label_matrix
+binary_label_matrix <- function(a, b, type=c("s", "d")) {
+  type <- match.arg(type)
   assert_that(length(a) == length(b))
 
   levs <- unique(a)
@@ -76,7 +78,6 @@ label_matrix2 <- function(a, b, type=c("s", "d"), simfun=NULL, dim1=length(a), d
 #' @param Kern the Kernel used to smooth the matrix
 #' @importFrom Matrix Diagonal
 #' @importFrom assertthat assert_that
-#'
 convolve_matrix <- function(X, Kern, normalize=FALSE) {
   assert_that(ncol(Kern) == nrow(Kern))
   assert_that(ncol(X) == nrow(Kern))
