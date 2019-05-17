@@ -219,6 +219,7 @@ normalize_adjacency <- function(sm, symmetric=TRUE) {
 #' @param feature_mat2 the second feature matrix
 #' @param wsigma the sigma for the feature heat kernel
 #' @param nnk the maximum number of spatial nearest neighbors to include
+#' @param maxk the maximum number of neighbors to include within spatial window
 #' @param alpha the mixing weight for the spatial distance (1=all spatial weighting, 0=all feature weighting)
 #' @param dthresh the threshold for the spatial distance
 #' @param normalized whether to normalize the rows to sum to 1
