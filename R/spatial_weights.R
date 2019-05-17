@@ -224,10 +224,19 @@ normalize_adjacency <- function(sm, symmetric=TRUE) {
 #' @param normalized whether to normalize the rows to sum to 1
 #' @importFrom assertthat assert_that
 #' @export
+#'
+#' @examples
+#'
+#' coords <- as.matrix(expand.grid(1:5, 1:5))
+#' fmat1 <- matrix(rnorm(5*25), 25, 5)
+#' fmat2 <- matrix(rnorm(5*25), 25, 5)
+#'
+#' adj <- cross_weighted_spatial_adjacency(coords, coords, fmat1, fmat2)
 cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
                                              feature_mat1, feature_mat2,
                                              wsigma=.73, alpha=.5,
                                              nnk=27,
+                                             maxk=nnk,
                                              weight_mode=c("binary", "heat"),
                                              sigma=1,
                                              dthresh=sigma*2.5,
@@ -243,14 +252,19 @@ cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
 
   full_nn <- rflann::RadiusSearch(coord_mat1, coord_mat2, radius=dthresh^2,
                                   max_neighbour=nnk)
+
   weight_mode <- match.arg(weight_mode)
 
-  nels <- sum(sapply(full_nn$indices, length))
+  lens <- sapply(full_nn$indices, length)
+  lens <- ifelse(lens > maxk, maxk, lens)
+  #nels <- sum(sapply(full_nn$indices, length))
+  nels <- sum(lens)
 
 
   triplet <- cross_fspatial_weights(full_nn$indices, lapply(full_nn$distances, sqrt),
                                     feature_mat1, feature_mat2,
                                     nels, sigma, wsigma, alpha,
+                                    maxk=maxk,
                                     weight_mode == "binary")
 
   sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3],

@@ -5,8 +5,12 @@ norm_heat_kernel <- function(x1, x2, sigma) {
     .Call('_neighborweights_norm_heat_kernel', PACKAGE = 'neighborweights', x1, x2, sigma)
 }
 
-cross_fspatial_weights <- function(indices, distances, feature_mat1, feature_mat2, nels, sigma, fsigma, alpha, binary) {
-    .Call('_neighborweights_cross_fspatial_weights', PACKAGE = 'neighborweights', indices, distances, feature_mat1, feature_mat2, nels, sigma, fsigma, alpha, binary)
+order_vec <- function(x) {
+    .Call('_neighborweights_order_vec', PACKAGE = 'neighborweights', x)
+}
+
+cross_fspatial_weights <- function(indices, distances, feature_mat1, feature_mat2, nels, sigma, fsigma, alpha, maxk, binary) {
+    .Call('_neighborweights_cross_fspatial_weights', PACKAGE = 'neighborweights', indices, distances, feature_mat1, feature_mat2, nels, sigma, fsigma, alpha, maxk, binary)
 }
 
 fspatial_weights <- function(indices, distances, feature_mat, nels, sigma, fsigma, alpha, binary) {

@@ -18,9 +18,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// order_vec
+IntegerVector order_vec(NumericVector x);
+RcppExport SEXP _neighborweights_order_vec(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(order_vec(x));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cross_fspatial_weights
-NumericMatrix cross_fspatial_weights(List indices, List distances, NumericMatrix feature_mat1, NumericMatrix feature_mat2, double nels, double sigma, double fsigma, double alpha, bool binary);
-RcppExport SEXP _neighborweights_cross_fspatial_weights(SEXP indicesSEXP, SEXP distancesSEXP, SEXP feature_mat1SEXP, SEXP feature_mat2SEXP, SEXP nelsSEXP, SEXP sigmaSEXP, SEXP fsigmaSEXP, SEXP alphaSEXP, SEXP binarySEXP) {
+NumericMatrix cross_fspatial_weights(List indices, List distances, NumericMatrix feature_mat1, NumericMatrix feature_mat2, double nels, double sigma, double fsigma, double alpha, int maxk, bool binary);
+RcppExport SEXP _neighborweights_cross_fspatial_weights(SEXP indicesSEXP, SEXP distancesSEXP, SEXP feature_mat1SEXP, SEXP feature_mat2SEXP, SEXP nelsSEXP, SEXP sigmaSEXP, SEXP fsigmaSEXP, SEXP alphaSEXP, SEXP maxkSEXP, SEXP binarySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -32,8 +43,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
     Rcpp::traits::input_parameter< double >::type fsigma(fsigmaSEXP);
     Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< int >::type maxk(maxkSEXP);
     Rcpp::traits::input_parameter< bool >::type binary(binarySEXP);
-    rcpp_result_gen = Rcpp::wrap(cross_fspatial_weights(indices, distances, feature_mat1, feature_mat2, nels, sigma, fsigma, alpha, binary));
+    rcpp_result_gen = Rcpp::wrap(cross_fspatial_weights(indices, distances, feature_mat1, feature_mat2, nels, sigma, fsigma, alpha, maxk, binary));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -73,7 +85,8 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_neighborweights_norm_heat_kernel", (DL_FUNC) &_neighborweights_norm_heat_kernel, 3},
-    {"_neighborweights_cross_fspatial_weights", (DL_FUNC) &_neighborweights_cross_fspatial_weights, 9},
+    {"_neighborweights_order_vec", (DL_FUNC) &_neighborweights_order_vec, 1},
+    {"_neighborweights_cross_fspatial_weights", (DL_FUNC) &_neighborweights_cross_fspatial_weights, 10},
     {"_neighborweights_fspatial_weights", (DL_FUNC) &_neighborweights_fspatial_weights, 8},
     {"_neighborweights_spatial_weights", (DL_FUNC) &_neighborweights_spatial_weights, 5},
     {NULL, NULL, 0}

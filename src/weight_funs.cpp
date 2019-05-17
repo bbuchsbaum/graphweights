@@ -39,9 +39,19 @@ NumericVector normalized_distance(NumericVector dist, double sigma, int len) {
 }
 
 // [[Rcpp::export]]
+IntegerVector order_vec(NumericVector x) {
+  NumericVector sorted = clone(x).sort();
+  return match(sorted, x);
+}
+
+// [[Rcpp::export]]
 NumericMatrix cross_fspatial_weights(List indices, List distances, NumericMatrix feature_mat1,
                                      NumericMatrix feature_mat2,
-                                     double nels, double sigma, double fsigma, double alpha, bool binary) {
+                                     double nels, double sigma,
+                                     double fsigma, double alpha,
+                                     int maxk,
+                                     bool binary) {
+
   int n = indices.length();
   List out(n);
 
@@ -57,6 +67,8 @@ NumericMatrix cross_fspatial_weights(List indices, List distances, NumericMatrix
 
     if (ind.size() > 0) {
       NumericVector vals;
+      NumericVector fvals(ind.size());
+
       if (binary) {
         vals = rep(1.0, ind.size());
       } else {
@@ -64,14 +76,30 @@ NumericMatrix cross_fspatial_weights(List indices, List distances, NumericMatrix
       }
 
       NumericMatrix::Row f1 = feature_mat1(i,_);
+      if (maxk < ind.size()) {
+        for (int j=0; j<vals.length(); j++) {
+          NumericMatrix::Row f2 = feature_mat2(ind[j]-1,_);
+          double s = norm_heat_kernel(f1, f2, fsigma);
+          fvals[j] = alpha*vals[j] + alpha2*s;
+        }
 
-      for (int j=0; j<vals.length(); j++) {
-        NumericMatrix::Row f2 = feature_mat2(ind[j]-1,_);
-        double s = norm_heat_kernel(f1, f2, fsigma);
-        wout(count, 0) = i+1;
-        wout(count, 1) = ind[j];
-        wout(count, 2) = alpha*vals[j] + alpha2*s;
-        count++;
+        IntegerVector ord = order_vec(fvals);
+        for (int j=0; j<maxk; j++) {
+          wout(count, 0) = i+1;
+          wout(count, 1) = ind[ord[j]-1];
+          wout(count, 2) = fvals[ord[j]-1];
+          count++;
+        }
+      } else {
+
+        for (int j=0; j<vals.length(); j++) {
+          NumericMatrix::Row f2 = feature_mat2(ind[j]-1,_);
+          double s = norm_heat_kernel(f1, f2, fsigma);
+          wout(count, 0) = i+1;
+          wout(count, 1) = ind[j];
+          wout(count, 2) = alpha*vals[j] + alpha2*s;
+          count++;
+        }
       }
     }
   }
