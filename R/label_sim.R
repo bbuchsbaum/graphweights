@@ -3,7 +3,6 @@
 #' @export
 #' @inheritParams label_matrix
 #' @importFrom Matrix sparseVector tcrossprod
-#'
 binary_label_matrix <- function(a, b, type=c("s", "d")) {
   type <- match.arg(type)
   assert_that(length(a) == length(b))
@@ -51,7 +50,7 @@ label_matrix2 <- function(a, b, type=c("s", "d"), simfun=NULL, dim1=length(a), d
 
   if (type == "s") {
     out <- outer(a,b, simfun)
-    ret <- Matrix(out, sparse = TRUE)
+    ret <- Matrix::Matrix(out, sparse = TRUE)
     if (any(is.na(ret))) {
       ret[which(is.na(ret), arr.ind=TRUE)] <- 0
     }
@@ -60,7 +59,7 @@ label_matrix2 <- function(a, b, type=c("s", "d"), simfun=NULL, dim1=length(a), d
     ret
   } else if (type == "d") {
     out <- outer(a,b, simfun)
-    ret <- Matrix(out, sparse = TRUE)
+    ret <- Matrix::Matrix(out, sparse = TRUE)
     if (any(is.na(ret))) {
       ret[which(is.na(ret), arr.ind=TRUE)] <- 0
     }
