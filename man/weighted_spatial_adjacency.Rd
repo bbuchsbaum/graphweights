@@ -16,7 +16,7 @@ weighted_spatial_adjacency(coord_mat, feature_mat, wsigma = 0.73,
 
 \item{wsigma}{the sigma for the feature heat kernel}
 
-\item{alpha}{the mixing weight for the spatial distance (1=all spatial, 0=all feature)}
+\item{alpha}{the mixing weight for the spatial distance (1=all spatial weighting, 0=all feature weighting)}
 
 \item{nnk}{the maximum number of spatial nearest neighbors to include}
 

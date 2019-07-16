@@ -4,8 +4,9 @@
 \alias{cross_spatial_adjacency}
 \title{cross_spatial_adjacency}
 \usage{
-cross_spatial_adjacency(coord_mat1, coord_mat2, dthresh = 1.42, nnk = 27,
-  weight_mode = c("binary", "heat"), sigma = dthresh/2, normalized = TRUE)
+cross_spatial_adjacency(coord_mat1, coord_mat2, dthresh = sigma * 3,
+  nnk = 27, weight_mode = c("binary", "heat"), sigma = 5,
+  normalized = TRUE)
 }
 \arguments{
 \item{coord_mat1}{the first coordinate matrix}

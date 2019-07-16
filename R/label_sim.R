@@ -2,6 +2,8 @@
 
 #' @export
 #' @inheritParams label_matrix
+#' @importFrom Matrix sparseVector tcrossprod
+#'
 binary_label_matrix <- function(a, b, type=c("s", "d")) {
   type <- match.arg(type)
   assert_that(length(a) == length(b))

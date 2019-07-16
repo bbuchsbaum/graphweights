@@ -6,6 +6,11 @@
 \usage{
 make_doubly_stochastic(A, iter = 15)
 }
+\arguments{
+\item{A}{the smoothing matrix}
+
+\item{iter}{number of iterations}
+}
 \description{
 make_doubly_stochastic
 }

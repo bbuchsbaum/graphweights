@@ -2,10 +2,10 @@
 % Please edit documentation in R/spatial_weights.R
 \name{cross_weighted_spatial_adjacency}
 \alias{cross_weighted_spatial_adjacency}
-\title{cross_weighted_spatial_adjacency}
+\title{Compute the adjacency between two adjacency matrices weighted by two corresponding feature matrices.}
 \usage{
 cross_weighted_spatial_adjacency(coord_mat1, coord_mat2, feature_mat1,
-  feature_mat2, wsigma = 0.73, alpha = 0.5, nnk = 27,
+  feature_mat2, wsigma = 0.73, alpha = 0.5, nnk = 27, maxk = nnk,
   weight_mode = c("binary", "heat"), sigma = 1, dthresh = sigma * 2.5,
   normalized = TRUE)
 }
@@ -20,14 +20,24 @@ cross_weighted_spatial_adjacency(coord_mat1, coord_mat2, feature_mat1,
 
 \item{wsigma}{the sigma for the feature heat kernel}
 
-\item{alpha}{the mixing weight for the spatial distance (1=all spatial, 0=all feature)}
+\item{alpha}{the mixing weight for the spatial distance (1=all spatial weighting, 0=all feature weighting)}
 
 \item{nnk}{the maximum number of spatial nearest neighbors to include}
+
+\item{maxk}{the maximum number of neighbors to include within spatial window}
 
 \item{dthresh}{the threshold for the spatial distance}
 
 \item{normalized}{whether to normalize the rows to sum to 1}
 }
 \description{
-cross_weighted_spatial_adjacency
+Compute the adjacency between two adjacency matrices weighted by two corresponding feature matrices.
+}
+\examples{
+
+coords <- as.matrix(expand.grid(1:5, 1:5))
+fmat1 <- matrix(rnorm(5*25), 25, 5)
+fmat2 <- matrix(rnorm(5*25), 25, 5)
+
+adj <- cross_weighted_spatial_adjacency(coords, coords, fmat1, fmat2)
 }
