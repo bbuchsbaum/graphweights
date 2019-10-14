@@ -1,4 +1,15 @@
 
+#' @export
+#' @param labels the class label vector
+#' @importFrom Matrix sparseVector tcrossprod
+class_graph <- function(labels) {
+  labels <- as.factor(labels)
+  out <- Reduce("+", lapply(levels(labels), function(lev) {
+    kronecker(Matrix(labels==lev), t(Matrix(labels==lev)))
+  }))
+  out
+}
+
 
 #' @export
 #' @inheritParams label_matrix
@@ -38,7 +49,8 @@ binary_label_matrix <- function(a, b, type=c("s", "d")) {
 
 
 #' @export
-label_matrix2 <- function(a, b, type=c("s", "d"), simfun=NULL, dim1=length(a), dim2=length(b)) {
+label_matrix2 <- function(a, b, type=c("s", "d"), simfun=NULL, dim1=length(a),
+                          dim2=length(b)) {
   type <- match.arg(type)
 
   if (is.null(simfun) && type == "s") {
@@ -51,6 +63,7 @@ label_matrix2 <- function(a, b, type=c("s", "d"), simfun=NULL, dim1=length(a), d
   if (type == "s") {
     out <- outer(a,b, simfun)
     ret <- Matrix::Matrix(out, sparse = TRUE)
+
     if (any(is.na(ret))) {
       ret[which(is.na(ret), arr.ind=TRUE)] <- 0
     }
@@ -102,7 +115,6 @@ convolve_matrix <- function(X, Kern, normalize=FALSE) {
 #' @param return_matrix return as a sparse matrix or a triplet.
 #' @param the length of the first dimension
 #' @param the length of the second dimension
-#' @importFrom Matrix sparseMatrix
 #' @importFrom Matrix sparseMatrix
 label_matrix <- function(a, b, type=c("s", "d"), return_matrix=TRUE, simfun=NULL , dim1=length(a), dim2=length(b)) {
   type <- match.arg(type)

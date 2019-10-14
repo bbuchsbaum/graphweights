@@ -22,6 +22,16 @@ heat_kernel <- function(x, sigma=1) {
   exp((-x^2)/(2*sigma^2))
 }
 
+#' inverse_heat_kernel
+#'
+#' @param x the distances
+#' @param sigma the bandwidth
+#' @export
+inverse_heat_kernel <- function(x, sigma=1) {
+  #exp((-x^2)/(2*sigma^2))
+  exp((-2*sigma^2)/x)
+}
+
 
 
 
@@ -69,7 +79,32 @@ weighted_factor_sim <- function(des, wts=rep(1,ncol(des))/ncol(des)) {
   Reduce("+", Fmat)
 }
 
+#' @export
+discriminating_distance <- function(X, k=length(labels)/2, sigma,labels) {
+  Wknn <- graph_weights(X)
 
+  if (missing(sigma)) {
+    sigma <- estimate_sigma(X, prop=.1)
+  }
+
+  Wall <- graph_weights(X, k=k, weight_mode="euclidean", neighbor_mode="knn")
+
+  Ww <- label_matrix2(labels, labels)
+  Wb <- label_matrix2(labels, labels, type="d")
+
+  Ww2 <- Wall * Ww
+  Wb2 <- Wall * Wb
+
+  wind <- which(Ww2 >0)
+  bind <- which(Wb2 >0)
+
+  hw <- inverse_heat_kernel(Wall[wind], sigma)
+  hb <- inverse_heat_kernel(Wall[bind], sigma)
+
+  Wall[wind] <- hw * (1-hw)
+  Wall[bind] <- hb * (1+hb)
+  Wall
+}
 
 #'
 #' @export
