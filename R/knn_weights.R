@@ -373,10 +373,11 @@ weighted_knn <- function(X, k=5, FUN=heat_kernel, type=c("normal", "mutual", "as
 
   type <- match.arg(type)
   #nn <- FNN::get.knn(X, k=k)
-  nn <- nabor::knn(X, k=k)
+  #nn <- nabor::knn(X, k=k)
+  nn <- rflann::Neighbour(X, X,k=k, cores=0, checks=1)
   #nnd <- nn$nn.dist + 1e-16
-  nnd <- nn$nn.dists[, 2:ncol(nn$nn.dists)]
-  nni <- nn$nn.index[, 2:ncol(nn$nn.idx)]
+  nnd <- sqrt(nn$distances[, 2:ncol(nn$distances) + 1e-16])
+  nni <- nn$indices[, 2:ncol(nn$nn.idx)]
   hval <- FUN(nnd)
 
   #W <- indices_to_sparse(nn$nn.index, hval)
