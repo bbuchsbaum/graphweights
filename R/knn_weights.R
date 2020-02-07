@@ -177,7 +177,7 @@ estimate_sigma <- function(X, prop=.1, nsamples=500) {
 #' @export
 #' @examples
 #'
-#' X <- matrix(rnorm(20*10), 20, 10)
+#' X <- matrix(rnorm(2000*100), 2000, 100)
 #' sm <- graph_weights(X, neighbor_mode="knn",k=3)
 #'
 #' labels <- factor(rep(letters[1:4],5))
@@ -372,13 +372,15 @@ weighted_knn <- function(X, k=5, FUN=heat_kernel, type=c("normal", "mutual", "as
   assert_that(k > 0 && k <= nrow(X))
 
   type <- match.arg(type)
-  nn <- FNN::get.knn(X, k=k)
-
-  nnd <- nn$nn.dist + 1e-16
-
+  #nn <- FNN::get.knn(X, k=k)
+  nn <- nabor::knn(X, k=k)
+  #nnd <- nn$nn.dist + 1e-16
+  nnd <- nn$nn.dists[, 2:ncol(nn$nn.dists)]
+  nni <- nn$nn.index[, 2:ncol(nn$nn.idx)]
   hval <- FUN(nnd)
 
-  W <- indices_to_sparse(nn$nn.index, hval)
+  #W <- indices_to_sparse(nn$nn.index, hval)
+  W <- indices_to_sparse(nni, hval)
 
   if (type == "normal") {
     psparse(W, pmax, return_triplet=return_triplet)
