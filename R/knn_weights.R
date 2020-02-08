@@ -368,13 +368,18 @@ weighted_knnx <- function(X, query, k=5, FUN=heat_kernel, type=c("normal", "mutu
 #' @importFrom FNN get.knn
 #' @importFrom Matrix t
 #' @export
-weighted_knn <- function(X, k=5, FUN=heat_kernel, type=c("normal", "mutual", "asym"), return_triplet=FALSE) {
+weighted_knn <- function(X, k=5, FUN=heat_kernel,
+                         type=c("normal", "mutual", "asym"),
+                         return_triplet=FALSE,
+                         ...) {
   assert_that(k > 0 && k <= nrow(X))
+
+  build <- match.arg(build)
 
   type <- match.arg(type)
   #nn <- FNN::get.knn(X, k=k)
   #nn <- nabor::knn(X, k=k)
-  nn <- rflann::Neighbour(X, X,k=k, cores=0, checks=1)
+  nn <- rflann::Neighbour(X, X,k=k, ...)
   #nnd <- nn$nn.dist + 1e-16
   nnd <- sqrt(nn$distances[, 2:ncol(nn$distances) + 1e-16])
   nni <- nn$indices[, 2:ncol(nn$indices)]
