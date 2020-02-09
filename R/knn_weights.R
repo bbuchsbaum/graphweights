@@ -375,7 +375,6 @@ weighted_knn <- function(X, k=5, FUN=heat_kernel,
                          ...) {
   assert_that(k > 0 && k <= nrow(X))
 
-  build <- match.arg(build)
 
   type <- match.arg(type)
   #nn <- FNN::get.knn(X, k=k)
