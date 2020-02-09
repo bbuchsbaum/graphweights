@@ -187,7 +187,7 @@ estimate_sigma <- function(X, prop=.1, nsamples=500) {
 graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest_misses", "epsilon"),
                                  weight_mode=c("heat", "normalized", "binary", "euclidean", "cosine"),
                                  type=c("normal", "mutual", "asym"),
-                                 sigma,eps=NULL, labels=NULL) {
+                                 sigma,eps=NULL, labels=NULL, ...) {
 
   neighbor_mode = match.arg(neighbor_mode)
   weight_mode = match.arg(weight_mode)
@@ -218,7 +218,7 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest
   }
 
   if (neighbor_mode == "knn") {
-    W <- weighted_knn(X, k, FUN=wfun, type=type)
+    W <- weighted_knn(X, k, FUN=wfun, type=type,...)
   } else if (neighbor_mode == "supervised") {
     assertthat::assert_that(!is.null(labels),
                             msg="when `neighbor_mode` is `supervised` must supply vector of `labels`")
@@ -247,7 +247,8 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest
       idx1 <- which(labels != lev)
       idx2 <- which(labels == lev)
 
-      M <- weighted_knnx(X[idx1,,drop=FALSE], X[idx2,,drop=FALSE], k=k, FUN=wfun, type="asym")
+      M <- weighted_knnx(X[idx1,,drop=FALSE], X[idx2,,drop=FALSE], k=k, FUN=wfun,
+                         type="asym",...)
       Mind <- which(M > 0, arr.ind=TRUE)
       cbind(idx2[Mind[,1]], idx1[Mind[,2]], M[Mind])
     }))
