@@ -4,8 +4,12 @@
 \alias{temporal_adjacency}
 \title{temporal_adjacency}
 \usage{
-temporal_adjacency(time, weight_mode = c("heat", "binary"), sigma = 1,
-  window = 2)
+temporal_adjacency(
+  time,
+  weight_mode = c("heat", "binary"),
+  sigma = 1,
+  window = 2
+)
 }
 \arguments{
 \item{time}{the time vector}

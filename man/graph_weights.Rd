@@ -4,10 +4,17 @@
 \alias{graph_weights}
 \title{Convert a data matrix with n instances and p features to an n-by-n adjacency matrix}
 \usage{
-graph_weights(X, k = 5, neighbor_mode = c("knn", "supervised",
-  "knearest_misses", "epsilon"), weight_mode = c("heat", "normalized",
-  "binary", "euclidean", "cosine"), type = c("normal", "mutual", "asym"),
-  sigma, eps = NULL, labels = NULL)
+graph_weights(
+  X,
+  k = 5,
+  neighbor_mode = c("knn", "supervised", "knearest_misses", "epsilon"),
+  weight_mode = c("heat", "normalized", "binary", "euclidean", "cosine"),
+  type = c("normal", "mutual", "asym"),
+  sigma,
+  eps = NULL,
+  labels = NULL,
+  ...
+)
 }
 \arguments{
 \item{X}{the data matrix, where each row is an instance and each column is a variable. Similarity is computed over instances.}
@@ -31,7 +38,7 @@ Convert a data matrix with n instances and p features to an n-by-n adjacency mat
 }
 \examples{
 
-X <- matrix(rnorm(20*10), 20, 10)
+X <- matrix(rnorm(2000*100), 2000, 100)
 sm <- graph_weights(X, neighbor_mode="knn",k=3)
 
 labels <- factor(rep(letters[1:4],5))

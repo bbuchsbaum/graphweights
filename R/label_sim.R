@@ -2,11 +2,12 @@
 #' @export
 #' @param labels the class label vector
 #' @importFrom Matrix sparseVector tcrossprod
-class_graph <- function(labels) {
+class_graph <- function(labels, sparse=TRUE) {
   labels <- as.factor(labels)
   out <- Reduce("+", lapply(levels(labels), function(lev) {
-    kronecker(Matrix(labels==lev), t(Matrix(labels==lev)))
+    kronecker(Matrix(labels==lev, sparse=sparse), t(Matrix(labels==lev, sparse=sparse)))
   }))
+
   out
 }
 

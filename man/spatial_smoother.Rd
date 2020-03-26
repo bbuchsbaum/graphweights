@@ -4,8 +4,12 @@
 \alias{spatial_smoother}
 \title{spatial_smoother}
 \usage{
-spatial_smoother(coord_mat, sigma = 5, nnk = 3^(ncol(coord_mat)),
-  stochastic = TRUE)
+spatial_smoother(
+  coord_mat,
+  sigma = 5,
+  nnk = 3^(ncol(coord_mat)),
+  stochastic = TRUE
+)
 }
 \arguments{
 \item{coord_mat}{the matrix of coordinates}

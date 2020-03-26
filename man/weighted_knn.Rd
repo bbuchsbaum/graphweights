@@ -4,8 +4,14 @@
 \alias{weighted_knn}
 \title{weighted_knn}
 \usage{
-weighted_knn(X, k = 5, FUN = heat_kernel, type = c("normal", "mutual",
-  "asym"), return_triplet = FALSE)
+weighted_knn(
+  X,
+  k = 5,
+  FUN = heat_kernel,
+  type = c("normal", "mutual", "asym"),
+  return_triplet = FALSE,
+  ...
+)
 }
 \arguments{
 \item{X}{the data matrix, where rows are instances and columns are features}

@@ -4,10 +4,19 @@
 \alias{weighted_spatial_adjacency}
 \title{construct a spatial adjacency matrix weighted by a secondary feature matrix}
 \usage{
-weighted_spatial_adjacency(coord_mat, feature_mat, wsigma = 0.73,
-  alpha = 0.5, nnk = 27, weight_mode = c("binary", "heat"), sigma = 1,
-  dthresh = sigma * 2.5, include_diagonal = TRUE, normalized = TRUE,
-  stochastic = FALSE)
+weighted_spatial_adjacency(
+  coord_mat,
+  feature_mat,
+  wsigma = 0.73,
+  alpha = 0.5,
+  nnk = 27,
+  weight_mode = c("binary", "heat"),
+  sigma = 1,
+  dthresh = sigma * 2.5,
+  include_diagonal = TRUE,
+  normalized = TRUE,
+  stochastic = FALSE
+)
 }
 \arguments{
 \item{coord_mat}{the coordinate matrix}

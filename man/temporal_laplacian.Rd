@@ -4,8 +4,12 @@
 \alias{temporal_laplacian}
 \title{temporal_laplacian}
 \usage{
-temporal_laplacian(time, weight_mode = c("heat", "binary"), sigma = 1,
-  window = 2)
+temporal_laplacian(
+  time,
+  weight_mode = c("heat", "binary"),
+  sigma = 1,
+  window = 2
+)
 }
 \arguments{
 \item{time}{the time vector}

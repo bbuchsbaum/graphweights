@@ -4,9 +4,16 @@
 \alias{spatial_laplacian}
 \title{construct a laplacian matrix in a local spatial neighborhood}
 \usage{
-spatial_laplacian(coord_mat, dthresh = 1.42, nnk = 27,
-  weight_mode = c("binary", "heat"), sigma = dthresh/2,
-  include_diagonal = TRUE, normalized = TRUE, stochastic = FALSE)
+spatial_laplacian(
+  coord_mat,
+  dthresh = 1.42,
+  nnk = 27,
+  weight_mode = c("binary", "heat"),
+  sigma = dthresh/2,
+  include_diagonal = TRUE,
+  normalized = TRUE,
+  stochastic = FALSE
+)
 }
 \arguments{
 \item{coord_mat}{the matrix of spatial coordinates}

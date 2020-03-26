@@ -4,10 +4,20 @@
 \alias{cross_weighted_spatial_adjacency}
 \title{Compute the adjacency between two adjacency matrices weighted by two corresponding feature matrices.}
 \usage{
-cross_weighted_spatial_adjacency(coord_mat1, coord_mat2, feature_mat1,
-  feature_mat2, wsigma = 0.73, alpha = 0.5, nnk = 27, maxk = nnk,
-  weight_mode = c("binary", "heat"), sigma = 1, dthresh = sigma * 2.5,
-  normalized = TRUE)
+cross_weighted_spatial_adjacency(
+  coord_mat1,
+  coord_mat2,
+  feature_mat1,
+  feature_mat2,
+  wsigma = 0.73,
+  alpha = 0.5,
+  nnk = 27,
+  maxk = nnk,
+  weight_mode = c("binary", "heat"),
+  sigma = 1,
+  dthresh = sigma * 2.5,
+  normalized = TRUE
+)
 }
 \arguments{
 \item{coord_mat1}{the first coordinate matrix (the query)}

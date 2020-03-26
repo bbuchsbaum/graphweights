@@ -4,9 +4,16 @@
 \alias{spatial_adjacency}
 \title{spatial_adjacency}
 \usage{
-spatial_adjacency(coord_mat, dthresh = sigma * 3, nnk = 27,
-  weight_mode = c("binary", "heat"), sigma = 5, include_diagonal = TRUE,
-  normalized = TRUE, stochastic = FALSE)
+spatial_adjacency(
+  coord_mat,
+  dthresh = sigma * 3,
+  nnk = 27,
+  weight_mode = c("binary", "heat"),
+  sigma = 5,
+  include_diagonal = TRUE,
+  normalized = TRUE,
+  stochastic = FALSE
+)
 }
 \arguments{
 \item{coord_mat}{the matrix of spatial coordinates}

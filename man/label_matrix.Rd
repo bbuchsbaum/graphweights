@@ -4,8 +4,15 @@
 \alias{label_matrix}
 \title{label_matrix}
 \usage{
-label_matrix(a, b, type = c("s", "d"), return_matrix = TRUE,
-  simfun = NULL, dim1 = length(a), dim2 = length(b))
+label_matrix(
+  a,
+  b,
+  type = c("s", "d"),
+  return_matrix = TRUE,
+  simfun = NULL,
+  dim1 = length(a),
+  dim2 = length(b)
+)
 }
 \arguments{
 \item{a}{the first categorical label vector}
@@ -15,8 +22,6 @@ label_matrix(a, b, type = c("s", "d"), return_matrix = TRUE,
 \item{type}{construct a a similarity ('s') or distance ('d') matrix.}
 
 \item{return_matrix}{return as a sparse matrix or a triplet.}
-
-\item{the}{length of the first dimension}
 
 \item{the}{length of the second dimension}
 }
