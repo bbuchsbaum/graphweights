@@ -1,10 +1,10 @@
 
 #' pairwise_adjacency
 #'
-#' @param Xcoords
-#' @param Xfeats
-#' @param fself
-#' @param fbetween
+#' @param Xcoords A list of coordinate matrices containing the spatial coordinates of the nodes of each graph
+#' @param Xfeats A list of feature matrices containing the feature vectors for the nodes of each graph
+#' @param fself a function that compute similarity for nodes of the same graph (e.g. Xi_1, Xi_2)
+#' @param fbetween a function that compute similarity for nodes across graphs (e.g. Xi_1, Xj_1)
 #' @export
 pairwise_adjacency <- function(Xcoords, Xfeats, fself, fbetween) {
   assertthat::assert_that(length(Xcoords) == length(Xfeats))
@@ -59,12 +59,12 @@ pairwise_adjacency <- function(Xcoords, Xfeats, fself, fbetween) {
 #' lp <- spatial_laplacian(coord_mat)
 #' all(dim(lp) == c(27,27))
 spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27,weight_mode=c("binary", "heat"), sigma=dthresh/2,
-                              include_diagonal=TRUE, normalized=TRUE, stochastic=FALSE) {
+                              normalized=TRUE, stochastic=FALSE) {
 
   weight_mode <- match.arg(weight_mode)
   adj <- spatial_adjacency(coord_mat, dthresh, nnk,weight_mode, sigma,
-                           include_diagonal, normalized, stochastic)
-  Diagonal(x=rowSums(adj))  - adj
+                           include_diagonal=FALSE, normalized, stochastic)
+  L <- Diagonal(x=rowSums(adj))  - adj
 }
 
 

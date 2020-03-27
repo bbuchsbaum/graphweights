@@ -46,6 +46,10 @@ normalized_heat_kernel <- function(x, sigma=.68, len) {
   exp(-norm_dist/(2*sigma^2))
 }
 
+correlation_kernel <- function(x, len) {
+  1 - (x^2)/(2*(len-1))
+}
+
 cosine_kernel <- function(x, sigma=1) {
   1 - (x^2)/2
 }
@@ -81,7 +85,7 @@ weighted_factor_sim <- function(des, wts=rep(1,ncol(des))/ncol(des)) {
 
 #' @export
 discriminating_distance <- function(X, k=length(labels)/2, sigma,labels) {
-  Wknn <- graph_weights(X)
+  #Wknn <- graph_weights(X)
 
   if (missing(sigma)) {
     sigma <- estimate_sigma(X, prop=.1)
@@ -109,13 +113,13 @@ discriminating_distance <- function(X, k=length(labels)/2, sigma,labels) {
 #'
 #' @export
 discriminating_simililarity <- function(X, k=length(labels)/2, sigma,labels) {
-  Wknn <- graph_weights(X)
+  #Wknn <- graph_weights(X)
 
   if (missing(sigma)) {
     sigma <- estimate_sigma(X, prop=.1)
   }
 
-  Wall <- graph_weights(X, k=k, weight_mode="euclidean", neighbor_mode="knn")
+  Wall <- graph_weights(X, k=k, weight_mode="euclidean", neighbor_mode="knn",sigma=sigma)
   Ww <- label_matrix2(labels, labels)
   Wb <- label_matrix2(labels, labels, type="d")
 
@@ -150,7 +154,7 @@ between_class_weights <- function(X, k=1, labels,
 }
 
 #' @export
-estimate_sigma <- function(X, prop=.1, nsamples=500) {
+estimate_sigma <- function(X, prop=.25, nsamples=500) {
   ## estimate sigma
   if (nrow(X) <= 500) {
     nsamples <- nrow(X)
@@ -161,7 +165,14 @@ estimate_sigma <- function(X, prop=.1, nsamples=500) {
   }
 
   d <- dist(X[sam,])
-  quantile(d[d!=0],prop)
+  qs <- quantile(d[d!=0],seq(prop, 1,by=.1))
+  if (all(is.na(qs))) {
+    stop("could not estimate sigma, all quantiles are NA ...")
+  } else {
+    qs <- qs[!is.na(qs)]
+    qs[1]
+  }
+
 }
 
 #' Convert a data matrix with n instances and p features to an n-by-n adjacency matrix
@@ -177,13 +188,14 @@ estimate_sigma <- function(X, prop=.1, nsamples=500) {
 #' @export
 #' @examples
 #'
-#' X <- matrix(rnorm(2000*100), 2000, 100)
+#' X <- matrix(rnorm(3000*100), 3000, 100)
 #' sm <- graph_weights(X, neighbor_mode="knn",k=3)
 #'
 #' labels <- factor(rep(letters[1:4],5))
 #' sm2 <- graph_weights(X, neighbor_mode="supervised",k=3, labels=labels)
 #'
 #' sm3 <- graph_weights(X, neighbor_mode="knearest_misses",k=3, labels=labels, weight_mode="binary")
+#' sm4 <- graph_weights(X, neighbor_mode="knn",k=3, labels=labels, weight_mode="cosine")
 graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest_misses", "epsilon"),
                                  weight_mode=c("heat", "normalized", "binary", "euclidean", "cosine"),
                                  type=c("normal", "mutual", "asym"),
@@ -194,13 +206,13 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest
   type <- match.arg(type)
 
 
-  if (weight_mode == "normalized") {
+  if (weight_mode == "normalized" || weight_mode == "correlation") {
     X <- t(scale(t(X), center=TRUE, scale=TRUE))
   } else if (weight_mode == "cosine") {
     X <- t(apply(X, 1, function(x) x/sqrt(sum(x^2))))
   }
 
-  if (missing(sigma) || is.null(sigma)) {
+  if (missing(sigma) || is.null(sigma) && weight_mode %in% c("heat", "normalized")) {
     sigma <- estimate_sigma(X)
     message("sigma is ", sigma)
   }
@@ -271,6 +283,8 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest
 }
 
 
+## TODO probably should be called "threshold_adjacency"
+
 
 #' sim_from_adj
 #'
@@ -291,7 +305,6 @@ sim_from_adj <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
 
   jind <- 1:nrow(A)
   A2 <- do.call(rbind, parallel::mclapply(1:nrow(A), function(i) {
-
     ord <- order(A[i,], decreasing=TRUE)
     cbind(i=i, j=jind[ord[1:k]],x=A[i, ord[1:k]])
   }, mc.cores=ncores))

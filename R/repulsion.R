@@ -9,26 +9,32 @@ repulse_weight <- function(x1,x2, sigma=10) {
 
 #' construct a "repulsion graph"
 #'
-#' @param labels a set of labels defining the classes
-#' @param W the neighborhood graph (weighted or binary)
-#' @param X the original data matrix where \code{nrow(X) == nrow(W)}
-#' @param sigma bandwidth of the similarity function
-#' @export
-repulsion_graph <- function(labels, W, X=NULL, sigma=10, method=c("binary", "weighted")) {
-  method <- match.arg(method)
-  cg <- class_graph(labels)
-  acg <- 1-cg
 
-  res <- if (type == "binary") {
+#' @param W the adjacency matrix (weighted or binary)
+#' @param cg the class graph indicating the pairwise relationships among node classes
+#' @param threshold
+#' @export
+#' @examples
+#'
+#' X <- matrix(rnorm(100*100), 100,100)
+#' labels <- factor(rep(1:5, each=20))
+#' cg <- class_graph(labels)
+#' W <- graph_weights(X, k=10)
+#' R <- repulsion_graph(W, cg, method="weighted")
+repulsion_graph <- function(W, cg, method=c("binary", "weighted"), threshold=.001, norm_fac=10) {
+  method <- match.arg(method)
+  #cg <- class_graph(labels)
+  acg <- 1- (cg > threshold)
+
+  res <- if (method == "binary") {
     acg * (W != 0)
   } else {
     assert_that(!is.null(X))
     assert_that(nrow(X) == nrow(W))
     ind <- which((acg * W) != 0, arr.ind=TRUE)
     R <- acg * (W != 0)
-    wts <- sapply(1:nrow(ind), function(i) {
-      repulse_weight(X[ind[i,1],], X[ind[i,2],], sigma)
-    })
+    R[ind] <- W[ind]/norm_fac
+    R
   }
 
 }
