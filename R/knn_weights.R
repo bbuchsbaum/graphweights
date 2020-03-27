@@ -197,7 +197,7 @@ estimate_sigma <- function(X, prop=.25, nsamples=500) {
 #' sm3 <- graph_weights(X, neighbor_mode="knearest_misses",k=3, labels=labels, weight_mode="binary")
 #' sm4 <- graph_weights(X, neighbor_mode="knn",k=3, labels=labels, weight_mode="cosine")
 graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest_misses", "epsilon"),
-                                 weight_mode=c("heat", "normalized", "binary", "euclidean", "cosine"),
+                                 weight_mode=c("heat", "normalized", "binary", "euclidean", "cosine", "correlation"),
                                  type=c("normal", "mutual", "asym"),
                                  sigma,eps=NULL, labels=NULL, ...) {
 
@@ -212,7 +212,7 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest
     X <- t(apply(X, 1, function(x) x/sqrt(sum(x^2))))
   }
 
-  if (missing(sigma) || is.null(sigma) && weight_mode %in% c("heat", "normalized")) {
+  if (missing(sigma) || is.null(sigma) && (weight_mode %in% c("heat", "normalized"))) {
     sigma <- estimate_sigma(X)
     message("sigma is ", sigma)
   }
@@ -382,6 +382,8 @@ weighted_knnx <- function(X, query, k=5, FUN=heat_kernel, type=c("normal", "mutu
 #' @importFrom FNN get.knn
 #' @importFrom Matrix t
 #' @export
+#'
+#'
 weighted_knn <- function(X, k=5, FUN=heat_kernel,
                          type=c("normal", "mutual", "asym"),
                          return_triplet=FALSE,
