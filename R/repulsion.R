@@ -29,8 +29,8 @@ repulsion_graph <- function(W, cg, method=c("binary", "weighted"), threshold=.00
   res <- if (method == "binary") {
     acg * (W != 0)
   } else {
-    assert_that(!is.null(X))
-    assert_that(nrow(X) == nrow(W))
+    #assert_that(!is.null(X))
+    #assert_that(nrow(X) == nrow(W))
     ind <- which((acg * W) != 0, arr.ind=TRUE)
     R <- acg * (W != 0)
     R[ind] <- W[ind]/norm_fac

@@ -110,24 +110,34 @@ discriminating_distance <- function(X, k=length(labels)/2, sigma,labels) {
   Wall
 }
 
+#' Compute similarity graph weighted by class structure
+#'
+#' @param X
+#' @param k
+#' @param sigma
+#' @param cg
+#'
+#' @examples
+#'
+#' X <- matrix(rnorm(100*100), 100,100)
+#' labels <- factor(rep(1:5, each=20))
+#' cg <- class_graph(labels)
+#' sigma <- .7
 #'
 #' @export
-discriminating_simililarity <- function(X, k=length(labels)/2, sigma,labels) {
+discriminating_simililarity <- function(X, k=length(labels)/2, sigma,cg, threshold=.01) {
   #Wknn <- graph_weights(X)
 
-  if (missing(sigma)) {
-    sigma <- estimate_sigma(X, prop=.1)
-  }
-
-  Wall <- graph_weights(X, k=k, weight_mode="euclidean", neighbor_mode="knn",sigma=sigma)
-  Ww <- label_matrix2(labels, labels)
-  Wb <- label_matrix2(labels, labels, type="d")
+  Wall <- graph_weights(X, k=k, weight_mode="heat", neighbor_mode="knn",sigma=sigma)
+  Ww <- cg
+  Wb <- 1- (cg > threshold)
 
   Ww2 <- Wall * Ww
   Wb2 <- Wall * Wb
 
   wind <- which(Ww2 >0)
   bind <- which(Wb2 >0)
+
   hw <- heat_kernel(Wall[wind], sigma)
   hb <- heat_kernel(Wall[bind], sigma)
 
@@ -212,7 +222,7 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest
     X <- t(apply(X, 1, function(x) x/sqrt(sum(x^2))))
   }
 
-  if (missing(sigma) || is.null(sigma) && (weight_mode %in% c("heat", "normalized"))) {
+  if ((missing(sigma) || is.null(sigma)) && (weight_mode %in% c("heat", "normalized"))) {
     sigma <- estimate_sigma(X)
     message("sigma is ", sigma)
   }
