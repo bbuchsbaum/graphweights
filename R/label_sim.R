@@ -1,13 +1,32 @@
 
+intraclass_density <- function(X, cg,q=2, mc.cores=1) {
+  assert_that(nrow(X) == nrow(cg))
+  labs <- attr(cg)
+  parallel::mclapply(levels(labs), function(l) {
+    idx <- which(labs == l)
+    xc <- X[idx,]
+    sapply(1:length(idx), function(i) {
+      S <- sum(sweep(xc[-i,], 2, xc[i,], "-")^2)
+      1/(length(idx)^q) * S
+    })
+  })
+}
+
+
 #' @export
 #' @param labels the class label vector
-#' @importFrom Matrix sparseVector tcrossprod
+#' @importFrom Matrix sparseVector tcrossprod Matrix t
+#'
+#' @examples
+#' labels <- rep(letters[1:6], 10)
+#' cg <- class_graph(labels)
 class_graph <- function(labels, sparse=TRUE) {
   labels <- as.factor(labels)
   out <- Reduce("+", lapply(levels(labels), function(lev) {
     kronecker(Matrix(labels==lev, sparse=sparse), t(Matrix(labels==lev, sparse=sparse)))
   }))
 
+  attr(out, "labels") <- labels
   out
 }
 

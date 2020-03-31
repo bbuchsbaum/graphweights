@@ -300,7 +300,7 @@ bilateral_smoother <- function(coord_mat, feature_mat, nnk=27, s_sigma=2.5, f_si
   assert_that(nnk >= 4)
 
   ## find the set of spatial nearest neighbors
-  full_nn <- rflann::RadiusSearch(coord_mat, coord_mat, radius=s_sigma*2.5, max_neighbour=nnk)
+  full_nn <- rflann::RadiusSearch(coord_mat, coord_mat, radius=(s_sigma*2.5)^2, max_neighbour=nnk)
 
   nels <- sum(sapply(full_nn$indices, length))
 

@@ -125,6 +125,9 @@ discriminating_distance <- function(X, k=length(labels)/2, sigma,labels) {
 #' sigma <- .7
 #'
 #' @export
+#'
+## ref: Local similarity and diversity preserving discriminant projection for face and
+## handwriting digits recognition
 discriminating_simililarity <- function(X, k=length(labels)/2, sigma,cg, threshold=.01) {
   #Wknn <- graph_weights(X)
 
@@ -308,7 +311,7 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest
 #' @importFrom Matrix which sparseMatrix
 #' @importFrom assertthat assert_that
 #' @export
-sim_from_adj <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
+threshold_adjacency <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
   assert_that(k > 0 && k <= nrow(A))
 
   type <- match.arg(type)
@@ -393,6 +396,10 @@ weighted_knnx <- function(X, query, k=5, FUN=heat_kernel, type=c("normal", "mutu
 #' @importFrom Matrix t
 #' @export
 #'
+#' @examples
+#'
+#' X <- matrix(rnorm(10*10), 10,10)
+#' w <- weighted_knn(X,k=5)
 #'
 weighted_knn <- function(X, k=5, FUN=heat_kernel,
                          type=c("normal", "mutual", "asym"),
