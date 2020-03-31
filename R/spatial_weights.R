@@ -281,6 +281,42 @@ cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
 
 
 
+#' bilateral spatial smoother
+#'
+#' @param s_sigma spatial bandwidth in standard deviations
+#' @param f_sigma normalized feature bandwidth in standard deviations
+#' @inheritParams spatial_smoother
+#'
+#' @examples
+#'
+#' coord_mat = as.matrix(expand.grid(1:10, 1:10))
+#' feature_mat = matrix(rnorm(100*10), 100, 10)
+#'
+#' S <- bilateral_smoother(coord_mat, feature_mat, nnk=8)
+#'
+#' @export
+bilateral_smoother <- function(coord_mat, feature_mat, nnk=27, s_sigma=2.5, f_sigma=.7, stochastic=FALSE) {
+  assert_that(nrow(feature_mat) == nrow(coord_mat))
+  assert_that(nnk >= 4)
+
+  ## find the set of spatial nearest neighbors
+  full_nn <- rflann::RadiusSearch(coord_mat, coord_mat, radius=s_sigma*2.5, max_neighbour=nnk)
+
+  nels <- sum(sapply(full_nn$indices, length))
+
+  triplet <- bilateral_weights(full_nn$indices, lapply(full_nn$distances, sqrt),
+                              feature_mat, nels, s_sigma, f_sigma)
+
+  sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3], dims=c(nrow(coord_mat), nrow(coord_mat)))
+
+  if (stochastic) {
+    sm <- make_doubly_stochastic(sm)
+  }
+
+  sm
+
+}
+
 #' construct a spatial adjacency matrix weighted by a secondary feature matrix
 #'
 #' @param coord_mat the coordinate matrix

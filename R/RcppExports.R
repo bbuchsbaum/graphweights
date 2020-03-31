@@ -13,6 +13,10 @@ cross_fspatial_weights <- function(indices, distances, feature_mat1, feature_mat
     .Call('_neighborweights_cross_fspatial_weights', PACKAGE = 'neighborweights', indices, distances, feature_mat1, feature_mat2, nels, sigma, fsigma, alpha, maxk, binary)
 }
 
+bilateral_weights <- function(indices, distances, feature_mat, nels, sigma, fsigma) {
+    .Call('_neighborweights_bilateral_weights', PACKAGE = 'neighborweights', indices, distances, feature_mat, nels, sigma, fsigma)
+}
+
 fspatial_weights <- function(indices, distances, feature_mat, nels, sigma, fsigma, alpha, binary) {
     .Call('_neighborweights_fspatial_weights', PACKAGE = 'neighborweights', indices, distances, feature_mat, nels, sigma, fsigma, alpha, binary)
 }

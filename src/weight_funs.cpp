@@ -110,6 +110,44 @@ NumericMatrix cross_fspatial_weights(List indices, List distances, NumericMatrix
 
 
 // [[Rcpp::export]]
+NumericMatrix bilateral_weights(List indices, List distances, NumericMatrix feature_mat,
+                               double nels, double sigma, double fsigma) {
+  int n = indices.length();
+  List out(n);
+
+  NumericMatrix wout(nels, 3);
+
+  int count = 0;
+
+
+  for(int i = 0; i < n; ++i) {
+    SEXP ll = indices[i];
+    IntegerVector ind(ll);
+    // first compute spatial similarity
+    if (ind.size() > 0) {
+      NumericVector vals;
+
+      vals = distance_heat(distances[i], sigma);
+
+      NumericMatrix::Row f1 = feature_mat(i,_);
+
+      for (int j=0; j<vals.length(); j++) {
+        NumericMatrix::Row f2 = feature_mat(ind[j]-1,_);
+        double s = norm_heat_kernel(f1, f2, fsigma);
+        wout(count, 0) = i+1;
+        wout(count, 1) = ind[j];
+        wout(count, 2) = vals[j]*s;
+        count++;
+      }
+    }
+  }
+
+  return wout;
+
+}
+
+
+// [[Rcpp::export]]
 NumericMatrix fspatial_weights(List indices, List distances, NumericMatrix feature_mat,
                                double nels, double sigma, double fsigma, double alpha, bool binary) {
   int n = indices.length();

@@ -49,6 +49,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// bilateral_weights
+NumericMatrix bilateral_weights(List indices, List distances, NumericMatrix feature_mat, double nels, double sigma, double fsigma);
+RcppExport SEXP _neighborweights_bilateral_weights(SEXP indicesSEXP, SEXP distancesSEXP, SEXP feature_matSEXP, SEXP nelsSEXP, SEXP sigmaSEXP, SEXP fsigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type indices(indicesSEXP);
+    Rcpp::traits::input_parameter< List >::type distances(distancesSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type feature_mat(feature_matSEXP);
+    Rcpp::traits::input_parameter< double >::type nels(nelsSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< double >::type fsigma(fsigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(bilateral_weights(indices, distances, feature_mat, nels, sigma, fsigma));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fspatial_weights
 NumericMatrix fspatial_weights(List indices, List distances, NumericMatrix feature_mat, double nels, double sigma, double fsigma, double alpha, bool binary);
 RcppExport SEXP _neighborweights_fspatial_weights(SEXP indicesSEXP, SEXP distancesSEXP, SEXP feature_matSEXP, SEXP nelsSEXP, SEXP sigmaSEXP, SEXP fsigmaSEXP, SEXP alphaSEXP, SEXP binarySEXP) {
@@ -87,6 +103,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_neighborweights_norm_heat_kernel", (DL_FUNC) &_neighborweights_norm_heat_kernel, 3},
     {"_neighborweights_order_vec", (DL_FUNC) &_neighborweights_order_vec, 1},
     {"_neighborweights_cross_fspatial_weights", (DL_FUNC) &_neighborweights_cross_fspatial_weights, 10},
+    {"_neighborweights_bilateral_weights", (DL_FUNC) &_neighborweights_bilateral_weights, 6},
     {"_neighborweights_fspatial_weights", (DL_FUNC) &_neighborweights_fspatial_weights, 8},
     {"_neighborweights_spatial_weights", (DL_FUNC) &_neighborweights_spatial_weights, 5},
     {NULL, NULL, 0}
