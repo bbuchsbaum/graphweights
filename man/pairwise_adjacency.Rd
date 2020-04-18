@@ -6,6 +6,15 @@
 \usage{
 pairwise_adjacency(Xcoords, Xfeats, fself, fbetween)
 }
+\arguments{
+\item{Xcoords}{A list of coordinate matrices containing the spatial coordinates of the nodes of each graph}
+
+\item{Xfeats}{A list of feature matrices containing the feature vectors for the nodes of each graph}
+
+\item{fself}{a function that compute similarity for nodes of the same graph (e.g. Xi_1, Xi_2)}
+
+\item{fbetween}{a function that compute similarity for nodes across graphs (e.g. Xi_1, Xj_1)}
+}
 \description{
 pairwise_adjacency
 }

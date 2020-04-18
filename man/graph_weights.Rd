@@ -2,13 +2,13 @@
 % Please edit documentation in R/knn_weights.R
 \name{graph_weights}
 \alias{graph_weights}
-\title{Convert a data matrix with n instances and p features to an n-by-n adjacency matrix}
+\title{Convert a data matrix with n instances and p features to an n-by-n adjacency graph}
 \usage{
 graph_weights(
   X,
   k = 5,
   neighbor_mode = c("knn", "supervised", "knearest_misses", "epsilon"),
-  weight_mode = c("heat", "normalized", "binary", "euclidean", "cosine"),
+  weight_mode = c("heat", "normalized", "binary", "euclidean", "cosine", "correlation"),
   type = c("normal", "mutual", "asym"),
   sigma,
   eps = NULL,
@@ -19,7 +19,7 @@ graph_weights(
 \arguments{
 \item{X}{the data matrix, where each row is an instance and each column is a variable. Similarity is computed over instances.}
 
-\item{k}{number of neighbors}
+\item{k}{number of neighbors (ignored when neighbor_mode is not 'epsilon')}
 
 \item{neighbor_mode}{the method for assigning weights to neighbors, either "supervised", "knn", "knearest_misses", or "epsilon"}
 
@@ -34,15 +34,16 @@ graph_weights(
 \item{labels}{the class of the categories when \code{weight_mode} is \code{supervised}, supplied as a \code{factor} with \code{nrow(labels) == nrow(X)}}
 }
 \description{
-Convert a data matrix with n instances and p features to an n-by-n adjacency matrix
+Convert a data matrix with n instances and p features to an n-by-n adjacency graph
 }
 \examples{
 
-X <- matrix(rnorm(2000*100), 2000, 100)
+X <- matrix(rnorm(3000*100), 3000, 100)
 sm <- graph_weights(X, neighbor_mode="knn",k=3)
 
 labels <- factor(rep(letters[1:4],5))
 sm2 <- graph_weights(X, neighbor_mode="supervised",k=3, labels=labels)
 
 sm3 <- graph_weights(X, neighbor_mode="knearest_misses",k=3, labels=labels, weight_mode="binary")
+sm4 <- graph_weights(X, neighbor_mode="knn",k=3, labels=labels, weight_mode="cosine")
 }

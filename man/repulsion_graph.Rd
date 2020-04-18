@@ -5,22 +5,26 @@
 \title{construct a "repulsion graph"}
 \usage{
 repulsion_graph(
-  labels,
   W,
-  X = NULL,
-  sigma = 10,
-  method = c("binary", "weighted")
+  cg,
+  method = c("binary", "weighted"),
+  threshold = 0.001,
+  norm_fac = 10
 )
 }
 \arguments{
-\item{labels}{a set of labels defining the classes}
+\item{W}{the adjacency matrix (weighted or binary)}
 
-\item{W}{the neighborhood graph (weighted or binary)}
-
-\item{X}{the original data matrix where \code{nrow(X) == nrow(W)}}
-
-\item{sigma}{bandwidth of the similarity function}
+\item{cg}{the class graph indicating the pairwise relationships among node classes}
 }
 \description{
 construct a "repulsion graph"
+}
+\examples{
+
+X <- matrix(rnorm(100*100), 100,100)
+labels <- factor(rep(1:5, each=20))
+cg <- class_graph(labels)
+W <- graph_weights(X, k=10)
+R <- repulsion_graph(W, cg, method="weighted")
 }

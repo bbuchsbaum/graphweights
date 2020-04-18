@@ -25,3 +25,9 @@ weighted_knn(
 \description{
 weighted_knn
 }
+\examples{
+
+X <- matrix(rnorm(10*10), 10,10)
+w <- weighted_knn(X,k=5)
+
+}

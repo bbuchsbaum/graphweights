@@ -10,7 +10,6 @@ spatial_laplacian(
   nnk = 27,
   weight_mode = c("binary", "heat"),
   sigma = dthresh/2,
-  include_diagonal = TRUE,
   normalized = TRUE,
   stochastic = FALSE
 )
@@ -25,8 +24,6 @@ spatial_laplacian(
 \item{weight_mode}{a binary or heat kernel}
 
 \item{sigma}{the bandwidth of the heat kernel if weight_mode == "heat"}
-
-\item{include_diagonal}{diagonal elements assigned 1}
 
 \item{normalized}{make row elements sum to 1}
 
