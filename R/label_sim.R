@@ -1,34 +1,39 @@
 
-intraclass_density <- function(X, cg,q=2, mc.cores=1) {
-  assert_that(nrow(X) == nrow(cg))
-  labs <- attr(cg)
-  parallel::mclapply(levels(labs), function(l) {
-    idx <- which(labs == l)
-    xc <- X[idx,]
-    sapply(1:length(idx), function(i) {
-      S <- sum(sweep(xc[-i,], 2, xc[i,], "-")^2)
-      1/(length(idx)^q) * S
-    })
-  })
-}
 
 
-#' @export
-#' @param labels the class label vector
-#' @importFrom Matrix sparseVector tcrossprod Matrix t
-#'
-#' @examples
-#' labels <- rep(letters[1:6], 10)
-#' cg <- class_graph(labels)
-class_graph <- function(labels, sparse=TRUE) {
-  labels <- as.factor(labels)
-  out <- Reduce("+", lapply(levels(labels), function(lev) {
-    kronecker(Matrix(labels==lev, sparse=sparse), t(Matrix(labels==lev, sparse=sparse)))
-  }))
 
-  attr(out, "labels") <- labels
-  out
-}
+# globality_preserving_scatter <- function(X, cg,q=2) {
+#   type <- match.arg(type)
+#   intra_dens <- intra_class_density(X,cg,q)
+#   inter_dens <- inter_class_density(X,cg,q)
+#
+#   inter_class <- function(d, i, j) {
+#     e_i <- exp(-d/intra_dens[i])
+#     e_j <- exp(-d/intra_dens[j])
+#     w <- (e_i*(1 + e_i) + e_j*(1 + e_j))/4
+#   }
+#
+#   ### intra_class_pairs
+#   ### inter_class_pairs
+#
+#   ret <- lapply(1:nrow(X), function(i) {
+#     lapply(1:nrow(X), function(j) {
+#       if (i >= j) {
+#         next
+#       }
+#
+#       if (cg[i,j]) {
+#         rbind(c(i,j,w)_
+#
+#       }
+#     })
+#   })
+#
+# }
+
+
+
+
 
 
 #' @export

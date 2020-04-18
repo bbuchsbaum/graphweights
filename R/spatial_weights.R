@@ -327,10 +327,10 @@ bilateral_smoother <- function(coord_mat, feature_mat, nnk=27, s_sigma=2.5, f_si
 #'
 #' @examples
 #'
-#' coord_mat <- as.matrix(expand.grid(x=1:3, y=1:3))
-#' fmat <- matrix(rnorm(9*3), 9, 3)
+#' coord_mat <- as.matrix(expand.grid(x=1:9, y=1:9, z=1:9))
+#' fmat <- matrix(rnorm(nrow(coord_mat)*100), nrow(coord_mat), 100)
 #' wsa1 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, weight_mode="binary", alpha=1, stochastic=TRUE)
-#' wsa2 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, weight_mode="binary", alpha=0, stochastic=TRUE)
+#' wsa2 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=27, weight_mode="heat", alpha=0, stochastic=TRUE, sigma=2.5)
 weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha=.5,
                                        nnk=27,
                                        weight_mode=c("binary", "heat"),
@@ -365,10 +365,11 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
 
   if (normalized) {
     sm <- normalize_adjacency(sm)
-    if (stochastic) {
-      ## make doubly stochastic (row and columns sum to 1)
-      sm <- make_doubly_stochastic(sm)
-    }
+  }
+
+  if (stochastic) {
+    ## make doubly stochastic (row and columns sum to 1)
+    sm <- make_doubly_stochastic(sm)
   }
 
   sm

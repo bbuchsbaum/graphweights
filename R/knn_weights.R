@@ -55,6 +55,25 @@ cosine_kernel <- function(x, sigma=1) {
 }
 
 
+get_neighbor_fun <- function(weight_mode=c("heat", "binary", "normalized", "euclidean", "cosine", "correlation"),
+                             len,sigma) {
+
+  weight_mode <- match.arg(weight_mode)
+
+  wfun <- if (weight_mode == "heat") {
+    function(x) heat_kernel(x, sigma)
+  } else if (weight_mode == "binary") {
+    function(x) (x>0) * 1
+  } else if (weight_mode == "normalized") {
+    function(x) normalized_heat_kernel(x,sigma,len)
+  } else if (weight_mode == "euclidean") {
+    function(x) x
+  } else if (weight_mode == "cosine") {
+    function(x) cosine_kernel(x)
+  }
+}
+
+
 #' factor_sim
 #'
 #' compute similarity matrix from a set of \code{factor}s in a \code{data.frame}
@@ -150,21 +169,6 @@ discriminating_simililarity <- function(X, k=length(labels)/2, sigma,cg, thresho
 }
 
 
-#' @inheritParams graph_weights
-#' @export
-within_class_weights <- function(X, k=1, labels,
-                                 weight_mode=c("heat", "normalized", "binary", "euclidean"),...) {
-  labels <- as.factor(labels)
-  Sw <- graph_weights(X, k=k, weight_mode=weight_mode, neighbor_mode="supervised", labels=labels,...)
-}
-
-#' @inheritParams graph_weights
-#' @export
-between_class_weights <- function(X, k=1, labels,
-                                  weight_mode=c("heat", "normalized", "binary", "euclidean"), ...) {
-  labels <- as.factor(labels)
-  Sb <- graph_weights(X, k=k, weight_mode=weight_mode, neighbor_mode="knearest_misses", labels=labels,...)
-}
 
 #' @export
 estimate_sigma <- function(X, prop=.25, nsamples=500) {
@@ -188,10 +192,10 @@ estimate_sigma <- function(X, prop=.25, nsamples=500) {
 
 }
 
-#' Convert a data matrix with n instances and p features to an n-by-n adjacency matrix
+#' Convert a data matrix with n instances and p features to an n-by-n adjacency graph
 #'
 #' @param X the data matrix, where each row is an instance and each column is a variable. Similarity is computed over instances.
-#' @param k number of neighbors
+#' @param k number of neighbors (ignored when neighbor_mode is not 'epsilon')
 #' @param neighbor_mode the method for assigning weights to neighbors, either "supervised", "knn", "knearest_misses", or "epsilon"
 #' @param weight_mode binary (1 if neighbor, 0 otherwise),'heat', 'normalized', 'euclidean', or 'cosine'
 #' @param type the nearest neighbor policy, one of: normal, mutual, asym.
@@ -210,7 +214,8 @@ estimate_sigma <- function(X, prop=.25, nsamples=500) {
 #' sm3 <- graph_weights(X, neighbor_mode="knearest_misses",k=3, labels=labels, weight_mode="binary")
 #' sm4 <- graph_weights(X, neighbor_mode="knn",k=3, labels=labels, weight_mode="cosine")
 graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest_misses", "epsilon"),
-                                 weight_mode=c("heat", "normalized", "binary", "euclidean", "cosine", "correlation"),
+                                 weight_mode=c("heat", "normalized", "binary", "euclidean",
+                                               "cosine", "correlation"),
                                  type=c("normal", "mutual", "asym"),
                                  sigma,eps=NULL, labels=NULL, ...) {
 
@@ -230,66 +235,10 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest
     message("sigma is ", sigma)
   }
 
-  wfun <- if (weight_mode == "heat") {
-    function(x) heat_kernel(x, sigma)
-  } else if (weight_mode == "binary") {
-    function(x) (x>0) * 1
-  } else if (weight_mode == "normalized") {
-    function(x) normalized_heat_kernel(x,sigma,ncol(X))
-  } else if (weight_mode == "euclidean") {
-    function(x) x
-  } else if (weight_mode == "cosine") {
-    function(x) cosine_kernel(x)
-  }
+  wfun <- get_neighbor_fun(weight_mode, sigma, ncol(X))
 
   if (neighbor_mode == "knn") {
     W <- weighted_knn(X, k, FUN=wfun, type=type,...)
-  } else if (neighbor_mode == "supervised") {
-    assertthat::assert_that(!is.null(labels),
-                            msg="when `neighbor_mode` is `supervised` must supply vector of `labels`")
-    labels <- as.factor(labels)
-    if (k == 0) {
-      W <- label_matrix2(labels, labels)
-    } else if (k > 0) {
-
-      M <- do.call(rbind, lapply(levels(labels), function(lev) {
-        idx <- which(labels == lev)
-        k <- min(k, length(idx)-1)
-        M <- weighted_knn(X[idx,], k=k, FUN=wfun, type=type)
-        Mind <- which(M > 0, arr.ind=TRUE)
-        cbind(idx[Mind[,1]], idx[Mind[,2]], M[Mind])
-      }))
-
-      Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)))
-    }
-
-  } else if (neighbor_mode == "knearest_misses") {
-    assertthat::assert_that(!is.null(labels) && k > 0,
-                            msg="when 'neighbor_mode' is 'knearest_misses',
-                            k must be greater than 0 and labels cannot be NULL")
-    labels <- as.factor(labels)
-    M <- do.call(rbind, lapply(levels(labels), function(lev) {
-      idx1 <- which(labels != lev)
-      idx2 <- which(labels == lev)
-
-      M <- weighted_knnx(X[idx1,,drop=FALSE], X[idx2,,drop=FALSE], k=k, FUN=wfun,
-                         type="asym",...)
-      Mind <- which(M > 0, arr.ind=TRUE)
-      cbind(idx2[Mind[,1]], idx1[Mind[,2]], M[Mind])
-    }))
-
-
-    W <- Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)), use.last.ij = TRUE)
-
-    if (type == "normal") {
-      psparse(W, pmax)
-    } else if (type == "mutual") {
-      #psparse(W, pmin, return_triplet=return_triplet)
-      psparse(W, pmin)
-    } else if (type == "asym") {
-      W
-    }
-
   } else if (neighbor_mode == "epsilon") {
     stop("epsilon not implemented")
   }
@@ -299,7 +248,7 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest
 ## TODO probably should be called "threshold_adjacency"
 
 
-#' sim_from_adj
+#' threshold_weights
 #'
 #' extract the k-nearest neighbors from an existing adjacency matrix
 #'
@@ -411,14 +360,19 @@ weighted_knn <- function(X, k=5, FUN=heat_kernel,
   type <- match.arg(type)
   #nn <- FNN::get.knn(X, k=k)
   #nn <- nabor::knn(X, k=k)
-  nn <- rflann::Neighbour(X, X,k=k, ...)
+  nn <- rflann::Neighbour(X, X,k=k+1, ...)
   #nnd <- nn$nn.dist + 1e-16
+  #browser()
   nnd <- sqrt(nn$distances[, 2:ncol(nn$distances) + 1e-16])
   nni <- nn$indices[, 2:ncol(nn$indices)]
   hval <- FUN(nnd)
 
   #W <- indices_to_sparse(nn$nn.index, hval)
-  W <- indices_to_sparse(nni, hval)
+  W <- if (k == 1) {
+    indices_to_sparse(as.matrix(nni), as.matrix(hval))
+  } else {
+    indices_to_sparse(nni, hval)
+  }
 
   if (type == "normal") {
     psparse(W, pmax, return_triplet=return_triplet)
