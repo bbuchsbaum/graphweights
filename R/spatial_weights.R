@@ -337,7 +337,7 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
                                        sigma=1,
                                        dthresh=sigma*2.5,
                                        include_diagonal=TRUE,
-                                       normalized=TRUE,
+                                       normalized=FALSE,
                                        stochastic=FALSE) {
 
 
