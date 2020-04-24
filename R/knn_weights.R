@@ -363,7 +363,7 @@ weighted_knn <- function(X, k=5, FUN=heat_kernel,
   nn <- rflann::Neighbour(X, X,k=k+1, ...)
   #nnd <- nn$nn.dist + 1e-16
   #browser()
-  nnd <- sqrt(nn$distances[, 2:ncol(nn$distances) + 1e-16])
+  nnd <- sqrt(nn$distances[, 2:ncol(nn$distances)] + 1e-16)
   nni <- nn$indices[, 2:ncol(nn$indices)]
   hval <- FUN(nnd)
 
