@@ -2,7 +2,7 @@ nrow          <- function(x) UseMethod("nrow")
 nrow.default  <- base::nrow
 
 ncol          <- function(x) UseMethod("ncol")
-ncol.default  <- base::nrow
+ncol.default  <- base::ncol
 
 
 #' compute graph laplacian of a weight matrix
