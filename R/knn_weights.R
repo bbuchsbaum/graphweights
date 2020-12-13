@@ -73,6 +73,8 @@ get_neighbor_fun <- function(weight_mode=c("heat", "binary", "normalized", "eucl
     function(x) x
   } else if (weight_mode == "cosine") {
     function(x) cosine_kernel(x)
+  } else if (weight_mode == "correlation") {
+    function(x) correlation_kernel(x)
   }
 }
 
@@ -190,8 +192,6 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest
 
 }
 
-
-## TODO probably should be called "threshold_adjacency"
 
 
 #' threshold_adjacency
