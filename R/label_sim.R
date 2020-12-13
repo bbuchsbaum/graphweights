@@ -2,37 +2,6 @@
 
 
 
-# globality_preserving_scatter <- function(X, cg,q=2) {
-#   type <- match.arg(type)
-#   intra_dens <- intra_class_density(X,cg,q)
-#   inter_dens <- inter_class_density(X,cg,q)
-#
-#   inter_class <- function(d, i, j) {
-#     e_i <- exp(-d/intra_dens[i])
-#     e_j <- exp(-d/intra_dens[j])
-#     w <- (e_i*(1 + e_i) + e_j*(1 + e_j))/4
-#   }
-#
-#   ### intra_class_pairs
-#   ### inter_class_pairs
-#
-#   ret <- lapply(1:nrow(X), function(i) {
-#     lapply(1:nrow(X), function(j) {
-#       if (i >= j) {
-#         next
-#       }
-#
-#       if (cg[i,j]) {
-#         rbind(c(i,j,w)_
-#
-#       }
-#     })
-#   })
-#
-# }
-
-
-
 
 
 

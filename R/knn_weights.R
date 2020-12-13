@@ -1,7 +1,9 @@
 
 
-#' internal function
-indices_to_sparse <- function(nn.index, hval, return_triplet=FALSE, idim=nrow(nn.index), jdim=nrow(nn.index)) {
+#' @keywords internal
+indices_to_sparse <- function(nn.index, hval, return_triplet=FALSE,
+                              idim=nrow(nn.index),
+                              jdim=nrow(nn.index)) {
   M <- do.call(rbind, lapply(1:nrow(nn.index), function(i) {
     cbind(i, nn.index[i,], hval[i,])
   }))
@@ -45,6 +47,7 @@ normalized_heat_kernel <- function(x, sigma=.68, len) {
   norm_dist <- (x^2)/(2*len)
   exp(-norm_dist/(2*sigma^2))
 }
+
 
 correlation_kernel <- function(x, len) {
   1 - (x^2)/(2*(len-1))
@@ -102,72 +105,6 @@ weighted_factor_sim <- function(des, wts=rep(1,ncol(des))/ncol(des)) {
   Reduce("+", Fmat)
 }
 
-#' @export
-discriminating_distance <- function(X, k=length(labels)/2, sigma,labels) {
-  #Wknn <- graph_weights(X)
-
-  if (missing(sigma)) {
-    sigma <- estimate_sigma(X, prop=.1)
-  }
-
-  Wall <- graph_weights(X, k=k, weight_mode="euclidean", neighbor_mode="knn")
-
-  Ww <- label_matrix2(labels, labels)
-  Wb <- label_matrix2(labels, labels, type="d")
-
-  Ww2 <- Wall * Ww
-  Wb2 <- Wall * Wb
-
-  wind <- which(Ww2 >0)
-  bind <- which(Wb2 >0)
-
-  hw <- inverse_heat_kernel(Wall[wind], sigma)
-  hb <- inverse_heat_kernel(Wall[bind], sigma)
-
-  Wall[wind] <- hw * (1-hw)
-  Wall[bind] <- hb * (1+hb)
-  Wall
-}
-
-#' Compute similarity graph weighted by class structure
-#'
-#' @param X
-#' @param k
-#' @param sigma
-#' @param cg
-#'
-#' @examples
-#'
-#' X <- matrix(rnorm(100*100), 100,100)
-#' labels <- factor(rep(1:5, each=20))
-#' cg <- class_graph(labels)
-#' sigma <- .7
-#'
-#' @export
-#'
-## ref: Local similarity and diversity preserving discriminant projection for face and
-## handwriting digits recognition
-discriminating_simililarity <- function(X, k=length(labels)/2, sigma,cg, threshold=.01) {
-  #Wknn <- graph_weights(X)
-
-  Wall <- graph_weights(X, k=k, weight_mode="heat", neighbor_mode="knn",sigma=sigma)
-  Ww <- cg
-  Wb <- 1- (cg > threshold)
-
-  Ww2 <- Wall * Ww
-  Wb2 <- Wall * Wb
-
-  wind <- which(Ww2 >0)
-  bind <- which(Wb2 >0)
-
-  hw <- heat_kernel(Wall[wind], sigma)
-  hb <- heat_kernel(Wall[bind], sigma)
-
-  Wall[wind] <- hw * (1+hw)
-  Wall[bind] <- hb * (1-hb)
-  Wall
-}
-
 
 
 #' @export
@@ -200,8 +137,9 @@ estimate_sigma <- function(X, prop=.25, nsamples=500) {
 #' @param weight_mode binary (1 if neighbor, 0 otherwise),'heat', 'normalized', 'euclidean', or 'cosine'
 #' @param type the nearest neighbor policy, one of: normal, mutual, asym.
 #' @param sigma parameter for heat kernel \code{exp(-dist/(2*sigma^2))}
-#' @param eps the neighborhood radius when neighbor_mode is `epsilon`
-#' @param labels the class of the categories when \code{weight_mode} is \code{supervised}, supplied as a \code{factor} with \code{nrow(labels) == nrow(X)}
+#' @param eps the neighborhood radius when neighbor_mode is `epsilon` (not implemented)
+#' @param labels the class of the categories when \code{weight_mode} is \code{supervised},
+#' supplied as a \code{factor} with \code{nrow(labels) == nrow(X)}
 #' @export
 #' @examples
 #'
@@ -223,7 +161,6 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest
   weight_mode = match.arg(weight_mode)
   type <- match.arg(type)
 
-
   if (weight_mode == "normalized" || weight_mode == "correlation") {
     X <- t(scale(t(X), center=TRUE, scale=TRUE))
   } else if (weight_mode == "cosine") {
@@ -242,13 +179,22 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "supervised", "knearest
   } else if (neighbor_mode == "epsilon") {
     stop("epsilon not implemented")
   }
+
+  neighbor_graph(W, params=list(k=k, neighbor_mode=neighbor_mode,
+                                     weight_mode=weight_mode,
+                                     sigma=sigma,
+                                     type=type,
+                                     labels=labels))
+
+
+
 }
 
 
 ## TODO probably should be called "threshold_adjacency"
 
 
-#' threshold_weights
+#' threshold_adjacency
 #'
 #' extract the k-nearest neighbors from an existing adjacency matrix
 #'
@@ -266,6 +212,7 @@ threshold_adjacency <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
   type <- match.arg(type)
 
   jind <- 1:nrow(A)
+
   A2 <- do.call(rbind, parallel::mclapply(1:nrow(A), function(i) {
     ord <- order(A[i,], decreasing=TRUE)
     cbind(i=i, j=jind[ord[1:k]],x=A[i, ord[1:k]])
@@ -313,7 +260,8 @@ threshold_adjacency <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
 #   }
 # }
 
-weighted_knnx <- function(X, query, k=5, FUN=heat_kernel, type=c("normal", "mutual", "asym"), return_triplet=FALSE) {
+weighted_knnx <- function(X, query, k=5, FUN=heat_kernel, type=c("normal", "mutual", "asym"),
+                          return_triplet=FALSE) {
   assert_that(k > 0 && k <= nrow(X))
 
   type <- match.arg(type)
@@ -340,6 +288,7 @@ weighted_knnx <- function(X, query, k=5, FUN=heat_kernel, type=c("normal", "mutu
 #' @param k the number of nearest neighbors
 #' @param FUN the function used to convert euclidean distances to similarities
 #' @param type whether to compute 'normal' or 'mutual' k-nearest neighbors
+#' @param as return as type \code{sparseMatrix} ("sparse") or \code{igraph} ("graph")
 #' @importFrom assertthat assert_that
 #' @importFrom FNN get.knn
 #' @importFrom Matrix t
@@ -352,9 +301,10 @@ weighted_knnx <- function(X, query, k=5, FUN=heat_kernel, type=c("normal", "mutu
 #'
 weighted_knn <- function(X, k=5, FUN=heat_kernel,
                          type=c("normal", "mutual", "asym"),
-                         return_triplet=FALSE,
+                         as=c("igraph", "sparse"),
                          ...) {
   assert_that(k > 0 && k <= nrow(X))
+  as <- match.arg(as)
 
 
   type <- match.arg(type)
@@ -362,7 +312,7 @@ weighted_knn <- function(X, k=5, FUN=heat_kernel,
   #nn <- nabor::knn(X, k=k)
   nn <- rflann::Neighbour(X, X,k=k+1, ...)
   #nnd <- nn$nn.dist + 1e-16
-  #browser()
+
   nnd <- sqrt(nn$distances[, 2:ncol(nn$distances)] + 1e-16)
   nni <- nn$indices[, 2:ncol(nn$indices)]
   hval <- FUN(nnd)
@@ -374,12 +324,22 @@ weighted_knn <- function(X, k=5, FUN=heat_kernel,
     indices_to_sparse(nni, hval)
   }
 
-  if (type == "normal") {
-    psparse(W, pmax, return_triplet=return_triplet)
+  ##bW <- W != 0
+  ##tmp <- as(x$G, "dgTMatrix")
+  ## should return the raw distances?
+
+  gg <- if (type == "normal") {
+    igraph::graph_from_adjacency_matrix(W, weighted=TRUE, mode="max")
   } else if (type == "mutual") {
-    psparse(W, pmin, return_triplet=return_triplet)
+    igraph::graph_from_adjacency_matrix(W, weighted=TRUE, mode="min")
   } else if (type == "asym") {
-    W
+    igraph::graph_from_adjacency_matrix(W, weighted=TRUE, mode="directed")
+  }
+
+  if (as == "sparse") {
+    igraph::as_adjacency_matrix(gg, attr="weight")
+  } else {
+    gg
   }
 }
 
@@ -400,7 +360,8 @@ psparse <- function(M, FUN, return_triplet=FALSE) {
   if (return_triplet) {
     cbind(i=c(ind[,1],ind[,2]), j=c(ind[,2],ind[,1]), x=rep(FUN(x1,x2),2))
   } else {
-    sm <- sparseMatrix(i=c(ind[,1],ind[,2]), j=c(ind[,2],ind[,1]), x=rep(FUN(x1,x2),2), dims=dim(M), use.last.ij=TRUE)
+    sm <- sparseMatrix(i=c(ind[,1],ind[,2]), j=c(ind[,2],ind[,1]), x=rep(FUN(x1,x2),2),
+                       dims=dim(M), use.last.ij=TRUE)
     sm
   }
 }
