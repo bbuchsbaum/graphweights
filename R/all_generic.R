@@ -52,7 +52,7 @@ intraclass_pairs <- function(x,...) UseMethod("intraclass_pairs")
 
 interclass_pairs <- function(x,...) UseMethod("interclass_pairs")
 
-
+#' @export
 edges <- function(x, ...) UseMethod("edges")
 
 #' @export

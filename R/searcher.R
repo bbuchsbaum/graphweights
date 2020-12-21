@@ -17,13 +17,26 @@ search_result.nnsearcher <- function(x, result) {
 
 #' @export
 dist_to_sim.nn_search <- function(x, method = c("heat", "binary", "normalized", "cosine", "correlation"), sigma=1) {
+  method <- match.arg(method)
   fun <- get_neighbor_fun(method, x$len, x$sigma)
   x$dist <- fun(x$dist)
   x
 }
 
+
 #' @export
-adjacency.nnsearch <- function(x, idim=nrow(nnres$idx), jdim=max(nnres$idx), return_triplet=FALSE) {
+dist_to_sim.Matrix <- function(x, method = c("heat", "binary", "normalized", "cosine", "correlation"), sigma=1, len=1) {
+  method <- match.arg(method)
+  fun <- get_neighbor_fun(method, len, sigma)
+
+  wh <- which(x != 0)
+  v <- fun(x[wh])
+  x[wh] <- v
+  x
+}
+
+#' @export
+adjacency.nnsearch <- function(x, idim=nrow(x$idx), jdim=max(x$idx), return_triplet=FALSE) {
   indices_to_sparse(as.matrix(x$idx), as.matrix(x$dist), return_triplet=FALSE, idim=idim, jdim=jdim)
 }
 
@@ -59,13 +72,31 @@ find_nn.nnsearcher <- function(x, query=NULL, k=5) {
 
 #' @export
 find_nn_among.nn_searcher <- function(x, k=5, idx) {
-  chk::chk_numeric(idx1)
+  chk::chk_numeric(idx)
 
   X1 <- x$X[idx,]
   ann <- RcppHNSW::hnsw_build(X1, x$distance, M=x$M, ef=x$ef)
   nnres <- RcppHNSW::hnsw_search(X1, ann, k=k)
   class(nnres) <- "nn_search"
   nnres
+}
+
+find_nn_among.class_graph <- function(x, X, k=5) {
+  searcher <- nnsearcher(X,x$labels)
+  ret <- lapply(x$class_indices, function(ind) {
+    nnr <- find_nn_among.nn_searcher(searcher, k=k, ind)
+    nnr$idx <- do.call(rbind, lapply(1:nrow(nnr$idx), function(i) {
+      ind[nnr$idx[i,]]
+    }))
+
+    nnr$labels <- t(apply(nnr$idx, 1,  function(i) x$labels[i]))
+    nnr
+  })
+
+  idx <- do.call(rbind, lapply(ret, "[[", "idx"))
+  d <- do.call(rbind, lapply(ret, "[[", "dist"))
+  labels <- do.call(rbind, lapply(ret, "[[", "labels"))
+  search_result(searcher, list(idx=idx, dist=d, labels=labels))
 }
 
 #' @export
