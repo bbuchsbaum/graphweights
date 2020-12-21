@@ -2,7 +2,7 @@
 % Please edit documentation in R/knn_weights.R
 \name{threshold_adjacency}
 \alias{threshold_adjacency}
-\title{threshold_weights}
+\title{threshold_adjacency}
 \usage{
 threshold_adjacency(A, k = 5, type = c("normal", "mutual"), ncores = 1)
 }

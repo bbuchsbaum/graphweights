@@ -29,17 +29,18 @@ graph_weights(
 
 \item{sigma}{parameter for heat kernel \code{exp(-dist/(2*sigma^2))}}
 
-\item{eps}{the neighborhood radius when neighbor_mode is `epsilon`}
+\item{eps}{the neighborhood radius when neighbor_mode is `epsilon` (not implemented)}
 
-\item{labels}{the class of the categories when \code{weight_mode} is \code{supervised}, supplied as a \code{factor} with \code{nrow(labels) == nrow(X)}}
+\item{labels}{the class of the categories when \code{weight_mode} is \code{supervised},
+supplied as a \code{factor} with \code{nrow(labels) == nrow(X)}}
 }
 \description{
 Convert a data matrix with n instances and p features to an n-by-n adjacency graph
 }
 \examples{
 
-X <- matrix(rnorm(3000*100), 3000, 100)
-sm <- graph_weights(X, neighbor_mode="knn",k=3)
+X <- matrix(rnorm(100*100), 100, 100)
+sm <- graph_weights(X, neighbor_mode="knn",weight_mode="normalized", k=3)
 
 labels <- factor(rep(letters[1:4],5))
 sm2 <- graph_weights(X, neighbor_mode="supervised",k=3, labels=labels)

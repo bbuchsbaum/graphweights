@@ -14,7 +14,7 @@ weighted_spatial_adjacency(
   sigma = 1,
   dthresh = sigma * 2.5,
   include_diagonal = TRUE,
-  normalized = TRUE,
+  normalized = FALSE,
   stochastic = FALSE
 )
 }

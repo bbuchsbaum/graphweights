@@ -4,7 +4,12 @@
 \alias{non_neighbors}
 \title{get indices of the non-neighbors of a set of nodes}
 \usage{
-non_neighbors(x, i)
+non_neighbors(x, ...)
+}
+\arguments{
+\item{x}{the neighbor graph}
+
+\item{...}{extra args}
 }
 \description{
 get indices of the non-neighbors of a set of nodes

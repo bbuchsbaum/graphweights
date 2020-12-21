@@ -6,6 +6,7 @@
 #' data(iris)
 #' labels <- iris[,5]
 #' cg <- class_graph(labels)
+#'
 class_graph <- function(labels, sparse=TRUE) {
   labels <- as.factor(labels)
   out <- Reduce("+", lapply(levels(labels), function(lev) {
@@ -25,6 +26,8 @@ class_graph <- function(labels, sparse=TRUE) {
   ret
 }
 
+
+
 #' @export
 nclasses.class_graph <- function(x) {
   length(x$levels)
@@ -42,23 +45,15 @@ class_means.class_graph <- function(x, X) {
 }
 
 
-interclass_locp_scatter.class_graph <- function(x, knn_graph, X, dens=NULL) {
-  if (is.null(dens)) {
-    dens <- node_density(x, X)
-  }
-
+# local scatter
+locality_preserving_scatter.class_graph <- function(x, ng, X) {
+  dens <- node_density(ng)
+  within_class_neighbors(x)
+  ## need knn and class_graph
 }
 
-intraclass_locp_scatter.class_graph <- function(x, knn_graph, X,dens=NULL) {
-  gi <- igraph::intersection(x, knn_graph)
 
-  if (is.null(dens)) {
-    dens <- node_density(x, X)
-  }
-
-
-
-}
+# equation (9,10)
 
 #' @export
 intraclass_scatter.class_graph <- function(x, X, q=1.5, mc.cores=1) {
@@ -80,10 +75,14 @@ intraclass_scatter.class_graph <- function(x, X, q=1.5, mc.cores=1) {
   W <- (W + t(W))/2
 }
 
+# equation (9,10)
+
 #' @export
 interclass_scatter.class_graph <- function(x, X, q=1.5, mc.cores=1) {
   dens <-  interclass_density(x, X, q, mc.cores)
   ipairs <- interclass_pairs(x)
+
+  ## need to go from i to j and j to i
   ret <- lapply(1:nrow(ipairs), function(n) {
     i <- ipairs[n,1]
     j <- ipairs[n,2]
@@ -109,7 +108,6 @@ intraclass_density.class_graph <- function(x, X, q=1.5, mc.cores=1) {
   assert_that(nrow(X) == nvertices(x))
   labs <- x$labels
 
-
   #1/(n_c[i]^q) * sum((x_i - x_j)^2) for all x_i
   ret <- parallel::mclapply(x$levels, function(l) {
     idx <- which(labs == l)
@@ -129,6 +127,7 @@ intraclass_density.class_graph <- function(x, X, q=1.5, mc.cores=1) {
   dens
 }
 
+## equation 18, 19
 #' @export
 interclass_density.class_graph <- function(x, X, q=2, mc.cores=1) {
   assert_that(nrow(X) == nvertices(x))
@@ -164,77 +163,62 @@ interclass_pairs.class_graph <- function(x) {
 }
 
 
-#' @inheritParams graph_weights
-#' @export
-within_class_neighbors.class_graph <- function(x, X, k=1,
-                                 weight_mode=c("heat", "normalized", "binary", "euclidean"),
-                                 sigma,
-                                 type=c("normal", "mutual", "asym"),
-                                 ...) {
 
+heterogeneous_neighbors.class_graph <- function(x, X, k, weight_mode="binary", sigma=.7) {
+  allind <- 1:nrow(X)
+  cind <- x$class_indices
+  ## this could be done set-wise, e.g. levels by level
+  out <- do.call(rbind, lapply(cind, function(ci) {
+    query <- X[ci,]
+    others <- which(!(allind %in% ci))
 
-  type <- match.arg(type)
-  weight_mode <- match.arg(weight_mode)
-  assert_that(k > 0)
-
-  if (missing(sigma)) {
-    sigma <- estimate_sigma(X)
-  }
-
-  wfun <- get_neighbor_fun(weight_mode, sigma, ncol(X))
-
-  M <- do.call(rbind, lapply(x$class_indices, function(idx) {
-      k <- min(k, length(idx)-1)
-      M <- weighted_knn(X[idx,], k=k, FUN=wfun, type=type,...)
-      Mind <- which(M > 0, arr.ind=TRUE)
-      cbind(idx[Mind[,1]], idx[Mind[,2]], M[Mind])
+    m <- weighted_knnx(X[others,,drop=FALSE], query,k=k,
+                  FUN=get_neighbor_fun(weight_mode, len=nrow(X), sigma=sigma), as="index_sim")
+    ## HER
   }))
 
-  W <- Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)))
-
+  ng <- neighbor_graph(igraph::graph_from_data_frame(out,directed=FALSE))
 
 }
 
-#' @inheritParams graph_weights
-#' @export
-between_class_neighbors.class_graph <- function(x, X, k=1,
-                                  weight_mode=c("heat", "normalized", "binary", "euclidean"),
-                                  sigma,
-                                  type=c("normal", "mutual", "asym"),...) {
+homogeneous_neighbors.class_graph <- function(x, X, k, weight_mode="heat", sigma=1) {
 
-  type <- match.arg(type)
-  weight_mode <- match.arg(weight_mode)
-  assert_that(k > 0)
+  cind <- x$class_indices
+  out <- do.call(rbind, lapply(cind, function(ci) {
+    m <- weighted_knn(X[ci,,drop=FALSE], k=k,
+                       FUN=get_neighbor_fun(weight_mode, len=length(cind), sigma=sigma), as="sparse")
 
-  if (missing(sigma)) {
-    sigma <- estimate_sigma(X)
-  }
 
-  wfun <- get_neighbor_fun(weight_mode, sigma, ncol(X))
-
-  M <- do.call(rbind, lapply(x$levels, function(lev) {
-    idx1 <- which(labels != lev)
-    idx2 <- which(labels == lev)
-
-    M <- weighted_knnx(X[idx1,,drop=FALSE], X[idx2,,drop=FALSE], k=k, FUN=wfun,
-                       type="asym",...)
-    Mind <- which(M > 0, arr.ind=TRUE)
-    cbind(idx2[Mind[,1]], idx1[Mind[,2]], M[Mind])
+    Tm <- as_triplet(m)
+    Tm[,1] <- ci[Tm[,1]]
+    Tm[,2] <- ci[Tm[,2]]
+    Tm
   }))
 
-
-  W <- Matrix::sparseMatrix(i=M[,1], j=M[,2], x=M[,3], dims=c(nrow(X), nrow(X)), use.last.ij = TRUE)
-
-  if (type == "normal") {
-    psparse(W, pmax)
-  } else if (type == "mutual") {
-    #psparse(W, pmin, return_triplet=return_triplet)
-    psparse(W, pmin)
-  } else if (type == "asym") {
-    W
-  }
+  ng <- neighbor_graph(igraph::graph_from_data_frame(out,directed=FALSE))
 
 }
+
+
+#' @inheritParams graph_weights
+#' @export
+within_class_neighbors.class_graph <- function(x, ng) {
+  Ac <- adjacency(x)
+  An <- adjacency(ng)
+  Aout <- Ac * An
+  neighbor_graph(Aout)
+}
+
+
+#' @inheritParams graph_weights
+#' @export
+between_class_neighbors.class_graph <- function(x, ng) {
+  Ac <- !adjacency(x)
+  An <- adjacency(ng)
+  Aout <- Ac * An
+  neighbor_graph(Aout)
+}
+
 
 #' @export
 discriminating_distance <- function(X, k=length(labels)/2, sigma,labels) {

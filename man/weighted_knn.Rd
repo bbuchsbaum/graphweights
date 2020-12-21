@@ -9,7 +9,7 @@ weighted_knn(
   k = 5,
   FUN = heat_kernel,
   type = c("normal", "mutual", "asym"),
-  return_triplet = FALSE,
+  as = c("igraph", "sparse"),
   ...
 )
 }
@@ -21,6 +21,8 @@ weighted_knn(
 \item{FUN}{the function used to convert euclidean distances to similarities}
 
 \item{type}{whether to compute 'normal' or 'mutual' k-nearest neighbors}
+
+\item{as}{return as type \code{sparseMatrix} ("sparse") or \code{igraph} ("graph")}
 }
 \description{
 weighted_knn

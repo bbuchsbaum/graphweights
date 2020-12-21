@@ -7,5 +7,5 @@
 neighbors(x, i, ...)
 }
 \description{
-neighbors of a set of nodes
+get the indices of neighbors of one or more vertices
 }

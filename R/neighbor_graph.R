@@ -1,27 +1,35 @@
 
 #' @export
-neighbor_graph <- function(G, params=list(), type=NULL, classes=NULL, ...) {
-  if (inherits(G, "Matrix") || inherits(G, "matrix")) {
-    G <- igraph::graph_from_adjacency_matrix(G, mode="undirected", weighted=TRUE)
-  }
-
-  assert_that(inherits(G, "igraph"), msg="'G' must be one of tyhe types 'matrix', 'Matrix' or 'igraph' types")
+neighbor_graph.igraph <- function(x, params=list(), type=NULL, classes=NULL, ...) {
 
   structure(list(
-            G=G,
+            G=x,
             params=params,
             ...),
             class=c(classes, "neighbor_graph"))
 }
 
+#' @export
+neighbor_graph.Matrix <- function(x, params=list(), type=NULL, classes=NULL, ...) {
+
+  G <- igraph::graph_from_adjacency_matrix(x, mode="undirected", weighted=TRUE)
+
+  structure(list(
+    G=G,
+    params=params,
+    ...),
+    class=c(classes, "neighbor_graph"))
+}
+
 
 #' @export
 adjacency.neighbor_graph <- function(x, attr="weight") {
-  igraph::as_adjacency_matrix(W_g_mutual, attr=attr)
+  igraph::as_adjacency_matrix(x$G, attr=attr)
 }
 
 #' @export
 laplacian.neighbor_graph <- function(x, normalized=FALSE) {
+  ## TODO normalize if requested
   A <- adjacency(x)
   D <- Matrix::Diagonal(x=rowSums(a))
   L <- D - A
@@ -30,7 +38,12 @@ laplacian.neighbor_graph <- function(x, normalized=FALSE) {
 
 #' @export
 neighbors.neighbor_graph <- function(x, i) {
-  igraph::adjacent_vertices(x,i)
+  if (!missing(i)) {
+    igraph::adjacent_vertices(x$G,i)
+  } else {
+    igraph::adjacent_vertices(x$G)
+  }
+
 }
 
 #' @export
@@ -48,12 +61,20 @@ node_density.neighbor_graph <- function(x, X) {
 }
 
 #' @export
+edges.neighbor_graph <- function(x) {
+  ret <- igraph::as_data_frame(cg$G, what="edges")
+  cbind(ret[,1], ret[,2])
+}
+
+
 non_neighbors.neighbor_graph <- function(x, i) {
-  ret <- lapply(i, function(j) {
-    which(x$G[j,] == 0)
-  })
-  names(ret) <- i
-  ret
+  #ret <- lapply(i, function(j) {
+  #  which(x$G[j,] == 0)
+  #})
+  #names(ret) <- i
+  #ret
+
+  stop("not implemented")
 }
 
 #' @export
