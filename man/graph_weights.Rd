@@ -7,7 +7,7 @@
 graph_weights(
   X,
   k = 5,
-  neighbor_mode = c("knn", "supervised", "knearest_misses", "epsilon"),
+  neighbor_mode = c("knn", "epsilon"),
   weight_mode = c("heat", "normalized", "binary", "euclidean", "cosine", "correlation"),
   type = c("normal", "mutual", "asym"),
   sigma,
@@ -43,8 +43,5 @@ X <- matrix(rnorm(100*100), 100, 100)
 sm <- graph_weights(X, neighbor_mode="knn",weight_mode="normalized", k=3)
 
 labels <- factor(rep(letters[1:4],5))
-sm2 <- graph_weights(X, neighbor_mode="supervised",k=3, labels=labels)
-
-sm3 <- graph_weights(X, neighbor_mode="knearest_misses",k=3, labels=labels, weight_mode="binary")
-sm4 <- graph_weights(X, neighbor_mode="knn",k=3, labels=labels, weight_mode="cosine")
+sm3 <- graph_weights(X, neighbor_mode="knn",k=3, labels=labels, weight_mode="cosine")
 }
