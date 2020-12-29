@@ -8,7 +8,7 @@ repulsion_graph(
   W,
   cg,
   method = c("binary", "weighted"),
-  threshold = 0.001,
+  threshold = 0,
   norm_fac = 10
 )
 }
@@ -27,4 +27,10 @@ labels <- factor(rep(1:5, each=20))
 cg <- class_graph(labels)
 W <- graph_weights(X, k=10)
 R <- repulsion_graph(W, cg, method="weighted")
+
+data(iris)
+X2 <- as.matrix(iris[,1:4])
+labels <- iris[,5]
+cg <- class_graph(labels)
+W <- graph_weights(X2, k=6)
 }

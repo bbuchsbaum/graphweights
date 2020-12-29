@@ -119,8 +119,14 @@ weighted_factor_sim <- function(des, wts=rep(1,ncol(des))/ncol(des)) {
 }
 
 
-
+#' estimate a reasonable bandwith parameter, sigma, for the heat kernel
+#'
+#' bandwidth estimation
+#'
 #' @export
+#' @param X the data matrix, samples are rows, features are columns
+#' @param prop the quantile of the frequency distribution of distances used to determine bandwidth parameter.
+#' @param nsamples the number of samples to draw from the data matrix
 estimate_sigma <- function(X, prop=.25, nsamples=500) {
   ## estimate sigma
   if (nrow(X) <= 500) {
