@@ -26,8 +26,9 @@ repulse_weight <- function(x1,x2, sigma=10) {
 #' labels <- iris[,5]
 #' cg <- class_graph(labels)
 #' W <- graph_weights(X2, k=6)
+#' R <- repulsion_graph(W, cg, method="weighted")
 repulsion_graph <- function(W, cg, method=c("binary", "weighted"), threshold=0,
-                            norm_fac=10) {
+                            norm_fac=1) {
   method <- match.arg(method)
   #cg <- class_graph(labels)
   #acg <- 1- (adjacency(cg) > threshold)
