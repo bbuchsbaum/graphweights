@@ -13,9 +13,16 @@
 #'
 #' a <- iris[,5]
 #' b <- iris[,5]
-#' bl = binary_label_matrix(a,b, type="d")
+#' bl <- binary_label_matrix(a,b, type="d")
 binary_label_matrix <- function(a, b, type=c("s", "d")) {
   type <- match.arg(type)
+  if (is.factor(a)) {
+    a <- as.character(a)
+  }
+
+  if (is.factor(b)) {
+    b <- as.character(b)
+  }
   assert_that(length(a) == length(b))
 
   levs <- unique(a)
@@ -28,7 +35,7 @@ binary_label_matrix <- function(a, b, type=c("s", "d")) {
       idx1 <- which(a == lev)
       idx2 <- which(b == lev)
     } else {
-      idx1 <- which(a != lev)
+      idx1 <- which(a == lev)
       idx2 <- which(b != lev)
     }
     if (length(idx1) > 0 && length(idx2) > 0) {
@@ -44,7 +51,7 @@ binary_label_matrix <- function(a, b, type=c("s", "d")) {
     stop("no overlapping levels in 'a' and 'b'")
   }
 
-  Reduce("+", mlist)
+  ret <- Reduce("+", mlist)
 }
 
 
