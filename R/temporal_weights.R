@@ -6,8 +6,14 @@
 #' @param weight_mode the type of weighting
 #' @param sigma the bandwidth in units of time
 #' @param window the window size in sampling units (assuming a regularily space grid)
-#' @importFrom rowr rollApply
 #' @export
+#'
+#' @import runner
+#'
+#' @examples
+#'
+#' time <- 1:100
+#' tadj <- temporal_adjacency(time, weight_mode="heat", sigma=2, window=3)
 temporal_adjacency <- function(time, weight_mode = c("heat", "binary"), sigma=1, window=2) {
   weight_mode <- match.arg(weight_mode)
   len <- length(time)
@@ -20,14 +26,25 @@ temporal_adjacency <- function(time, weight_mode = c("heat", "binary"), sigma=1,
     stop()
   }
 
-  m <- do.call(rbind, rollApply(time, window=window, function(t) {
+  f <- function(t) {
     if (length(t) >= 1) {
       h <- wfun(sqrt((t[1] - t)^2))
       cbind(t[1], t, h)
     } else {
       NULL
     }
-  }))
+  }
+
+  m  <- do.call(rbind, runner(time, f, k=window, lag=0, simplify=TRUE))
+
+  # m <- do.call(rbind, rollApply(time, window=window, function(t) {
+  #   if (length(t) >= 1) {
+  #     h <- wfun(sqrt((t[1] - t)^2))
+  #     cbind(t[1], t, h)
+  #   } else {
+  #     NULL
+  #   }
+  # }))
 
   sm <- sparseMatrix(i=m[,1], j=m[,2], x=m[,3], dims=c(len, len))
   sm <- (sm + t(sm))

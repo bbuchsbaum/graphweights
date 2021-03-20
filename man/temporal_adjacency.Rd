@@ -23,3 +23,8 @@ temporal_adjacency(
 \description{
 temporal_adjacency
 }
+\examples{
+
+time <- 1:100
+tadj <- temporal_adjacency(time, weight_mode="heat", sigma=2, window=3)
+}
