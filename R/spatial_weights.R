@@ -1,3 +1,11 @@
+#' spatial autocorrelation
+#'
+spatial_autocor <- function(X, cds, radius=8, nsamples=100, inverse=FALSE) {
+  assertthat::assert_that(window > 1 && window < ncol(X))
+  ret <- rflann::Neighbour(cds, cds, radius^2)
+
+}
+
 
 #' pairwise_adjacency
 #'

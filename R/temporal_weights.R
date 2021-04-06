@@ -1,3 +1,35 @@
+#' temporal autocorrelation
+#'
+#' Compute a sparse temporal autocorrelation matrix for a temporal window
+#'
+#' @param X the data matrix, columns are variables, rows are time-points
+#' @param window th number of time-points included in the auto-correlation band
+#' @param inverse whether to return the inverse correlation matrix uisng `corpcor::invcor.shrink`
+#' @export
+temporal_autocor <- function(X, window=3, inverse=FALSE) {
+  assertthat::assert_that(window > 1 && window < ncol(X))
+  cmat <- cor(X)
+  if (inverse) {
+    cmat <- corpcor::invcor.shrink(cmat)
+  }
+
+  rowmat <- matrix(rep(1:nrow(cmat), ncol(cmat)), nrow(cmat), ncol(cmat))
+  colmat <- matrix(rep(1:ncol(cmat), each=nrow(cmat)), nrow(cmat), ncol(cmat))
+  delta <- abs(rowmat - colmat)
+
+  cvals <- sapply(1:window, function(i) {
+    ind <- which(delta == i)
+    mean(cmat[ind])
+  })
+
+  bmat <- matrix(unlist(cvals), nrow(cmat), length(cvals) , byrow=TRUE)
+  bLis <- as.data.frame(bmat)
+  A <- bandSparse(nrow(cmat), k = 1:window, diag = bLis, symmetric=TRUE)
+  A
+
+  #fill cmat as distance matrix()
+}
+
 
 
 #' temporal_adjacency
