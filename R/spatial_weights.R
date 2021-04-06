@@ -66,7 +66,8 @@ pairwise_adjacency <- function(Xcoords, Xfeats, fself, fbetween) {
 #' coord_mat <- as.matrix(expand.grid(x=1:3, y=1:3, z=1:3))
 #' lp <- spatial_laplacian(coord_mat)
 #' all(dim(lp) == c(27,27))
-spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27,weight_mode=c("binary", "heat"), sigma=dthresh/2,
+spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27,weight_mode=c("binary", "heat"),
+                              sigma=dthresh/2,
                               normalized=TRUE, stochastic=FALSE) {
 
   weight_mode <- match.arg(weight_mode)
@@ -91,6 +92,12 @@ spatial_lap_of_gauss <- function(coord_mat, sigma=2) {
   #lap <- spatial_laplacian(coord_mat, weight_mode="binary", nnk=ncol(coord_mat)^3)
   adj <- spatial_smoother(coord_mat,  sigma=sigma)
   lap %*% adj
+}
+
+difference_of_gauss <- function(coord_mat, sigma1=2, sigma2=sigma1 * 1.6, nnk=3^(ncol(coord_mat))) {
+  adj1 <- spatial_smoother(coord_mat,  sigma=sigma1, stochastic=TRUE, nnk=nnk)
+  adj2 <- spatial_smoother(coord_mat,  sigma=sigma2, stochastic=TRUE, nnk=nnk)
+  adj1 - adj2
 }
 
 
