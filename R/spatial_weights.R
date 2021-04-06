@@ -1,9 +1,39 @@
 #' spatial autocorrelation
 #'
-spatial_autocor <- function(X, cds, radius=8, nsamples=100, inverse=FALSE) {
-  assertthat::assert_that(window > 1 && window < ncol(X))
-  ret <- rflann::Neighbour(cds, cds, radius^2)
+#' @importFrom mgcv gam
+#' @export
+spatial_autocor <- function(X, cds, radius=8, nsamples=1000) {
+  assertthat::assert_that(radius > 0)
+  if (nrow(cds) < nsamples) {
+    nsamples <- nrow(cds)
+  }
 
+  nabe <- rflann::RadiusSearch(cds, cds,radius=radius)
+  ids <- sample(1:nrow(nabe$indices), nsamples)
+
+  ret <- do.call(rbind, lapply(ids, function(id) {
+    ind <- nabe$indices[id,]
+    d <- nabe$distances[id,]
+    valmat <- X[,ind[-1]]
+    vals <- X[,ind[1]]
+    cvals <- cor(vals,valmat)
+    data.frame(cor=as.vector(cvals), d=sqrt(d[-1]))
+  }))
+
+  gam.1 <- gam(cor ~ s(d), data=ret)
+
+  trip <- do.call(rbind, lapply(1:nrow(cds), function(i) {
+    i <- nabe$indices[i,1]
+    j <- nabe$indices[i,-1]
+    d <- sqrt(nabe$distances[i,-1])
+    cbind(i,j,d)
+  }))
+
+  trip[,3] <- predict(gam.1, newdata=data.frame(d=trip[,3]))
+  smat <- Matrix::sparseMatrix(i=trip[,1], j=trip[,2], x=trip[,3], dims=c(nrow(cds),
+                                                                  nrow(cds)))
+
+  smat
 }
 
 
