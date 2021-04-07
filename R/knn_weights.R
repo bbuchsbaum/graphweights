@@ -167,11 +167,12 @@ estimate_sigma <- function(X, prop=.25, nsamples=500) {
 #'
 #' labels <- factor(rep(letters[1:4],5))
 #' sm3 <- graph_weights(X, neighbor_mode="knn",k=3, labels=labels, weight_mode="cosine")
+#' sm4 <- graph_weights(X, neighbor_mode="knn",k=100, labels=labels, weight_mode="cosine")
 graph_weights <- function(X, k=5, neighbor_mode=c("knn", "epsilon"),
                                  weight_mode=c("heat", "normalized", "binary", "euclidean",
                                                "cosine", "correlation"),
                                  type=c("normal", "mutual", "asym"),
-                                 sigma,eps=NULL, labels=NULL, ...) {
+                                 sigma=1,eps=NULL, labels=NULL, ...) {
 
   neighbor_mode = match.arg(neighbor_mode)
   weight_mode = match.arg(weight_mode)
@@ -349,7 +350,7 @@ weighted_knn <- function(X, k=5, FUN=heat_kernel,
   type <- match.arg(type)
   #nn <- FNN::get.knn(X, k=k)
   #nn <- nabor::knn(X, k=k)
-  nn <- rflann::Neighbour(X, X,k=k+1, ...)
+  nn <- rflann::Neighbour(X, X,k=min(k+1, nrow(X)), ...)
   #nnd <- nn$nn.dist + 1e-16
 
   nnd <- sqrt(nn$distances[, 2:ncol(nn$distances),drop=FALSE] + 1e-16)
