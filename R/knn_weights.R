@@ -127,7 +127,7 @@ weighted_factor_sim <- function(des, wts=rep(1,ncol(des))/ncol(des)) {
 #' @param X the data matrix, samples are rows, features are columns
 #' @param prop the quantile of the frequency distribution of distances used to determine bandwidth parameter.
 #' @param nsamples the number of samples to draw from the data matrix
-estimate_sigma <- function(X, prop=.25, nsamples=500) {
+estimate_sigma <- function(X, prop=.25, nsamples=500, normalized=FALSE) {
   ## estimate sigma
   if (nrow(X) <= 500) {
     nsamples <- nrow(X)
@@ -138,6 +138,8 @@ estimate_sigma <- function(X, prop=.25, nsamples=500) {
   }
 
   d <- dist(X[sam,])
+
+
   qs <- quantile(d[d!=0],seq(prop, 1,by=.1))
   if (all(is.na(qs))) {
     stop("could not estimate sigma, all quantiles are NA ...")
@@ -172,7 +174,7 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "epsilon"),
                                  weight_mode=c("heat", "normalized", "binary", "euclidean",
                                                "cosine", "correlation"),
                                  type=c("normal", "mutual", "asym"),
-                                 sigma=1,eps=NULL, labels=NULL, ...) {
+                                 sigma=NULL,eps=NULL, labels=NULL, ...) {
 
   neighbor_mode = match.arg(neighbor_mode)
   weight_mode = match.arg(weight_mode)
@@ -184,11 +186,12 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "epsilon"),
     X <- t(apply(X, 1, function(x) x/sqrt(sum(x^2))))
   }
 
-  if ((missing(sigma) || is.null(sigma)) && (weight_mode %in% c("heat", "normalized"))) {
+  #browser()
+  if ((is.null(sigma)) && (weight_mode %in% c("heat", "normalized"))) {
     if (weight_mode == "heat") {
       sigma <- estimate_sigma(X)
-    } else {
-      sigma <- estimate_sigma(X)
+    } else if (weight_mode == "normalized") {
+      sigma <- estimate_sigma(X, normalized=TRUE)
     }
     message("sigma is ", sigma)
   }
