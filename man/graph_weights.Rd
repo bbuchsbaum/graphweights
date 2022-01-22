@@ -10,7 +10,7 @@ graph_weights(
   neighbor_mode = c("knn", "epsilon"),
   weight_mode = c("heat", "normalized", "binary", "euclidean", "cosine", "correlation"),
   type = c("normal", "mutual", "asym"),
-  sigma,
+  sigma = NULL,
   eps = NULL,
   labels = NULL,
   ...
@@ -44,4 +44,5 @@ sm <- graph_weights(X, neighbor_mode="knn",weight_mode="normalized", k=3)
 
 labels <- factor(rep(letters[1:4],5))
 sm3 <- graph_weights(X, neighbor_mode="knn",k=3, labels=labels, weight_mode="cosine")
+sm4 <- graph_weights(X, neighbor_mode="knn",k=100, labels=labels, weight_mode="cosine")
 }

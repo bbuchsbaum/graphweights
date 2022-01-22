@@ -4,7 +4,7 @@
 \alias{estimate_sigma}
 \title{estimate a reasonable bandwith parameter, sigma, for the heat kernel}
 \usage{
-estimate_sigma(X, prop = 0.25, nsamples = 500)
+estimate_sigma(X, prop = 0.25, nsamples = 500, normalized = FALSE)
 }
 \arguments{
 \item{X}{the data matrix, samples are rows, features are columns}

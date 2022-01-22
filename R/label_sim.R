@@ -179,6 +179,8 @@ label_matrix <- function(a, b, type=c("s", "d"), return_matrix=TRUE, simfun=NULL
   }
 }
 
+
+#' @export
 expand_similarity <- function(labels, sim_mat, threshold=0) {
   cnames <- colnames(sim_mat)
   rnames <- rownames(sim_mat)
