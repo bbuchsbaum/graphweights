@@ -181,7 +181,7 @@ label_matrix <- function(a, b, type=c("s", "d"), return_matrix=TRUE, simfun=NULL
 
 
 #' @export
-expand_similarity <- function(labels, sim_mat, threshold=0) {
+expand_similarity <- function(labels, sim_mat, threshold=0, above=TRUE) {
   cnames <- colnames(sim_mat)
   rnames <- rownames(sim_mat)
   assertthat::assert_that(!(is.null(cnames) && is.null(rnames)))
@@ -201,7 +201,13 @@ expand_similarity <- function(labels, sim_mat, threshold=0) {
     stop(paste("no matches between `labels` and similarity matrix entries"))
   }
 
-  out <- expand_similarity_cpp(mind, sim_mat, threshold)
+  mind[is.na(mind)] <- 0
+
+  out <- if (above) {
+    expand_similarity_cpp(mind, sim_mat, threshold)
+  } else {
+    expand_similarity_below_cpp(mind, sim_mat, threshold)
+  }
 
   if (length(out) == 0) {
     stop("similarity matching failed: no returned entries")

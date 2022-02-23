@@ -5,6 +5,10 @@ expand_similarity_cpp <- function(indices, simmat, thresh) {
     .Call('_neighborweights_expand_similarity_cpp', PACKAGE = 'neighborweights', indices, simmat, thresh)
 }
 
+expand_similarity_below_cpp <- function(indices, simmat, thresh) {
+    .Call('_neighborweights_expand_similarity_below_cpp', PACKAGE = 'neighborweights', indices, simmat, thresh)
+}
+
 norm_heat_kernel <- function(x1, x2, sigma) {
     .Call('_neighborweights_norm_heat_kernel', PACKAGE = 'neighborweights', x1, x2, sigma)
 }

@@ -23,6 +23,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// expand_similarity_below_cpp
+List expand_similarity_below_cpp(IntegerVector indices, NumericMatrix simmat, double thresh);
+RcppExport SEXP _neighborweights_expand_similarity_below_cpp(SEXP indicesSEXP, SEXP simmatSEXP, SEXP threshSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type indices(indicesSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type simmat(simmatSEXP);
+    Rcpp::traits::input_parameter< double >::type thresh(threshSEXP);
+    rcpp_result_gen = Rcpp::wrap(expand_similarity_below_cpp(indices, simmat, thresh));
+    return rcpp_result_gen;
+END_RCPP
+}
 // norm_heat_kernel
 double norm_heat_kernel(NumericVector x1, NumericVector x2, double sigma);
 RcppExport SEXP _neighborweights_norm_heat_kernel(SEXP x1SEXP, SEXP x2SEXP, SEXP sigmaSEXP) {
@@ -119,6 +132,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_neighborweights_expand_similarity_cpp", (DL_FUNC) &_neighborweights_expand_similarity_cpp, 3},
+    {"_neighborweights_expand_similarity_below_cpp", (DL_FUNC) &_neighborweights_expand_similarity_below_cpp, 3},
     {"_neighborweights_norm_heat_kernel", (DL_FUNC) &_neighborweights_norm_heat_kernel, 3},
     {"_neighborweights_order_vec", (DL_FUNC) &_neighborweights_order_vec, 1},
     {"_neighborweights_cross_fspatial_weights", (DL_FUNC) &_neighborweights_cross_fspatial_weights, 10},

@@ -33,6 +33,9 @@ List expand_similarity_cpp(IntegerVector indices, NumericMatrix simmat, double t
       } else {
         int r = indices(i)-1;
         int c = indices(j)-1;
+        if (r < 0 || c < 0) {
+          continue;
+        }
         if (simmat(r,c) > thresh) {
           NumericVector ii = NumericVector::create(i+1,j+1,simmat(r,c));
           triplets.push_back(ii);
@@ -43,6 +46,32 @@ List expand_similarity_cpp(IntegerVector indices, NumericMatrix simmat, double t
   }
   return Rcpp::wrap(triplets);
 }
+
+// [[Rcpp::export]]
+List expand_similarity_below_cpp(IntegerVector indices, NumericMatrix simmat, double thresh ) {
+  int n = indices.length();
+  //List triplets;
+
+  std::vector<NumericVector> triplets;
+
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
+      if (j > i) {
+        continue;
+      } else {
+        int r = indices(i)-1;
+        int c = indices(j)-1;
+        if (simmat(r,c) < thresh) {
+          NumericVector ii = NumericVector::create(i+1,j+1,simmat(r,c));
+          triplets.push_back(ii);
+        }
+
+      }
+    }
+  }
+  return Rcpp::wrap(triplets);
+}
+
 
 // [[Rcpp::export]]
 double norm_heat_kernel(NumericVector x1, NumericVector x2, double sigma) {
