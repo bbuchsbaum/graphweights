@@ -22,16 +22,26 @@ spatial_constraints <- function(coords, nblocks=1,
                                 nnk_between=1,
                                 weight_mode_within="heat",
                                 weight_mode_between="binary",
-                                variable_weights=rep(1, ncol(coords)*nblocks), verbose=FALSE) {
+                                variable_weights=1, verbose=FALSE) {
 
   assert_that(shrinkage_factor > 0 & shrinkage_factor <= 1)
+
 
   if (is.list(coords)) {
     assert_that(length(coords) == nblocks)
     coords <- lapply(coords, as.matrix)
+    nvars <- sum(sapply(coords, nrow))
   } else {
     coords <- as.matrix(coords)
+    nvars <- nrow(coords) * nblocks
   }
+
+  if (length(variable_weights) == 1) {
+    variable_weights <- rep(1, nvars)
+  } else {
+    assert_that(length(variable_weights) == nvars)
+  }
+
 
   if (verbose) {
     message("spatial_contraints: computing spatial adjacency (within)")
