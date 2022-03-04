@@ -12,7 +12,7 @@
 #' @param nnk_between the maximum number of nearest neighbors for between block smoother
 #' @param weight_mode_within the within block nearest neighbor weight_mode ("heat" or "binary")
 #' @param weight_mode_between the between block nearest neighbor weight_mode ("heat" or "binary")
-#' @param variable_weights a set of per variable weights
+#' @param variable_weights a vector of per-variable weights
 #' @export
 spatial_constraints <- function(coords, nblocks=1,
                                 sigma_within=5,
@@ -163,8 +163,8 @@ spatial_constraints <- function(coords, nblocks=1,
 
 }
 
-
-#' @export
+#' feature weighted spatial constraints
+#'
 #' @examples
 #'
 #' coords <- as.matrix(expand.grid(1:10, 1:10))

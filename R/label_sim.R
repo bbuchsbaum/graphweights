@@ -1,5 +1,8 @@
 
-
+#' create a binary adjaceny matrix
+#'
+#' Given a set of labels `a` and `b`, construct a binary adjacency matrix containing edges when `a==b`.
+#'
 #' @export
 #' @inheritParams label_matrix
 #' @importFrom Matrix sparseVector tcrossprod

@@ -1,3 +1,8 @@
+#' construct a class_graph
+#'
+#' A graph in which members of the same class have edges
+#'
+#'
 #' @export
 #' @param labels the class label vector
 #' @importFrom Matrix sparseVector tcrossprod Matrix t

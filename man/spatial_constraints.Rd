@@ -14,7 +14,7 @@ spatial_constraints(
   nnk_between = 1,
   weight_mode_within = "heat",
   weight_mode_between = "binary",
-  variable_weights = rep(1, ncol(coords) * nblocks),
+  variable_weights = 1,
   verbose = FALSE
 )
 }
