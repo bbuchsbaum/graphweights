@@ -1,10 +1,21 @@
-#' temporal autocorrelation
+#' Compute the temporal autocorrelation of a matrix
 #'
-#' Compute a sparse temporal autocorrelation matrix for a temporal window
+#' This function computes the temporal autocorrelation of a given matrix using a specified window size and
+#' optionally inverts the correlation matrix.
 #'
-#' @param X the data matrix, columns are variables, rows are time-points
-#' @param window th number of time-points included in the auto-correlation band
-#' @param inverse whether to return the inverse correlation matrix uisng `corpcor::invcor.shrink`
+#' @param X A numeric matrix for which to compute the temporal autocorrelation
+#' @param window integer, the window size for computing the autocorrelation, must be between 1 and ncol(X) (default is 3)
+#' @param inverse logical, whether to compute the inverse of the correlation matrix (default is FALSE)
+#'
+#' @return A sparse symmetric matrix representing the computed temporal autocorrelation
+#'
+#' @examples
+#' # Create an example matrix
+#' X <- matrix(rnorm(50), nrow = 10, ncol = 5)
+#'
+#' # Compute the temporal autocorrelation
+#' result <- temporal_autocor(X, window = 2)
+#'
 #' @export
 temporal_autocor <- function(X, window=3, inverse=FALSE) {
   assertthat::assert_that(window > 1 && window < ncol(X))
@@ -22,7 +33,7 @@ temporal_autocor <- function(X, window=3, inverse=FALSE) {
     mean(cmat[ind])
   })
 
-  bmat <- matrix(unlist(cvals), nrow(cmat), length(cvals) , byrow=TRUE)
+  bmat <- matrix(unlist(cvals), nrow(cmat), length(cvals), byrow=TRUE)
   bLis <- as.data.frame(bmat)
   A <- bandSparse(nrow(cmat), k = 1:window, diag = bLis, symmetric=TRUE)
   A
@@ -31,21 +42,26 @@ temporal_autocor <- function(X, window=3, inverse=FALSE) {
 }
 
 
-
-#' temporal_adjacency
+#' Compute the temporal adjacency matrix of a time series
 #'
-#' @param time the time vector
-#' @param weight_mode the type of weighting
-#' @param sigma the bandwidth in units of time
-#' @param window the window size in sampling units (assuming a regularily space grid)
-#' @export
+#' This function computes the temporal adjacency matrix of a given time series using a specified weight mode,
+#' sigma, and window size.
 #'
-#' @import runner
+#' @param time A numeric vector representing a time series
+#' @param weight_mode Character, the mode for computing weights, either "heat" or "binary" (default is "heat")
+#' @param sigma Numeric, the sigma parameter for the heat kernel (default is 1)
+#' @param window Integer, the window size for computing adjacency (default is 2)
+#'
+#' @return A sparse symmetric matrix representing the computed temporal adjacency
 #'
 #' @examples
+#' # Create an example time series
+#' time <- 1:10
 #'
-#' time <- 1:100
-#' tadj <- temporal_adjacency(time, weight_mode="heat", sigma=2, window=3)
+#' # Compute the temporal adjacency matrix using the heat weight mode
+#' result <- temporal_adjacency(time, weight_mode = "heat", sigma = 1, window = 2)
+#'
+#' @export
 temporal_adjacency <- function(time, weight_mode = c("heat", "binary"), sigma=1, window=2) {
   weight_mode <- match.arg(weight_mode)
   len <- length(time)
@@ -85,9 +101,25 @@ temporal_adjacency <- function(time, weight_mode = c("heat", "binary"), sigma=1,
 
 }
 
-#' temporal_laplacian
+#' Compute the temporal Laplacian matrix of a time series
 #'
-#' @inheritParams temporal_adjacency
+#' This function computes the temporal Laplacian matrix of a given time series using a specified weight mode,
+#' sigma, and window size.
+#'
+#' @param time A numeric vector representing a time series
+#' @param weight_mode Character, the mode for computing weights, either "heat" or "binary" (default is "heat")
+#' @param sigma Numeric, the sigma parameter for the heat kernel (default is 1)
+#' @param window Integer, the window size for computing adjacency (default is 2)
+#'
+#' @return A sparse symmetric matrix representing the computed temporal Laplacian
+#'
+#' @examples
+#' # Create an example time series
+#' time <- 1:10
+#'
+#' # Compute the temporal Laplacian matrix using the heat weight mode
+#' result <- temporal_laplacian(time, weight_mode = "heat", sigma = 1, window = 2)
+#'
 #' @export
 temporal_laplacian <- function(time, weight_mode = c("heat", "binary"), sigma=1, window=2) {
   weight_mode <- match.arg(weight_mode)

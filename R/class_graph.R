@@ -1,10 +1,19 @@
-#' construct a class_graph
+#' Construct a class_graph
 #'
-#' A graph in which members of the same class have edges
+#' A graph in which members of the same class have edges.
 #'
+#' @param labels A vector of class labels.
+#' @param sparse A logical value, indicating whether to use sparse matrices in the computation. Default is TRUE.
 #'
-#' @export
-#' @param labels the class label vector
+#' @return A class_graph object, which is a list containing the following components:
+#'   - adjacency: A matrix representing the adjacency of the graph.
+#'   - params: A list of parameters used in the construction of the graph.
+#'   - labels: A vector of class labels.
+#'   - class_indices: A list of vectors, each containing the indices of elements belonging to a specific class.
+#'   - class_freq: A table of frequencies for each class.
+#'   - levels: A vector of unique class labels.
+#'   - classes: A character string indicating the type of graph ("class_graph").
+#'
 #' @importFrom Matrix sparseVector tcrossprod Matrix t
 #'
 #' @examples
@@ -12,6 +21,7 @@
 #' labels <- iris[,5]
 #' cg <- class_graph(labels)
 #'
+#' @export
 class_graph <- function(labels, sparse=TRUE) {
   labels <- as.factor(labels)
   out <- Reduce("+", lapply(levels(labels), function(lev) {
@@ -50,125 +60,6 @@ class_means.class_graph <- function(x, X) {
 }
 
 
-# local scatter
-locality_preserving_scatter.class_graph <- function(x, ng, X) {
-  dens <- node_density(ng)
-  within_class_neighbors(x)
-  ## need knn and class_graph
-}
-
-
-# equation (9,10)
-
-#' @export
-intraclass_scatter.class_graph <- function(x, X, q=1.5, mc.cores=1) {
-  dens <-  intraclass_density(x, X, q, mc.cores)
-  ipairs <- intraclass_pairs(x)
-  ret <- lapply(1:nrow(ipairs), function(n) {
-    i <- ipairs[n,1]
-    j <- ipairs[n,2]
-    xi <- X[i,]
-    xj <- X[j,]
-    dij <- sum( (xi - xj)^2)
-    edij <- exp(-dij/dens[i])
-    w <- 1/2 * edij * (1 + edij)
-    cbind(i, j, w)
-  })
-
-  triplet <- do.call(rbind, ret)
-  W <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3])
-  W <- (W + t(W))/2
-}
-
-# equation (9,10)
-
-#' @export
-interclass_scatter.class_graph <- function(x, X, q=1.5, mc.cores=1) {
-  dens <-  interclass_density(x, X, q, mc.cores)
-  ipairs <- interclass_pairs(x)
-
-  ## need to go from i to j and j to i
-  ret <- lapply(1:nrow(ipairs), function(n) {
-    i <- ipairs[n,1]
-    j <- ipairs[n,2]
-    xi <- X[i,]
-    xj <- X[j,]
-    dij <- sum( (xi - xj)^2)
-    edij <- exp(-dij/dens[i])
-    w <- 1/2 * edij * (1 - edij)
-    cbind(i, j, w)
-  })
-
-  triplet <- do.call(rbind, ret)
-  W <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3])
-  W <- (W + t(W))/2
-}
-
-
-## Discriminative globality and locality preserving graph embedding for
-## dimensionality reduction
-## equations 11 (12)
-#' @export
-intraclass_density.class_graph <- function(x, X, q=1.5, mc.cores=1) {
-  assert_that(nrow(X) == nvertices(x))
-  labs <- x$labels
-
-  #1/(n_c[i]^q) * sum((x_i - x_j)^2) for all x_i
-  ret <- parallel::mclapply(x$levels, function(l) {
-    idx <- which(labs == l)
-    xc <- X[idx,]
-    sapply(1:length(idx), function(i) {
-      S <- sum(sweep(xc[-i,], 2, xc[i,], "-")^2)
-      1/(length(idx)^q) * S
-    })
-  })
-
-  dens <- numeric(nrow(X))
-
-  for (i in 1:nclasses(x)) {
-    dens[x$class_indices[[i]]] <- ret[[i]]
-  }
-
-  dens
-}
-
-## equation 18, 19
-#' @export
-interclass_density.class_graph <- function(x, X, q=2, mc.cores=1) {
-  assert_that(nrow(X) == nvertices(x))
-  labs <- x$labels
-
-  vind <- 1:nvertices(x)
-  sapply(1:nrow(X), function(i) {
-    #nabes <- neighbors(x, i)[[1]]
-    #non <- vind[vind %in% nabes]
-    non <- vind[-match(nabes,vind)]
-    #non <- which(!(x$data[i,,drop=FALSE] == 1))
-    S <- sum(sweep(X[non,], 2, X[i,], "-")^2)
-    1/(length(non)^q) * S
-  })
-
-}
-
-#' @export
-intraclass_pairs.class_graph <- function(x) {
-  ## convert to triplet-style matrix?
-  do.call(rbind, lapply(1:length(x$class_indices), function(i) {
-    expand.grid(x=x$class_indices[[i]], y=x$class_indices[[i]])
-  }))
-
-}
-
-#' @export
-interclass_pairs.class_graph <- function(x) {
-  do.call(rbind, lapply(1:length(x$class_indices), function(i) {
-    expand.grid(x=x$class_indices[[i]], y=unlist(x$class_indices[-i]))
-  }))
-
-}
-
-
-
 heterogeneous_neighbors.class_graph <- function(x, X, k, weight_mode="binary", sigma=.7) {
   allind <- 1:nrow(X)
   cind <- x$class_indices
@@ -205,6 +96,15 @@ homogeneous_neighbors.class_graph <- function(x, X, k, weight_mode="heat", sigma
 }
 
 
+#' Within-Class Neighbors for class_graph Objects
+#'
+#' Compute the within-class neighbors of a class_graph object.
+#'
+#' @param x A class_graph object.
+#' @param ng A neighbor graph object.
+#'
+#' @return A neighbor_graph object representing the within-class neighbors of the input class_graph.
+#'
 #' @inheritParams graph_weights
 #' @export
 within_class_neighbors.class_graph <- function(x, ng) {

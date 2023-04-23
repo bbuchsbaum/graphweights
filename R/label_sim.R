@@ -1,16 +1,21 @@
 
-#' create a binary adjaceny matrix
+#' Create a Binary Label Adjacency Matrix
 #'
-#' Given a set of labels `a` and `b`, construct a binary adjacency matrix containing edges when `a==b`.
+#' Constructs a binary adjacency matrix based on two sets of labels `a` and `b`, creating edges when `a` and `b` have the same or different labels, depending on the `type` parameter.
 #'
-#' @export
-#' @inheritParams label_matrix
-#' @importFrom Matrix sparseVector tcrossprod
+#' @param a A vector of labels for the first set of data points.
+#' @param b A vector of labels for the second set of data points (default: NULL). If NULL, `b` will be set to `a`.
+#' @param type A character specifying the type of adjacency matrix to create, either "s" for same labels or "d" for different labels (default: "s").
+#'
+#' @return A binary adjacency matrix with edges determined by the label relationships between `a` and `b`.
+#'
 #' @examples
 #' data(iris)
-#'
 #' a <- iris[,5]
 #' bl <- binary_label_matrix(a, type="d")
+#'
+#' @export
+#' @importFrom Matrix sparseVector tcrossprod
 binary_label_matrix <- function(a, b=NULL, type=c("s", "d")) {
   type <- match.arg(type)
   if (is.null(b)) {
@@ -57,6 +62,19 @@ binary_label_matrix <- function(a, b=NULL, type=c("s", "d")) {
 }
 
 
+#' Create a Label Adjacency Matrix
+#'
+#' Constructs a label adjacency matrix based on two sets of labels `a` and `b`, creating edges depending on the `type` parameter and the similarity function `simfun`.
+#'
+#' @param a A vector of labels for the first set of data points.
+#' @param b A vector of labels for the second set of data points.
+#' @param type A character specifying the type of adjacency matrix to create, either "s" for same labels or "d" for different labels (default: "s").
+#' @param simfun A function to determine the similarity between the labels (default: NULL). If NULL, the function will use "==" for type "s" and "!=" for type "d".
+#' @param dim1 The dimension of the first set of data points (default: length(a)).
+#' @param dim2 The dimension of the second set of data points (default: length(b)).
+#'
+#' @return A label adjacency matrix with edges determined by the label relationships between `a` and `b` and the similarity function `simfun`.
+#'
 #' @export
 label_matrix2 <- function(a, b, type=c("s", "d"), simfun=NULL, dim1=length(a),
                           dim2=length(b)) {
@@ -95,12 +113,19 @@ label_matrix2 <- function(a, b, type=c("s", "d"), simfun=NULL, dim1=length(a),
 
 
 
-#' convolve_matrix
+#' Convolve a Data Matrix with a Kernel Matrix
 #'
-#' @param X the data matrix
-#' @param Kern the Kernel used to smooth the matrix
+#' Performs a convolution operation on a given data matrix `X` using a specified kernel matrix `Kern`.
+#'
+#' @param X A data matrix to be convolved.
+#' @param Kern A kernel matrix used for the convolution.
+#' @param normalize A logical flag indicating whether to normalize the kernel matrix before performing the convolution (default: FALSE).
+#'
+#' @return A matrix resulting from the convolution of the data matrix `X` with the kernel matrix `Kern`.
+#'
 #' @importFrom Matrix Diagonal
 #' @importFrom assertthat assert_that
+#' @export
 convolve_matrix <- function(X, Kern, normalize=FALSE) {
   assert_that(ncol(Kern) == nrow(Kern))
   assert_that(ncol(X) == nrow(Kern))
@@ -116,15 +141,22 @@ convolve_matrix <- function(X, Kern, normalize=FALSE) {
 
 
 
-#' label_matrix
+#' Compute a Similarity or Distance Matrix for Categorical Labels
 #'
-#' @param a the first categorical label vector
-#' @param b the second categorical label vector
-#' @param type construct a a similarity ('s') or distance ('d') matrix.
-#' @param return_matrix return as a sparse matrix or a triplet.
-#' @param the length of the first dimension
-#' @param the length of the second dimension
+#' Calculates a similarity or distance matrix between two categorical label vectors `a` and `b`.
+#'
+#' @param a The first categorical label vector.
+#' @param b The second categorical label vector.
+#' @param type The type of matrix to construct, either a similarity ('s') or distance ('d') matrix.
+#' @param return_matrix A logical flag indicating whether to return the result as a sparse matrix (default: TRUE) or a triplet.
+#' @param simfun An optional user-provided similarity function. If not provided, a default similarity function will be used.
+#' @param dim1 The length of the first dimension.
+#' @param dim2 The length of the second dimension.
+#'
+#' @return A similarity or distance matrix between the categorical label vectors `a` and `b`, either as a sparse matrix or a triplet.
+#'
 #' @importFrom Matrix sparseMatrix
+#' @export
 label_matrix <- function(a, b, type=c("s", "d"), return_matrix=TRUE, simfun=NULL , dim1=length(a), dim2=length(b)) {
   type <- match.arg(type)
 
@@ -183,8 +215,19 @@ label_matrix <- function(a, b, type=c("s", "d"), return_matrix=TRUE, simfun=NULL
 }
 
 
+#' Expand Similarity Between Labels Based on a Precomputed Similarity Matrix
+#'
+#' Expands the similarity between labels based on a precomputed similarity matrix, `sim_mat`, with either above-threshold or below-threshold values depending on the value of the `above` parameter.
+#'
+#' @param labels A vector of labels for which the similarities will be expanded.
+#' @param sim_mat A precomputed similarity matrix containing similarities between the unique labels.
+#' @param threshold A threshold value used to filter the expanded similarity values (default: 0).
+#' @param above A boolean flag indicating whether to include the values above the threshold (default: TRUE) or below the threshold (FALSE).
+#'
+#' @return A sparse symmetric similarity matrix with the expanded similarity values.
+#'
 #' @export
-expand_similarity <- function(labels, sim_mat, threshold=0, above=TRUE) {
+expand_label_similarity <- function(labels, sim_mat, threshold=0, above=TRUE) {
   cnames <- colnames(sim_mat)
   rnames <- rownames(sim_mat)
   assertthat::assert_that(!(is.null(cnames) && is.null(rnames)))

@@ -1,19 +1,23 @@
 Package: neighborweights
-Title: What the Package Does (one line, title case)
-Version: 0.0.0.9000
-Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+Title: Constructing Adjacency Matrices Based on Spatial and Feature Similarity
+Version: 0.1.0
+Authors@R: person("Bradley R.", "Buchsbaum", email = "brad.buchsbaum@gmail.com", role = c("aut", "cre"))
+Description: A collection of functions for constructing adjacency matrices based on spatial and feature-based similarity between data points. The package provides various methods to create spatial and feature-weighted adjacency matrices, enabling users to analyze and visualize complex data relationships.
 Depends:
     R (>= 3.3.2)
-License: What license is it under?
+License: MIT
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.3
 Imports:
     Rcpp (>= 0.11.3),
     Matrix,
     nabor,
-    RcppHNSW (>= 0.3.0.9001)
+    RcppHNSW (>= 0.3.0.9001),
+    assertthat,
+    rflann,
+    Matrix
 LinkingTo: Rcpp
 Remotes: 
     jlmelville/RcppHNSW
+URL: https://bbuchsbaum.github.io/neighborweights/

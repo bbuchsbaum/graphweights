@@ -1,6 +1,20 @@
-#' spatial autocorrelation
+#' Compute a spatial autocorrelation matrix
+#'
+#' This function computes a spatial autocorrelation matrix using a radius-based nearest neighbor search.
+#' The function leverages the mgcv package to fit a generalized additive model (GAM) to the data
+#' and constructs the autocorrelation matrix using the fitted model.
+#'
+#' @param X A numeric matrix or data.frame, where each column represents a variable and each row represents an observation.
+#' @param cds A numeric matrix or data.frame of spatial coordinates (x, y, or more dimensions) with the same number of rows as X.
+#' @param radius A positive numeric value representing the search radius for the radius-based nearest neighbor search. Default is 8.
+#' @param nsamples A positive integer indicating the number of samples to be taken for fitting the GAM. Default is 1000.
+#'
+#' @return A sparse matrix representing the spatial autocorrelation matrix for the input data.
 #'
 #' @importFrom mgcv gam
+#' @importFrom rflann RadiusSearch
+#' @importFrom Matrix sparseMatrix
+#' @importFrom assertthat assert_that
 #' @export
 spatial_autocor <- function(X, cds, radius=8, nsamples=1000) {
   assertthat::assert_that(radius > 0)
@@ -37,12 +51,21 @@ spatial_autocor <- function(X, cds, radius=8, nsamples=1000) {
 }
 
 
-#' pairwise_adjacency
+#' Compute a pairwise adjacency matrix for multiple graphs
 #'
-#' @param Xcoords A list of coordinate matrices containing the spatial coordinates of the nodes of each graph
-#' @param Xfeats A list of feature matrices containing the feature vectors for the nodes of each graph
-#' @param fself a function that compute similarity for nodes of the same graph (e.g. Xi_1, Xi_2)
-#' @param fbetween a function that compute similarity for nodes across graphs (e.g. Xi_1, Xj_1)
+#' This function computes a pairwise adjacency matrix for multiple graphs with a given set of spatial coordinates
+#' and feature vectors. The function takes two user-defined functions to compute within-graph and between-graph
+#' similarity measures.
+#'
+#' @param Xcoords A list of numeric matrices or data.frames containing the spatial coordinates of the nodes of each graph.
+#' @param Xfeats A list of numeric matrices or data.frames containing the feature vectors for the nodes of each graph.
+#' @param fself A function that computes similarity for nodes within the same graph (e.g., Xi_1, Xi_2).
+#' @param fbetween A function that computes similarity for nodes across graphs (e.g., Xi_1, Xj_1).
+#'
+#' @return A sparse matrix representing the pairwise adjacency matrix for the input graphs.
+#'
+#' @importFrom assertthat assert_that
+#' @importFrom Matrix sparseMatrix
 #' @export
 pairwise_adjacency <- function(Xcoords, Xfeats, fself, fbetween) {
   assertthat::assert_that(length(Xcoords) == length(Xfeats))
@@ -86,16 +109,28 @@ pairwise_adjacency <- function(Xcoords, Xfeats, fself, fbetween) {
 
 }
 
-#' construct a laplacian matrix in a local spatial neighborhood
+#' Compute the spatial Laplacian matrix of a coordinate matrix
 #'
-#' @importFrom Matrix Diagonal
-#' @export
-#' @inheritParams spatial_adjacency
+#' This function computes the spatial Laplacian matrix of a given coordinate matrix using specified parameters.
+#'
+#' @param coord_mat A numeric matrix representing coordinates
+#' @param dthresh Numeric, the distance threshold for adjacency (default is 1.42)
+#' @param nnk Integer, the number of nearest neighbors for adjacency (default is 27)
+#' @param weight_mode Character, the mode for computing weights, either "binary" or "heat" (default is "binary")
+#' @param sigma Numeric, the sigma parameter for the heat kernel (default is dthresh/2)
+#' @param normalized Logical, whether the adjacency matrix should be normalized (default is TRUE)
+#' @param stochastic Logical, whether the adjacency matrix should be stochastic (default is FALSE)
+#'
+#' @return A sparse symmetric matrix representing the computed spatial Laplacian
+#'
 #' @examples
+#' # Create an example coordinate matrix
+#' coord_mat <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 3, ncol = 2)
 #'
-#' coord_mat <- as.matrix(expand.grid(x=1:3, y=1:3, z=1:3))
-#' lp <- spatial_laplacian(coord_mat)
-#' all(dim(lp) == c(27,27))
+#' # Compute the spatial Laplacian matrix using the binary weight mode
+#' result <- spatial_laplacian(coord_mat, dthresh = 1.42, nnk = 27, weight_mode = "binary")
+#'
+#' @export
 spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27,weight_mode=c("binary", "heat"),
                               sigma=dthresh/2,
                               normalized=TRUE, stochastic=FALSE) {
@@ -107,16 +142,23 @@ spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27,weight_mode=c("bin
 }
 
 
-#' construct a laplacian-of-gaussian matrix in a local spatial neighborhood
+#' Compute the spatial Laplacian of Gaussian for a coordinate matrix
 #'
-#' @param coord_mat the matrix of coordinates
-#' @param sigma the standard deviation of the spatial smoother
-#' @export
+#' This function computes the spatial Laplacian of Gaussian for a given coordinate matrix using a specified sigma value.
+#'
+#' @param coord_mat A numeric matrix representing coordinates
+#' @param sigma Numeric, the sigma parameter for the Gaussian smoother (default is 2)
+#'
+#' @return A sparse symmetric matrix representing the computed spatial Laplacian of Gaussian
+#'
 #' @examples
+#' # Create an example coordinate matrix
+#' coord_mat <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 3, ncol = 2)
 #'
-#' coord_mat <- as.matrix(expand.grid(x=1:10, y=1:10))
-#' lp <- spatial_lap_of_gauss(coord_mat)
-#' all(dim(lp) == c(100,100))
+#' # Compute the spatial Laplacian of Gaussian with sigma = 2
+#' result <- spatial_lap_of_gauss(coord_mat, sigma = 2)
+#'
+#' @export
 spatial_lap_of_gauss <- function(coord_mat, sigma=2) {
   lap <- spatial_laplacian(coord_mat, weight_mode="binary", normalized=FALSE, nnk=ncol(coord_mat)^3, dthresh=sigma*2.5)
   #lap <- spatial_laplacian(coord_mat, weight_mode="binary", nnk=ncol(coord_mat)^3)
@@ -124,22 +166,53 @@ spatial_lap_of_gauss <- function(coord_mat, sigma=2) {
   lap %*% adj
 }
 
+#' Compute the Difference of Gaussians for a coordinate matrix
+#'
+#' This function computes the Difference of Gaussians for a given coordinate matrix using specified sigma values and the number of nearest neighbors.
+#'
+#' @param coord_mat A numeric matrix representing coordinates
+#' @param sigma1 Numeric, the first sigma parameter for the Gaussian smoother (default is 2)
+#' @param sigma2 Numeric, the second sigma parameter for the Gaussian smoother (default is sigma1 * 1.6)
+#' @param nnk Integer, the number of nearest neighbors for adjacency (default is 3^(ncol(coord_mat)))
+#'
+#' @return A sparse symmetric matrix representing the computed Difference of Gaussians
+#'
+#' @examples
+#' # Create an example coordinate matrix
+#' coord_mat <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 3, ncol = 2)
+#'
+#' # Compute the Difference of Gaussians with sigma1 = 2 and sigma2 = 3.2
+#' result <- difference_of_gauss(coord_mat, sigma1 = 2, sigma2 = 3.2)
+#'
+#' @export
 difference_of_gauss <- function(coord_mat, sigma1=2, sigma2=sigma1 * 1.6, nnk=3^(ncol(coord_mat))) {
   adj1 <- spatial_smoother(coord_mat,  sigma=sigma1, stochastic=TRUE, nnk=nnk)
-  adj2 <- spatial_smoother(coord_mat,  sigma=sigma2, stochastic=TRUE, nnk=nnk)
+  adj2 <- spatial_smoother(coord_mat,  sigma=sigma2,stochastic=TRUE, nnk=nnk)
   adj1 - adj2
 }
 
 
-#' spatial_smoother
+
+
+
+#' Compute the spatial smoother matrix for a coordinate matrix
 #'
-#' @param coord_mat the matrix of coordinates
-#' @param sigma the standard deviation of the smoother
-#' @param nnk the number of neighbors in the kernel
-#' @param stochastic make doubly stochastic
-#' @export
+#' This function computes the spatial smoother matrix for a given coordinate matrix using specified parameters.
+#'
+#' @param coord_mat A numeric matrix representing coordinates
+#' @param sigma Numeric, the sigma parameter for the Gaussian smoother (default is 5)
+#' @param nnk Integer, the number of nearest neighbors for adjacency (default is 3^(ncol(coord_mat)))
+#' @param stochastic Logical, whether the adjacency matrix should be doubly stochastic (default is TRUE)
+#'
+#' @return A sparse symmetric matrix representing the computed spatial smoother
 #'
 #' @examples
+#' # Create an example coordinate matrix
+#' coord_mat <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 3, ncol = 2)
+#'
+#' # Compute the spatial smoother matrix with sigma = 5
+#' result <- spatial_smoother(coord_mat, sigma = 5, nnk = 3^(ncol(coord_mat)), stochastic = TRUE)
+#'
 #' coord_mat <- as.matrix(expand.grid(x=1:10, y=1:10))
 #' sm <- spatial_smoother(coord_mat, sigma=3)
 #' sm2 <- spatial_smoother(coord_mat, sigma=6, stochastic=FALSE,nnk=50)
@@ -159,22 +232,27 @@ spatial_smoother <- function(coord_mat, sigma=5, nnk=3^(ncol(coord_mat)), stocha
 }
 
 
-#' spatial_adjacency
+#' Compute the spatial adjacency matrix for a coordinate matrix
 #'
-#' @param coord_mat the matrix of spatial coordinates
-#' @param dthresh the distance threshold defining the radius of the neighborhood
-#' @param nnk the maximum number of neighbors to include in each spatial neighborhood
-#' @param weight_mode a binary or heat kernel
-#' @param sigma the bandwidth of the heat kernel if weight_mode == "heat"
-#' @param include_diagonal diagonal elements assigned 1
-#' @param normalized make row elements sum to 1
-#' @param stochastic make column elements also sum to 1 (only relevant if \code{normalized == TRUE})
+#' This function computes the spatial adjacency matrix for a given coordinate matrix using specified parameters.
+#' Adjacency is determined by distance threshold and the maximum number of neighbors.
+#'
+#' @param coord_mat A numeric matrix representing the spatial coordinates
+#' @param dthresh Numeric, the distance threshold defining the radius of the neighborhood (default is sigma*3)
+#' @param nnk Integer, the maximum number of neighbors to include in each spatial neighborhood (default is 27)
+#' @param weight_mode Character, the mode for computing weights, either "binary" or "heat" (default is "binary")
+#' @param sigma Numeric, the bandwidth of the heat kernel if weight_mode == "heat" (default is 5)
+#' @param include_diagonal Logical, whether to assign 1 to diagonal elements (default is TRUE)
+#' @param normalized Logical, whether to make row elements sum to 1 (default is TRUE)
+#' @param stochastic Logical, whether to make column elements also sum to 1 (only relevant if normalized == TRUE) (default is FALSE)
+#'
+#' @return A sparse symmetric matrix representing the computed spatial adjacency
+#'
 #' @importFrom rflann RadiusSearch
 #' @importFrom Matrix sparseMatrix
 #' @export
 #'
 #' @examples
-#'
 #' coord_mat = as.matrix(expand.grid(x=1:6, y=1:6))
 #' sa <- spatial_adjacency(coord_mat)
 spatial_adjacency <- function(coord_mat, dthresh=sigma*3, nnk=27, weight_mode=c("binary", "heat"), sigma=5,
@@ -203,12 +281,25 @@ spatial_adjacency <- function(coord_mat, dthresh=sigma*3, nnk=27, weight_mode=c(
 }
 
 
-#' make_doubly_stochastic
+#' Compute the doubly stochastic matrix from a given matrix
 #'
-#' @param A the smoothing matrix
-#' @param iter number of iterations
+#' This function iteratively computes the doubly stochastic matrix from a given input matrix.
+#' A doubly stochastic matrix is a matrix in which both row and column elements sum to 1.
+#'
+#' @param A A numeric matrix for which to compute the doubly stochastic matrix
+#' @param iter Integer, the number of iterations to perform (default is 30)
+#'
+#' @return A numeric matrix representing the computed doubly stochastic matrix
+#'
 #' @export
-make_doubly_stochastic <- function(A, iter=15) {
+#'
+#' @examples
+#' # Create an example matrix
+#' A <- matrix(c(2, 4, 6, 8, 10, 12), nrow = 3, ncol = 2)
+#'
+#' # Compute the doubly stochastic matrix
+#' result <- make_doubly_stochastic(A, iter = 30)
+make_doubly_stochastic <- function(A, iter=30) {
   r <- rep(1, nrow(A))
   #Given A, let (n, n) = size(A) and initialize r = ones(n, 1);
 
@@ -237,10 +328,20 @@ make_doubly_stochastic <- function(A, iter=15) {
 #
 # }
 
-#' normalize an adjacency matrix
+#' Normalize Adjacency Matrix
 #'
-#' @param sm the adjacency matrix
-#' @param symmetric whether to symmetrize after normalizing
+#' This function normalizes an adjacency matrix by dividing each element by the product of the square root of the corresponding row and column sums.
+#' Optionally, it can also symmetrize the normalized matrix by averaging it with its transpose.
+#'
+#' @param sm A sparse adjacency matrix representing the graph.
+#' @param symmetric A logical value indicating whether to symmetrize the matrix after normalization (default: TRUE).
+#'
+#' @return A normalized and, if requested, symmetrized adjacency matrix.
+#'
+#' @examples
+#' A <- matrix(runif(100), 10, 10)
+#' A_normalized <- normalize_adjacency(A)
+#'
 #' @importFrom Matrix rowSums
 #' @export
 normalize_adjacency <- function(sm, symmetric=TRUE) {
@@ -326,17 +427,22 @@ cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
 
 
 
-#' bilateral spatial smoother
+#' Bilateral Spatial Smoother
 #'
-#' @param s_sigma spatial bandwidth in standard deviations
-#' @param f_sigma normalized feature bandwidth in standard deviations
-#' @inheritParams spatial_smoother
+#' This function computes a bilateral smoothing of the input data, which combines spatial and feature information to provide a smoothed representation of the data.
+#'
+#' @param coord_mat A matrix with the spatial coordinates of the data points, where each row represents a point and each column represents a coordinate dimension.
+#' @param feature_mat A matrix with the feature vectors of the data points, where each row represents a point and each column represents a feature dimension.
+#' @param nnk The number of nearest neighbors to consider for smoothing (default: 27).
+#' @param s_sigma The spatial bandwidth in standard deviations (default: 2.5).
+#' @param f_sigma The normalized feature bandwidth in standard deviations (default: 0.7).
+#' @param stochastic A logical value indicating whether to make the resulting adjacency matrix doubly stochastic (default: FALSE).
+#'
+#' @return A sparse adjacency matrix representing the smoothed data.
 #'
 #' @examples
-#'
-#' coord_mat = as.matrix(expand.grid(1:10, 1:10))
-#' feature_mat = matrix(rnorm(100*10), 100, 10)
-#'
+#' coord_mat <- as.matrix(expand.grid(1:10, 1:10))
+#' feature_mat <- matrix(rnorm(100*10), 100, 10)
 #' S <- bilateral_smoother(coord_mat, feature_mat, nnk=8)
 #'
 #' @export
@@ -362,20 +468,30 @@ bilateral_smoother <- function(coord_mat, feature_mat, nnk=27, s_sigma=2.5, f_si
 
 }
 
-#' construct a spatial adjacency matrix weighted by a secondary feature matrix
+#' Weighted Spatial Adjacency
 #'
-#' @param coord_mat the coordinate matrix
-#' @param feature_mat the feature matrix, where: (\code{nrow(feature_mat) == nrow(coord_mat)})
-#' @inheritParams cross_weighted_spatial_adjacency
-#' @importFrom assertthat assert_that
-#' @export
+#' Constructs a spatial adjacency matrix, where weights are determined by a secondary feature matrix.
+#'
+#' @param coord_mat A matrix with the spatial coordinates of the data points, where each row represents a point and each column represents a coordinate dimension.
+#' @param feature_mat A matrix with the feature vectors of the data points, where each row represents a point and each column represents a feature dimension. The number of rows in feature_mat must be equal to the number of rows in coord_mat.
+#' @param wsigma The spatial weight scale (default: 0.73).
+#' @param alpha The mixing parameter between 0 and 1 (default: 0.5). A value of 0 results in a purely spatial adjacency matrix, while a value of 1 results in a purely feature-based adjacency matrix.
+#' @param nnk The number of nearest neighbors to consider (default: 27).
+#' @param weight_mode The mode to use for weighting the adjacency matrix, either "binary" or "heat" (default: "binary").
+#' @param sigma The bandwidth for heat kernel weights (default: 1).
+#' @param dthresh The distance threshold for nearest neighbors (default: sigma * 2.5).
+#' @param include_diagonal A logical value indicating whether to include diagonal elements in the adjacency matrix (default: TRUE).
+#' @param normalized A logical value indicating whether to normalize the adjacency matrix (default: FALSE).
+#' @param stochastic A logical value indicating whether to make the resulting adjacency matrix doubly stochastic (default: FALSE).
+#'
+#' @return A sparse adjacency matrix with weighted spatial relationships.
 #'
 #' @examples
-#'
 #' coord_mat <- as.matrix(expand.grid(x=1:9, y=1:9, z=1:9))
-#' fmat <- matrix(rnorm(nrow(coord_mat)*100), nrow(coord_mat), 100)
+#' fmat <- matrix(rnorm(nrow(coord_mat) * 100), nrow(coord_mat), 100)
 #' wsa1 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, weight_mode="binary", alpha=1, stochastic=TRUE)
 #' wsa2 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=27, weight_mode="heat", alpha=0, stochastic=TRUE, sigma=2.5)
+#' @export
 weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha=.5,
                                        nnk=27,
                                        weight_mode=c("binary", "heat"),
@@ -423,13 +539,25 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
 
 
 
-#' cross_spatial_adjacency
+#' Cross Spatial Adjacency
 #'
-#' @param coord_mat1 the first coordinate matrix
-#' @param coord_mat2 the second coordinate matrix
-#' @inheritParams spatial_adjacency
-#' @importFrom rflann RadiusSearch
-#' @importFrom Matrix sparseMatrix
+#' Constructs a cross spatial adjacency matrix between two sets of points, where weights are determined by spatial relationships.
+#'
+#' @param coord_mat1 A matrix with the spatial coordinates of the first set of data points, where each row represents a point and each column represents a coordinate dimension.
+#' @param coord_mat2 A matrix with the spatial coordinates of the second set of data points, where each row represents a point and each column represents a coordinate dimension.
+#' @param dthresh The distance threshold for nearest neighbors (default: sigma * 3).
+#' @param nnk The number of nearest neighbors to consider (default: 27).
+#' @param weight_mode The mode to use for weighting the adjacency matrix, either "binary" or "heat" (default: "binary").
+#' @param sigma The bandwidth for heat kernel weights (default: 5).
+#' @param normalized A logical value indicating whether to normalize the adjacency matrix (default: TRUE).
+#'
+#' @return A sparse cross adjacency matrix with weighted spatial relationships between the two sets of points.
+#'
+#' @examples
+#' coord_mat1 <- as.matrix(expand.grid(x=1:5, y=1:5, z=1:5))
+#' coord_mat2 <- as.matrix(expand.grid(x=6:10, y=6:10, z=6:10))
+#' csa <- cross_spatial_adjacency(coord_mat1, coord_mat2, nnk=3, weight_mode="binary", sigma=5, normalized=TRUE)
+#'
 #' @export
 cross_spatial_adjacency <- function(coord_mat1, coord_mat2, dthresh=sigma*3,
                                     nnk=27, weight_mode=c("binary", "heat"),

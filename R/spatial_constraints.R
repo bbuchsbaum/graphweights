@@ -1,18 +1,24 @@
-#' spatial constraints
+#' Construct a Sparse Matrix of Spatial Constraints for Data Blocks
 #'
-#' construct a sparse matrix of spatial constraints for a set of data blocks
+#' This function creates a sparse matrix of spatial constraints for a set of data blocks. The spatial constraints matrix is useful in applications like image segmentation, where spatial information is crucial for identifying different regions in the image.
 #'
-#' @param coords the spatial coordinates as a matrix with rows as objects and columns as dimensions; or as a
-#'               list of matrices where each element of the list contains the coordinate for a block.
-#' @param nblocks the number of coordinate blocks
-#' @param sigma_within the bandwidth of the within-block smoother
-#' @param sigma_between the bandwidth of the between-block smoother
-#' @param shrinkage_factor the amount of shrinkage towards the spatial block average
-#' @param nnk_within the maximum number of nearest neighbors for within block smoother
-#' @param nnk_between the maximum number of nearest neighbors for between block smoother
-#' @param weight_mode_within the within block nearest neighbor weight_mode ("heat" or "binary")
-#' @param weight_mode_between the between block nearest neighbor weight_mode ("heat" or "binary")
-#' @param variable_weights a vector of per-variable weights
+#' @section Details:
+#' The function computes within-block and between-block constraints based on the provided coordinates, bandwidths, and other input parameters. It then balances the within-block and between-block constraints using a shrinkage factor, and normalizes the resulting matrix by the first eigenvalue.
+#'
+#' @param coords The spatial coordinates as a matrix with rows as objects and columns as dimensions; or as a list of matrices where each element of the list contains the coordinates for a block.
+#' @param nblocks The number of coordinate blocks. Default is 1.
+#' @param sigma_within The bandwidth of the within-block smoother. Default is 5.
+#' @param sigma_between The bandwidth of the between-block smoother. Default is 1.
+#' @param shrinkage_factor The amount of shrinkage towards the spatial block average. Default is 0.1.
+#' @param nnk_within The maximum number of nearest neighbors for within-block smoother. Default is 27.
+#' @param nnk_between The maximum number of nearest neighbors for between-block smoother. Default is 1.
+#' @param weight_mode_within The within-block nearest neighbor weight mode ("heat" or "binary"). Default is "heat".
+#' @param weight_mode_between The between-block nearest neighbor weight mode ("heat" or "binary"). Default is "binary".
+#' @param variable_weights A vector of per-variable weights. Default is 1.
+#' @param verbose A boolean indicating whether to print progress messages. Default is FALSE.
+#'
+#' @return A sparse matrix representing the spatial constraints for the provided data blocks.
+#'
 #' @export
 spatial_constraints <- function(coords, nblocks=1,
                                 sigma_within=5,
@@ -163,19 +169,41 @@ spatial_constraints <- function(coords, nblocks=1,
 
 }
 
-#' feature weighted spatial constraints
+#' Construct Feature-Weighted Spatial Constraints for Data Blocks
+#'
+#' This function creates a sparse matrix of feature-weighted spatial constraints for a set of data blocks. The feature-weighted spatial constraints matrix is useful in applications like image segmentation and analysis, where both spatial and feature information are crucial for identifying different regions in the image.
+#'
+#' @section Details:
+#' The function computes within-block and between-block constraints based on the provided coordinates, feature matrices, and other input parameters. It balances the within-block and between-block constraints using a shrinkage factor, and normalizes the resulting matrix by the first eigenvalue. The function also takes into account the weights of the variables in the provided feature matrices.
+#'
+#' @param coords The spatial coordinates as a matrix with rows as objects and columns as dimensions.
+#' @param feature_mats A list of feature matrices, one for each data block.
+#' @param sigma_within The bandwidth of the within-block smoother. Default is 5.
+#' @param sigma_between The bandwidth of the between-block smoother. Default is 3.
+#' @param wsigma_within The bandwidth of the within-block feature weights. Default is 0.73.
+#' @param wsigma_between The bandwidth of the between-block feature weights. Default is 0.73.
+#' @param alpha_within The scaling factor for within-block feature weights. Default is 0.5.
+#' @param alpha_between The scaling factor for between-block feature weights. Default is 0.5.
+#' @param shrinkage_factor The amount of shrinkage towards the spatial block average. Default is 0.1.
+#' @param nnk_within The maximum number of nearest neighbors for within-block smoother. Default is 27.
+#' @param nnk_between The maximum number of nearest neighbors for between-block smoother. Default is 27.
+#' @param maxk_within The maximum number of nearest neighbors for within-block computation. Default is `nnk_within`.
+#' @param maxk_between The maximum number of nearest neighbors for between-block computation. Default is `nnk_between`.
+#' @param weight_mode_within The within-block nearest neighbor weight mode ("heat" or "binary"). Default is "heat".
+#' @param weight_mode_between The between-block nearest neighbor weight mode ("heat" or "binary"). Default is "binary".
+#' @param variable_weights A vector of per-variable weights. Default is a vector of ones with length equal to the product of the number of columns in the `coords` matrix and the length of `feature_mats`.
+#' @param verbose A boolean indicating whether to print progress messages. Default is FALSE.
+#'
+#' @return A sparse matrix representing the feature-weighted spatial constraints for the provided data blocks.
 #'
 #' @examples
-#'
 #' coords <- as.matrix(expand.grid(1:10, 1:10))
 #' fmats <- replicate(20, matrix(rnorm(100*10), 10, 100), simplify=FALSE)
 #' conmat <- feature_weighted_spatial_constraints(coords, fmats)
 #'
 #' conmat <- feature_weighted_spatial_constraints(coords, fmats, maxk_between=4, maxk_within=2,sigma_between=5, nnk_between=60)
 #'
-#' #future::plan("multiprocess")
-#' #conmat <- feature_weighted_spatial_constraints(coords, fmats)
-#' @importFrom furrr future_map
+#' @export
 feature_weighted_spatial_constraints <- function(coords,
                                                  feature_mats,
                                                  sigma_within=5,
