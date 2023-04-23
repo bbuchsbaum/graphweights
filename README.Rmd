@@ -36,10 +36,10 @@ Here's a basic example demonstrating how to create a spatial adjacency matrix us
 library(neighborweights)
 
 # Generate random coordinates
-coord_mat <- matrix(runif(100), nrow=50, ncol=2)
+coord_mat <- matrix(runif(100), nrow=10, ncol=2)
 
 # Calculate the spatial adjacency matrix
-spatial_mat <- spatial_adjacency(coord_mat, sigma=1)
+spatial_mat <- spatial_adjacency(coord_mat, nnk=5, sigma=1)
 
 # Inspect the resulting matrix
 print(spatial_mat)
