@@ -2,7 +2,7 @@
 % Please edit documentation in R/temporal_weights.R
 \name{temporal_laplacian}
 \alias{temporal_laplacian}
-\title{temporal_laplacian}
+\title{Compute the temporal Laplacian matrix of a time series}
 \usage{
 temporal_laplacian(
   time,
@@ -12,14 +12,26 @@ temporal_laplacian(
 )
 }
 \arguments{
-\item{time}{the time vector}
+\item{time}{A numeric vector representing a time series}
 
-\item{weight_mode}{the type of weighting}
+\item{weight_mode}{Character, the mode for computing weights, either "heat" or "binary" (default is "heat")}
 
-\item{sigma}{the bandwidth in units of time}
+\item{sigma}{Numeric, the sigma parameter for the heat kernel (default is 1)}
 
-\item{window}{the window size in sampling units (assuming a regularily space grid)}
+\item{window}{Integer, the window size for computing adjacency (default is 2)}
+}
+\value{
+A sparse symmetric matrix representing the computed temporal Laplacian
 }
 \description{
-temporal_laplacian
+This function computes the temporal Laplacian matrix of a given time series using a specified weight mode,
+sigma, and window size.
+}
+\examples{
+# Create an example time series
+time <- 1:10
+
+# Compute the temporal Laplacian matrix using the heat weight mode
+result <- temporal_laplacian(time, weight_mode = "heat", sigma = 1, window = 2)
+
 }

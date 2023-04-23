@@ -2,15 +2,26 @@
 % Please edit documentation in R/spatial_weights.R
 \name{make_doubly_stochastic}
 \alias{make_doubly_stochastic}
-\title{make_doubly_stochastic}
+\title{Compute the doubly stochastic matrix from a given matrix}
 \usage{
-make_doubly_stochastic(A, iter = 15)
+make_doubly_stochastic(A, iter = 30)
 }
 \arguments{
-\item{A}{the smoothing matrix}
+\item{A}{A numeric matrix for which to compute the doubly stochastic matrix}
 
-\item{iter}{number of iterations}
+\item{iter}{Integer, the number of iterations to perform (default is 30)}
+}
+\value{
+A numeric matrix representing the computed doubly stochastic matrix
 }
 \description{
-make_doubly_stochastic
+This function iteratively computes the doubly stochastic matrix from a given input matrix.
+A doubly stochastic matrix is a matrix in which both row and column elements sum to 1.
+}
+\examples{
+# Create an example matrix
+A <- matrix(c(2, 4, 6, 8, 10, 12), nrow = 3, ncol = 2)
+
+# Compute the doubly stochastic matrix
+result <- make_doubly_stochastic(A, iter = 30)
 }

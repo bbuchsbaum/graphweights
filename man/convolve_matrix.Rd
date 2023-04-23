@@ -2,15 +2,20 @@
 % Please edit documentation in R/label_sim.R
 \name{convolve_matrix}
 \alias{convolve_matrix}
-\title{convolve_matrix}
+\title{Convolve a Data Matrix with a Kernel Matrix}
 \usage{
 convolve_matrix(X, Kern, normalize = FALSE)
 }
 \arguments{
-\item{X}{the data matrix}
+\item{X}{A data matrix to be convolved.}
 
-\item{Kern}{the Kernel used to smooth the matrix}
+\item{Kern}{A kernel matrix used for the convolution.}
+
+\item{normalize}{A logical flag indicating whether to normalize the kernel matrix before performing the convolution (default: FALSE).}
+}
+\value{
+A matrix resulting from the convolution of the data matrix `X` with the kernel matrix `Kern`.
 }
 \description{
-convolve_matrix
+Performs a convolution operation on a given data matrix `X` using a specified kernel matrix `Kern`.
 }

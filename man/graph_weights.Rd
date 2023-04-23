@@ -2,7 +2,7 @@
 % Please edit documentation in R/knn_weights.R
 \name{graph_weights}
 \alias{graph_weights}
-\title{Convert a data matrix with n instances and p features to an n-by-n adjacency graph}
+\title{Convert a Data Matrix to an Adjacency Graph}
 \usage{
 graph_weights(
   X,
@@ -17,32 +17,41 @@ graph_weights(
 )
 }
 \arguments{
-\item{X}{the data matrix, where each row is an instance and each column is a variable. Similarity is computed over instances.}
+\item{X}{A data matrix where each row represents an instance and each column represents a variable. Similarity is computed over instances.}
 
-\item{k}{number of neighbors (ignored when neighbor_mode is not 'epsilon')}
+\item{k}{An integer representing the number of neighbors (ignored when neighbor_mode is not 'epsilon').}
 
-\item{neighbor_mode}{the method for assigning weights to neighbors, either "supervised", "knn", "knearest_misses", or "epsilon"}
+\item{neighbor_mode}{A character string specifying the method for assigning weights to neighbors, either "supervised", "knn", "knearest_misses", or "epsilon".}
 
-\item{weight_mode}{binary (1 if neighbor, 0 otherwise),'heat', 'normalized', 'euclidean', or 'cosine'}
+\item{weight_mode}{A character string specifying the weight mode: binary (1 if neighbor, 0 otherwise), 'heat', 'normalized', 'euclidean', 'cosine', or 'correlation'.}
 
-\item{type}{the nearest neighbor policy, one of: normal, mutual, asym.}
+\item{type}{A character string specifying the nearest neighbor policy, one of: normal, mutual, asym.}
 
-\item{sigma}{parameter for heat kernel \code{exp(-dist/(2*sigma^2))}}
+\item{sigma}{A numeric parameter for the heat kernel (exp(-dist/(2*sigma^2))).}
 
-\item{eps}{the neighborhood radius when neighbor_mode is `epsilon` (not implemented)}
+\item{eps}{A numeric value representing the neighborhood radius when neighbor_mode is 'epsilon' (not implemented).}
 
-\item{labels}{the class of the categories when \code{weight_mode} is \code{supervised},
-supplied as a \code{factor} with \code{nrow(labels) == nrow(X)}}
+\item{labels}{A factor vector representing the class of the categories when weight_mode is 'supervised' with nrow(labels) equal to nrow(X).}
+
+\item{...}{Additional parameters passed to the internal functions.}
+}
+\value{
+An adjacency graph based on the specified neighbor and weight modes.
 }
 \description{
-Convert a data matrix with n instances and p features to an n-by-n adjacency graph
+Convert a data matrix with n instances and p features to an n-by-n adjacency graph using specified neighbor and weight modes.
+}
+\details{
+This function converts a data matrix with n instances and p features into an adjacency graph. The adjacency graph is created
+based on the specified neighbor and weight modes. The neighbor mode determines how neighbors are assigned weights, and the weight
+mode defines the method used to compute weights.
 }
 \examples{
-
+# Sample data
 X <- matrix(rnorm(100*100), 100, 100)
-sm <- graph_weights(X, neighbor_mode="knn",weight_mode="normalized", k=3)
+sm <- graph_weights(X, neighbor_mode="knn", weight_mode="normalized", k=3)
 
-labels <- factor(rep(letters[1:4],5))
-sm3 <- graph_weights(X, neighbor_mode="knn",k=3, labels=labels, weight_mode="cosine")
-sm4 <- graph_weights(X, neighbor_mode="knn",k=100, labels=labels, weight_mode="cosine")
+labels <- factor(rep(letters[1:4], 5))
+sm3 <- graph_weights(X, neighbor_mode="knn", k=3, labels=labels, weight_mode="cosine")
+sm4 <- graph_weights(X, neighbor_mode="knn", k=100, labels=labels, weight_mode="cosine")
 }

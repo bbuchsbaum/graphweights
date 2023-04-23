@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_constraints.R
 \name{spatial_constraints}
 \alias{spatial_constraints}
-\title{spatial constraints}
+\title{Construct a Sparse Matrix of Spatial Constraints for Data Blocks}
 \usage{
 spatial_constraints(
   coords,
@@ -19,27 +19,36 @@ spatial_constraints(
 )
 }
 \arguments{
-\item{coords}{the spatial coordinates as a matrix with rows as objects and columns as dimensions; or as a
-list of matrices where each element of the list contains the coordinate for a block.}
+\item{coords}{The spatial coordinates as a matrix with rows as objects and columns as dimensions; or as a list of matrices where each element of the list contains the coordinates for a block.}
 
-\item{nblocks}{the number of coordinate blocks}
+\item{nblocks}{The number of coordinate blocks. Default is 1.}
 
-\item{sigma_within}{the bandwidth of the within-block smoother}
+\item{sigma_within}{The bandwidth of the within-block smoother. Default is 5.}
 
-\item{sigma_between}{the bandwidth of the between-block smoother}
+\item{sigma_between}{The bandwidth of the between-block smoother. Default is 1.}
 
-\item{shrinkage_factor}{the amount of shrinkage towards the spatial block average}
+\item{shrinkage_factor}{The amount of shrinkage towards the spatial block average. Default is 0.1.}
 
-\item{nnk_within}{the maximum number of nearest neighbors for within block smoother}
+\item{nnk_within}{The maximum number of nearest neighbors for within-block smoother. Default is 27.}
 
-\item{nnk_between}{the maximum number of nearest neighbors for between block smoother}
+\item{nnk_between}{The maximum number of nearest neighbors for between-block smoother. Default is 1.}
 
-\item{weight_mode_within}{the within block nearest neighbor weight_mode ("heat" or "binary")}
+\item{weight_mode_within}{The within-block nearest neighbor weight mode ("heat" or "binary"). Default is "heat".}
 
-\item{weight_mode_between}{the between block nearest neighbor weight_mode ("heat" or "binary")}
+\item{weight_mode_between}{The between-block nearest neighbor weight mode ("heat" or "binary"). Default is "binary".}
 
-\item{variable_weights}{a set of per variable weights}
+\item{variable_weights}{A vector of per-variable weights. Default is 1.}
+
+\item{verbose}{A boolean indicating whether to print progress messages. Default is FALSE.}
+}
+\value{
+A sparse matrix representing the spatial constraints for the provided data blocks.
 }
 \description{
-construct a sparse matrix of spatial constraints for a set of data blocks
+This function creates a sparse matrix of spatial constraints for a set of data blocks. The spatial constraints matrix is useful in applications like image segmentation, where spatial information is crucial for identifying different regions in the image.
 }
+\section{Details}{
+
+The function computes within-block and between-block constraints based on the provided coordinates, bandwidths, and other input parameters. It then balances the within-block and between-block constraints using a shrinkage factor, and normalizes the resulting matrix by the first eigenvalue.
+}
+

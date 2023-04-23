@@ -2,7 +2,7 @@
 % Please edit documentation in R/label_sim.R
 \name{label_matrix}
 \alias{label_matrix}
-\title{label_matrix}
+\title{Compute a Similarity or Distance Matrix for Categorical Labels}
 \usage{
 label_matrix(
   a,
@@ -15,16 +15,23 @@ label_matrix(
 )
 }
 \arguments{
-\item{a}{the first categorical label vector}
+\item{a}{The first categorical label vector.}
 
-\item{b}{the second categorical label vector}
+\item{b}{The second categorical label vector.}
 
-\item{type}{construct a a similarity ('s') or distance ('d') matrix.}
+\item{type}{The type of matrix to construct, either a similarity ('s') or distance ('d') matrix.}
 
-\item{return_matrix}{return as a sparse matrix or a triplet.}
+\item{return_matrix}{A logical flag indicating whether to return the result as a sparse matrix (default: TRUE) or a triplet.}
 
-\item{the}{length of the second dimension}
+\item{simfun}{An optional user-provided similarity function. If not provided, a default similarity function will be used.}
+
+\item{dim1}{The length of the first dimension.}
+
+\item{dim2}{The length of the second dimension.}
+}
+\value{
+A similarity or distance matrix between the categorical label vectors `a` and `b`, either as a sparse matrix or a triplet.
 }
 \description{
-label_matrix
+Calculates a similarity or distance matrix between two categorical label vectors `a` and `b`.
 }

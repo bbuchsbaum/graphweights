@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{weighted_spatial_adjacency}
 \alias{weighted_spatial_adjacency}
-\title{construct a spatial adjacency matrix weighted by a secondary feature matrix}
+\title{Weighted Spatial Adjacency}
 \usage{
 weighted_spatial_adjacency(
   coord_mat,
@@ -19,27 +19,37 @@ weighted_spatial_adjacency(
 )
 }
 \arguments{
-\item{coord_mat}{the coordinate matrix}
+\item{coord_mat}{A matrix with the spatial coordinates of the data points, where each row represents a point and each column represents a coordinate dimension.}
 
-\item{feature_mat}{the feature matrix, where: (\code{nrow(feature_mat) == nrow(coord_mat)})}
+\item{feature_mat}{A matrix with the feature vectors of the data points, where each row represents a point and each column represents a feature dimension. The number of rows in feature_mat must be equal to the number of rows in coord_mat.}
 
-\item{wsigma}{the sigma for the feature heat kernel}
+\item{wsigma}{The spatial weight scale (default: 0.73).}
 
-\item{alpha}{the mixing weight for the spatial distance (1=all spatial weighting, 0=all feature weighting)}
+\item{alpha}{The mixing parameter between 0 and 1 (default: 0.5). A value of 0 results in a purely spatial adjacency matrix, while a value of 1 results in a purely feature-based adjacency matrix.}
 
-\item{nnk}{the maximum number of spatial nearest neighbors to include}
+\item{nnk}{The number of nearest neighbors to consider (default: 27).}
 
-\item{dthresh}{the threshold for the spatial distance}
+\item{weight_mode}{The mode to use for weighting the adjacency matrix, either "binary" or "heat" (default: "binary").}
 
-\item{normalized}{whether to normalize the rows to sum to 1}
+\item{sigma}{The bandwidth for heat kernel weights (default: 1).}
+
+\item{dthresh}{The distance threshold for nearest neighbors (default: sigma * 2.5).}
+
+\item{include_diagonal}{A logical value indicating whether to include diagonal elements in the adjacency matrix (default: TRUE).}
+
+\item{normalized}{A logical value indicating whether to normalize the adjacency matrix (default: FALSE).}
+
+\item{stochastic}{A logical value indicating whether to make the resulting adjacency matrix doubly stochastic (default: FALSE).}
+}
+\value{
+A sparse adjacency matrix with weighted spatial relationships.
 }
 \description{
-construct a spatial adjacency matrix weighted by a secondary feature matrix
+Constructs a spatial adjacency matrix, where weights are determined by a secondary feature matrix.
 }
 \examples{
-
 coord_mat <- as.matrix(expand.grid(x=1:9, y=1:9, z=1:9))
-fmat <- matrix(rnorm(nrow(coord_mat)*100), nrow(coord_mat), 100)
+fmat <- matrix(rnorm(nrow(coord_mat) * 100), nrow(coord_mat), 100)
 wsa1 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, weight_mode="binary", alpha=1, stochastic=TRUE)
 wsa2 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=27, weight_mode="heat", alpha=0, stochastic=TRUE, sigma=2.5)
 }

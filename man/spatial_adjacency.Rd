@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{spatial_adjacency}
 \alias{spatial_adjacency}
-\title{spatial_adjacency}
+\title{Compute the spatial adjacency matrix for a coordinate matrix}
 \usage{
 spatial_adjacency(
   coord_mat,
@@ -16,27 +16,30 @@ spatial_adjacency(
 )
 }
 \arguments{
-\item{coord_mat}{the matrix of spatial coordinates}
+\item{coord_mat}{A numeric matrix representing the spatial coordinates}
 
-\item{dthresh}{the distance threshold defining the radius of the neighborhood}
+\item{dthresh}{Numeric, the distance threshold defining the radius of the neighborhood (default is sigma*3)}
 
-\item{nnk}{the maximum number of neighbors to include in each spatial neighborhood}
+\item{nnk}{Integer, the maximum number of neighbors to include in each spatial neighborhood (default is 27)}
 
-\item{weight_mode}{a binary or heat kernel}
+\item{weight_mode}{Character, the mode for computing weights, either "binary" or "heat" (default is "binary")}
 
-\item{sigma}{the bandwidth of the heat kernel if weight_mode == "heat"}
+\item{sigma}{Numeric, the bandwidth of the heat kernel if weight_mode == "heat" (default is 5)}
 
-\item{include_diagonal}{diagonal elements assigned 1}
+\item{include_diagonal}{Logical, whether to assign 1 to diagonal elements (default is TRUE)}
 
-\item{normalized}{make row elements sum to 1}
+\item{normalized}{Logical, whether to make row elements sum to 1 (default is TRUE)}
 
-\item{stochastic}{make column elements also sum to 1 (only relevant if \code{normalized == TRUE})}
+\item{stochastic}{Logical, whether to make column elements also sum to 1 (only relevant if normalized == TRUE) (default is FALSE)}
+}
+\value{
+A sparse symmetric matrix representing the computed spatial adjacency
 }
 \description{
-spatial_adjacency
+This function computes the spatial adjacency matrix for a given coordinate matrix using specified parameters.
+Adjacency is determined by distance threshold and the maximum number of neighbors.
 }
 \examples{
-
 coord_mat = as.matrix(expand.grid(x=1:6, y=1:6))
 sa <- spatial_adjacency(coord_mat)
 }

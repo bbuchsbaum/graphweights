@@ -2,15 +2,18 @@
 % Please edit documentation in R/all_generic.R
 \name{laplacian}
 \alias{laplacian}
-\title{compute graph laplacian of a weight matrix}
+\title{Compute Graph Laplacian of a Weight Matrix}
 \usage{
 laplacian(x, ...)
 }
 \arguments{
-\item{x}{the weight matrix}
+\item{x}{The weight matrix representing the graph structure.}
 
-\item{...}{extra args}
+\item{...}{Additional arguments to be passed to specific implementations of the laplacian method.}
+}
+\value{
+The graph Laplacian matrix of the given weight matrix.
 }
 \description{
-compute graph laplacian of a weight matrix
+This function computes the graph Laplacian of a given weight matrix. The graph Laplacian is defined as the difference between the degree matrix and the adjacency matrix.
 }

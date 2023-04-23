@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{bilateral_smoother}
 \alias{bilateral_smoother}
-\title{bilateral spatial smoother}
+\title{Bilateral Spatial Smoother}
 \usage{
 bilateral_smoother(
   coord_mat,
@@ -14,24 +14,27 @@ bilateral_smoother(
 )
 }
 \arguments{
-\item{coord_mat}{the matrix of coordinates}
+\item{coord_mat}{A matrix with the spatial coordinates of the data points, where each row represents a point and each column represents a coordinate dimension.}
 
-\item{nnk}{the number of neighbors in the kernel}
+\item{feature_mat}{A matrix with the feature vectors of the data points, where each row represents a point and each column represents a feature dimension.}
 
-\item{s_sigma}{spatial bandwidth in standard deviations}
+\item{nnk}{The number of nearest neighbors to consider for smoothing (default: 27).}
 
-\item{f_sigma}{normalized feature bandwidth in standard deviations}
+\item{s_sigma}{The spatial bandwidth in standard deviations (default: 2.5).}
 
-\item{stochastic}{make doubly stochastic}
+\item{f_sigma}{The normalized feature bandwidth in standard deviations (default: 0.7).}
+
+\item{stochastic}{A logical value indicating whether to make the resulting adjacency matrix doubly stochastic (default: FALSE).}
+}
+\value{
+A sparse adjacency matrix representing the smoothed data.
 }
 \description{
-bilateral spatial smoother
+This function computes a bilateral smoothing of the input data, which combines spatial and feature information to provide a smoothed representation of the data.
 }
 \examples{
-
-coord_mat = as.matrix(expand.grid(1:10, 1:10))
-feature_mat = matrix(rnorm(100*10), 100, 10)
-
+coord_mat <- as.matrix(expand.grid(1:10, 1:10))
+feature_mat <- matrix(rnorm(100*10), 100, 10)
 S <- bilateral_smoother(coord_mat, feature_mat, nnk=8)
 
 }

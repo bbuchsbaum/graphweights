@@ -2,10 +2,28 @@
 % Please edit documentation in R/all_generic.R
 \name{neighbors}
 \alias{neighbors}
-\title{neighbors of a set of nodes}
+\title{Neighbors of a Set of Nodes}
 \usage{
 neighbors(x, i, ...)
 }
+\arguments{
+\item{x}{The graph or graph-like object in which to find the neighbors.}
+
+\item{i}{The vertex or vertices for which to find the neighbors. Can be a single vertex index or a vector of vertex indices.}
+
+\item{...}{Additional arguments to be passed to specific implementations of the neighbors method.}
+}
+\value{
+A list of vertex indices representing the neighbors of the specified vertices. The length of the list is equal to the number of input vertices, and each element in the list contains the neighbor indices for the corresponding input vertex.
+}
 \description{
-get the indices of neighbors of one or more vertices
+This function retrieves the indices of neighbors of one or more vertices in a given graph or graph-like object.
+}
+\examples{
+# Create an example graph
+library(igraph)
+g <- neighbor_graph(make_ring(5))
+
+# Get neighbors of vertex 1
+n <- neighbors(g, 1)
 }

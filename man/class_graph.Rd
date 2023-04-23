@@ -2,15 +2,27 @@
 % Please edit documentation in R/class_graph.R
 \name{class_graph}
 \alias{class_graph}
-\title{construct a class_graph}
+\title{Construct a class_graph}
 \usage{
 class_graph(labels, sparse = TRUE)
 }
 \arguments{
-\item{labels}{the class label vector}
+\item{labels}{A vector of class labels.}
+
+\item{sparse}{A logical value, indicating whether to use sparse matrices in the computation. Default is TRUE.}
+}
+\value{
+A class_graph object, which is a list containing the following components:
+  - adjacency: A matrix representing the adjacency of the graph.
+  - params: A list of parameters used in the construction of the graph.
+  - labels: A vector of class labels.
+  - class_indices: A list of vectors, each containing the indices of elements belonging to a specific class.
+  - class_freq: A table of frequencies for each class.
+  - levels: A vector of unique class labels.
+  - classes: A character string indicating the type of graph ("class_graph").
 }
 \description{
-A graph in which members of the same class have edges
+A graph in which members of the same class have edges.
 }
 \examples{
 data(iris)

@@ -2,10 +2,45 @@
 % Please edit documentation in R/knn_weights.R
 \name{factor_sim}
 \alias{factor_sim}
-\title{factor_sim}
+\title{Compute Similarity Matrix for Factors in a Data Frame}
 \usage{
 factor_sim(des, method = c("Jaccard", "Rogers", "simple matching", "Dice"))
 }
+\arguments{
+\item{des}{A data frame containing factors for which the similarity matrix will be computed.}
+
+\item{method}{A character vector specifying the method used for computing the similarity. The available methods are:
+\itemize{
+  \item "Jaccard" - Jaccard similarity coefficient
+  \item "Rogers" - Rogers and Tanimoto similarity coefficient
+  \item "simple matching" - Simple matching coefficient
+  \item "Dice" - Dice similarity coefficient
+}}
+}
+\value{
+A similarity matrix computed using the specified method for the factors in the data frame.
+}
 \description{
-compute similarity matrix from a set of \code{factor}s in a \code{data.frame}
+Calculate the similarity matrix for a set of factors in a data frame using various similarity methods.
+}
+\details{
+The \code{factor_sim} function computes the similarity matrix for a set of factors in a data frame using the chosen method.
+The function first converts the data frame into a model matrix, then calculates the similarity matrix using the \code{proxy::simil}
+function from the \code{proxy} package.
+
+The function supports four similarity methods: Jaccard, Rogers, simple matching, and Dice. The choice of method depends on the
+specific use case and the desired properties of the similarity measure.
+}
+\examples{
+# Sample data
+des <- data.frame(
+  var1 = factor(c("a", "b", "a", "b", "a")),
+  var2 = factor(c("c", "c", "d", "d", "d"))
+)
+
+# Compute similarity matrix using Jaccard method
+sim_jaccard <- factor_sim(des, method = "Jaccard")
+
+# Compute similarity matrix using Dice method
+sim_dice <- factor_sim(des, method = "Dice")
 }

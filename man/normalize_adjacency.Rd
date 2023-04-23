@@ -2,15 +2,24 @@
 % Please edit documentation in R/spatial_weights.R
 \name{normalize_adjacency}
 \alias{normalize_adjacency}
-\title{normalize an adjacency matrix}
+\title{Normalize Adjacency Matrix}
 \usage{
 normalize_adjacency(sm, symmetric = TRUE)
 }
 \arguments{
-\item{sm}{the adjacency matrix}
+\item{sm}{A sparse adjacency matrix representing the graph.}
 
-\item{symmetric}{whether to symmetrize after normalizing}
+\item{symmetric}{A logical value indicating whether to symmetrize the matrix after normalization (default: TRUE).}
+}
+\value{
+A normalized and, if requested, symmetrized adjacency matrix.
 }
 \description{
-normalize an adjacency matrix
+This function normalizes an adjacency matrix by dividing each element by the product of the square root of the corresponding row and column sums.
+Optionally, it can also symmetrize the normalized matrix by averaging it with its transpose.
+}
+\examples{
+A <- matrix(runif(100), 10, 10)
+A_normalized <- normalize_adjacency(A)
+
 }

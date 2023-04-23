@@ -2,7 +2,7 @@
 % Please edit documentation in R/knn_weights.R
 \name{weighted_knn}
 \alias{weighted_knn}
-\title{weighted_knn}
+\title{Weighted k-Nearest Neighbors}
 \usage{
 weighted_knn(
   X,
@@ -14,22 +14,29 @@ weighted_knn(
 )
 }
 \arguments{
-\item{X}{the data matrix, where rows are instances and columns are features}
+\item{X}{A data matrix where rows are instances and columns are features.}
 
-\item{k}{the number of nearest neighbors}
+\item{k}{An integer specifying the number of nearest neighbors to consider (default: 5).}
 
-\item{FUN}{the function used to convert euclidean distances to similarities}
+\item{FUN}{A kernel function used to convert Euclidean distances into similarities (default: heat_kernel).}
 
-\item{type}{whether to compute 'normal' or 'mutual' k-nearest neighbors}
+\item{type}{A character string indicating the type of k-nearest neighbors graph to compute. One of "normal", "mutual", or "asym" (default: "normal").}
 
-\item{as}{return as type \code{sparseMatrix} ("sparse") or \code{igraph} ("graph")}
+\item{as}{A character string specifying the format of the output. One of "igraph" or "sparse" (default: "igraph").}
+
+\item{...}{Additional arguments passed to the nearest neighbor search function (rflann::Neighbour).}
+}
+\value{
+If 'as' is "igraph", an igraph object representing the weighted k-nearest neighbors graph.
+        If 'as' is "sparse", a sparse adjacency matrix.
 }
 \description{
-weighted_knn
+This function computes a weighted k-nearest neighbors graph or adjacency matrix from a data matrix.
+The function takes into account the Euclidean distance between instances and applies a kernel function
+to convert the distances into similarities.
 }
 \examples{
-
-X <- matrix(rnorm(10*10), 10,10)
-w <- weighted_knn(X,k=5)
+X <- matrix(rnorm(10 * 10), 10, 10)
+w <- weighted_knn(X, k = 5)
 
 }

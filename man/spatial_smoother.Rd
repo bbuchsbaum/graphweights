@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{spatial_smoother}
 \alias{spatial_smoother}
-\title{spatial_smoother}
+\title{Compute the spatial smoother matrix for a coordinate matrix}
 \usage{
 spatial_smoother(
   coord_mat,
@@ -12,18 +12,27 @@ spatial_smoother(
 )
 }
 \arguments{
-\item{coord_mat}{the matrix of coordinates}
+\item{coord_mat}{A numeric matrix representing coordinates}
 
-\item{sigma}{the standard deviation of the smoother}
+\item{sigma}{Numeric, the sigma parameter for the Gaussian smoother (default is 5)}
 
-\item{nnk}{the number of neighbors in the kernel}
+\item{nnk}{Integer, the number of nearest neighbors for adjacency (default is 3^(ncol(coord_mat)))}
 
-\item{stochastic}{make doubly stochastic}
+\item{stochastic}{Logical, whether the adjacency matrix should be doubly stochastic (default is TRUE)}
+}
+\value{
+A sparse symmetric matrix representing the computed spatial smoother
 }
 \description{
-spatial_smoother
+This function computes the spatial smoother matrix for a given coordinate matrix using specified parameters.
 }
 \examples{
+# Create an example coordinate matrix
+coord_mat <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 3, ncol = 2)
+
+# Compute the spatial smoother matrix with sigma = 5
+result <- spatial_smoother(coord_mat, sigma = 5, nnk = 3^(ncol(coord_mat)), stochastic = TRUE)
+
 coord_mat <- as.matrix(expand.grid(x=1:10, y=1:10))
 sm <- spatial_smoother(coord_mat, sigma=3)
 sm2 <- spatial_smoother(coord_mat, sigma=6, stochastic=FALSE,nnk=50)

@@ -2,17 +2,32 @@
 % Please edit documentation in R/knn_weights.R
 \name{estimate_sigma}
 \alias{estimate_sigma}
-\title{estimate a reasonable bandwith parameter, sigma, for the heat kernel}
+\title{Estimate Bandwidth Parameter (Sigma) for the Heat Kernel}
 \usage{
 estimate_sigma(X, prop = 0.25, nsamples = 500, normalized = FALSE)
 }
 \arguments{
-\item{X}{the data matrix, samples are rows, features are columns}
+\item{X}{A data matrix where samples are rows and features are columns.}
 
-\item{prop}{the quantile of the frequency distribution of distances used to determine bandwidth parameter.}
+\item{prop}{A numeric value representing the quantile of the frequency distribution of distances used to determine the bandwidth parameter. Default is 0.25.}
 
-\item{nsamples}{the number of samples to draw from the data matrix}
+\item{nsamples}{An integer representing the number of samples to draw from the data matrix. Default is 500.}
+
+\item{normalized}{A logical value indicating whether to normalize the data. Default is FALSE.}
+}
+\value{
+A numeric value representing the estimated bandwidth parameter (sigma) for the heat kernel.
 }
 \description{
-bandwidth estimation
+Estimate a reasonable bandwidth parameter (sigma) for the heat kernel based on a data matrix and the specified quantile of the frequency distribution of distances.
+}
+\examples{
+# Sample data
+X <- matrix(rnorm(1000), nrow=100, ncol=10)
+
+# Estimate sigma with default parameters
+sigma_default <- estimate_sigma(X)
+
+# Estimate sigma with custom quantile and number of samples
+sigma_custom <- estimate_sigma(X, prop=0.3, nsamples=300)
 }

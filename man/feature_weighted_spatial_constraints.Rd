@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_constraints.R
 \name{feature_weighted_spatial_constraints}
 \alias{feature_weighted_spatial_constraints}
-\title{feature weighted spatial constraints}
+\title{Construct Feature-Weighted Spatial Constraints for Data Blocks}
 \usage{
 feature_weighted_spatial_constraints(
   coords,
@@ -24,17 +24,57 @@ feature_weighted_spatial_constraints(
   verbose = FALSE
 )
 }
-\description{
-feature weighted spatial constraints
-}
-\examples{
+\arguments{
+\item{coords}{The spatial coordinates as a matrix with rows as objects and columns as dimensions.}
 
+\item{feature_mats}{A list of feature matrices, one for each data block.}
+
+\item{sigma_within}{The bandwidth of the within-block smoother. Default is 5.}
+
+\item{sigma_between}{The bandwidth of the between-block smoother. Default is 3.}
+
+\item{wsigma_within}{The bandwidth of the within-block feature weights. Default is 0.73.}
+
+\item{wsigma_between}{The bandwidth of the between-block feature weights. Default is 0.73.}
+
+\item{alpha_within}{The scaling factor for within-block feature weights. Default is 0.5.}
+
+\item{alpha_between}{The scaling factor for between-block feature weights. Default is 0.5.}
+
+\item{shrinkage_factor}{The amount of shrinkage towards the spatial block average. Default is 0.1.}
+
+\item{nnk_within}{The maximum number of nearest neighbors for within-block smoother. Default is 27.}
+
+\item{nnk_between}{The maximum number of nearest neighbors for between-block smoother. Default is 27.}
+
+\item{maxk_within}{The maximum number of nearest neighbors for within-block computation. Default is `nnk_within`.}
+
+\item{maxk_between}{The maximum number of nearest neighbors for between-block computation. Default is `nnk_between`.}
+
+\item{weight_mode_within}{The within-block nearest neighbor weight mode ("heat" or "binary"). Default is "heat".}
+
+\item{weight_mode_between}{The between-block nearest neighbor weight mode ("heat" or "binary"). Default is "binary".}
+
+\item{variable_weights}{A vector of per-variable weights. Default is a vector of ones with length equal to the product of the number of columns in the `coords` matrix and the length of `feature_mats`.}
+
+\item{verbose}{A boolean indicating whether to print progress messages. Default is FALSE.}
+}
+\value{
+A sparse matrix representing the feature-weighted spatial constraints for the provided data blocks.
+}
+\description{
+This function creates a sparse matrix of feature-weighted spatial constraints for a set of data blocks. The feature-weighted spatial constraints matrix is useful in applications like image segmentation and analysis, where both spatial and feature information are crucial for identifying different regions in the image.
+}
+\section{Details}{
+
+The function computes within-block and between-block constraints based on the provided coordinates, feature matrices, and other input parameters. It balances the within-block and between-block constraints using a shrinkage factor, and normalizes the resulting matrix by the first eigenvalue. The function also takes into account the weights of the variables in the provided feature matrices.
+}
+
+\examples{
 coords <- as.matrix(expand.grid(1:10, 1:10))
 fmats <- replicate(20, matrix(rnorm(100*10), 10, 100), simplify=FALSE)
 conmat <- feature_weighted_spatial_constraints(coords, fmats)
 
 conmat <- feature_weighted_spatial_constraints(coords, fmats, maxk_between=4, maxk_within=2,sigma_between=5, nnk_between=60)
 
-#future::plan("multiprocess")
-#conmat <- feature_weighted_spatial_constraints(coords, fmats)
 }

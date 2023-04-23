@@ -2,21 +2,26 @@
 % Please edit documentation in R/spatial_weights.R
 \name{spatial_lap_of_gauss}
 \alias{spatial_lap_of_gauss}
-\title{construct a laplacian-of-gaussian matrix in a local spatial neighborhood}
+\title{Compute the spatial Laplacian of Gaussian for a coordinate matrix}
 \usage{
 spatial_lap_of_gauss(coord_mat, sigma = 2)
 }
 \arguments{
-\item{coord_mat}{the matrix of coordinates}
+\item{coord_mat}{A numeric matrix representing coordinates}
 
-\item{sigma}{the standard deviation of the spatial smoother}
+\item{sigma}{Numeric, the sigma parameter for the Gaussian smoother (default is 2)}
+}
+\value{
+A sparse symmetric matrix representing the computed spatial Laplacian of Gaussian
 }
 \description{
-construct a laplacian-of-gaussian matrix in a local spatial neighborhood
+This function computes the spatial Laplacian of Gaussian for a given coordinate matrix using a specified sigma value.
 }
 \examples{
+# Create an example coordinate matrix
+coord_mat <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 3, ncol = 2)
 
-coord_mat <- as.matrix(expand.grid(x=1:10, y=1:10))
-lp <- spatial_lap_of_gauss(coord_mat)
-all(dim(lp) == c(100,100))
+# Compute the spatial Laplacian of Gaussian with sigma = 2
+result <- spatial_lap_of_gauss(coord_mat, sigma = 2)
+
 }

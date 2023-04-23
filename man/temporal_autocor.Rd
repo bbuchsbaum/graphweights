@@ -2,17 +2,29 @@
 % Please edit documentation in R/temporal_weights.R
 \name{temporal_autocor}
 \alias{temporal_autocor}
-\title{temporal autocorrelation}
+\title{Compute the temporal autocorrelation of a matrix}
 \usage{
 temporal_autocor(X, window = 3, inverse = FALSE)
 }
 \arguments{
-\item{X}{the data matrix, columns are variables, rows are time-points}
+\item{X}{A numeric matrix for which to compute the temporal autocorrelation}
 
-\item{window}{th number of time-points included in the auto-correlation band}
+\item{window}{integer, the window size for computing the autocorrelation, must be between 1 and ncol(X) (default is 3)}
 
-\item{inverse}{whether to return the inverse correlation matrix uisng `corpcor::invcor.shrink`}
+\item{inverse}{logical, whether to compute the inverse of the correlation matrix (default is FALSE)}
+}
+\value{
+A sparse symmetric matrix representing the computed temporal autocorrelation
 }
 \description{
-Compute a sparse temporal autocorrelation matrix for a temporal window
+This function computes the temporal autocorrelation of a given matrix using a specified window size and
+optionally inverts the correlation matrix.
+}
+\examples{
+# Create an example matrix
+X <- matrix(rnorm(50), nrow = 10, ncol = 5)
+
+# Compute the temporal autocorrelation
+result <- temporal_autocor(X, window = 2)
+
 }

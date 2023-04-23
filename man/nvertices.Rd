@@ -2,10 +2,25 @@
 % Please edit documentation in R/all_generic.R
 \name{nvertices}
 \alias{nvertices}
-\title{vertex count}
+\title{Number of Vertices in neighbor_graph Objects}
 \usage{
 nvertices(x, ...)
 }
+\arguments{
+\item{x}{A neighbor_graph object.}
+
+\item{...}{Additional arguments (currently ignored).}
+}
+\value{
+The number of vertices in the neighbor_graph object.
+}
 \description{
-the number of vertices in the neighbor graph
+Retrieve the number of vertices in a neighbor_graph object.
+}
+\examples{
+# Create a small example graph
+adj_matrix <- matrix(c(0, 1, 1, 0, 1, 0, 1, 0, 0), nrow = 3, byrow = TRUE)
+ng <- neighbor_graph(adj_matrix)
+nvertices(ng) # Should return 3
+
 }

@@ -9,3 +9,4 @@ psparse(M, FUN, return_triplet = FALSE)
 \description{
 apply a function (e.g. max) to each pair of nonzero elements in a \code{sparseMatrix}
 }
+\keyword{internal}

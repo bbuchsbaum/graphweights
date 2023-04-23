@@ -2,10 +2,24 @@
 % Please edit documentation in R/spatial_weights.R
 \name{spatial_autocor}
 \alias{spatial_autocor}
-\title{spatial autocorrelation}
+\title{Compute a spatial autocorrelation matrix}
 \usage{
 spatial_autocor(X, cds, radius = 8, nsamples = 1000)
 }
+\arguments{
+\item{X}{A numeric matrix or data.frame, where each column represents a variable and each row represents an observation.}
+
+\item{cds}{A numeric matrix or data.frame of spatial coordinates (x, y, or more dimensions) with the same number of rows as X.}
+
+\item{radius}{A positive numeric value representing the search radius for the radius-based nearest neighbor search. Default is 8.}
+
+\item{nsamples}{A positive integer indicating the number of samples to be taken for fitting the GAM. Default is 1000.}
+}
+\value{
+A sparse matrix representing the spatial autocorrelation matrix for the input data.
+}
 \description{
-spatial autocorrelation
+This function computes a spatial autocorrelation matrix using a radius-based nearest neighbor search.
+The function leverages the mgcv package to fit a generalized additive model (GAM) to the data
+and constructs the autocorrelation matrix using the fitted model.
 }

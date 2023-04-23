@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{spatial_laplacian}
 \alias{spatial_laplacian}
-\title{construct a laplacian matrix in a local spatial neighborhood}
+\title{Compute the spatial Laplacian matrix of a coordinate matrix}
 \usage{
 spatial_laplacian(
   coord_mat,
@@ -15,26 +15,31 @@ spatial_laplacian(
 )
 }
 \arguments{
-\item{coord_mat}{the matrix of spatial coordinates}
+\item{coord_mat}{A numeric matrix representing coordinates}
 
-\item{dthresh}{the distance threshold defining the radius of the neighborhood}
+\item{dthresh}{Numeric, the distance threshold for adjacency (default is 1.42)}
 
-\item{nnk}{the maximum number of neighbors to include in each spatial neighborhood}
+\item{nnk}{Integer, the number of nearest neighbors for adjacency (default is 27)}
 
-\item{weight_mode}{a binary or heat kernel}
+\item{weight_mode}{Character, the mode for computing weights, either "binary" or "heat" (default is "binary")}
 
-\item{sigma}{the bandwidth of the heat kernel if weight_mode == "heat"}
+\item{sigma}{Numeric, the sigma parameter for the heat kernel (default is dthresh/2)}
 
-\item{normalized}{make row elements sum to 1}
+\item{normalized}{Logical, whether the adjacency matrix should be normalized (default is TRUE)}
 
-\item{stochastic}{make column elements also sum to 1 (only relevant if \code{normalized == TRUE})}
+\item{stochastic}{Logical, whether the adjacency matrix should be stochastic (default is FALSE)}
+}
+\value{
+A sparse symmetric matrix representing the computed spatial Laplacian
 }
 \description{
-construct a laplacian matrix in a local spatial neighborhood
+This function computes the spatial Laplacian matrix of a given coordinate matrix using specified parameters.
 }
 \examples{
+# Create an example coordinate matrix
+coord_mat <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 3, ncol = 2)
 
-coord_mat <- as.matrix(expand.grid(x=1:3, y=1:3, z=1:3))
-lp <- spatial_laplacian(coord_mat)
-all(dim(lp) == c(27,27))
+# Compute the spatial Laplacian matrix using the binary weight mode
+result <- spatial_laplacian(coord_mat, dthresh = 1.42, nnk = 27, weight_mode = "binary")
+
 }

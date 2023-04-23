@@ -2,7 +2,7 @@
 % Please edit documentation in R/repulsion.R
 \name{repulsion_graph}
 \alias{repulsion_graph}
-\title{construct a "repulsion graph"}
+\title{This function creates a repulsion graph, which is a graph where edges between vertices of different classes are emphasized, while edges within the same class are suppressed.}
 \usage{
 repulsion_graph(
   W,
@@ -13,25 +13,36 @@ repulsion_graph(
 )
 }
 \arguments{
-\item{W}{the adjacency matrix (weighted or binary)}
+\item{W}{The adjacency matrix (weighted or binary) representing the relationships between vertices in the input graph.}
 
-\item{cg}{the class graph indicating the pairwise relationships among node classes}
+\item{cg}{The class graph indicating the pairwise relationships among node classes.}
+
+\item{method}{A character string indicating the method used to create the repulsion graph. Can be either "binary" or "weighted". Default is "binary".}
+
+\item{threshold}{A numeric value used to filter the adjacency matrix. Edges with weights below this threshold will be ignored. Default is 0.}
+
+\item{norm_fac}{A numeric value used to normalize the weights in the adjacency matrix when the method is set to "weighted". Default is 1.}
+}
+\value{
+A `neighbor_graph` object representing the repulsion graph.
 }
 \description{
-construct a "repulsion graph"
+This function creates a repulsion graph, which is a graph where edges between vertices of different classes are emphasized, while edges within the same class are suppressed.
 }
 \examples{
-
-X <- matrix(rnorm(100*100), 100,100)
+# Example with random data
+X <- matrix(rnorm(100*100), 100, 100)
 labels <- factor(rep(1:5, each=20))
 cg <- class_graph(labels)
 W <- graph_weights(X, k=10)
 R <- repulsion_graph(W, cg, method="weighted")
 
+# Example with iris dataset
 data(iris)
-X2 <- as.matrix(iris[,1:4])
-labels <- iris[,5]
+X2 <- as.matrix(iris[, 1:4])
+labels <- iris[, 5]
 cg <- class_graph(labels)
 W <- graph_weights(X2, k=6)
 R <- repulsion_graph(W, cg, method="weighted")
+
 }
