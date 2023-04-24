@@ -5,10 +5,19 @@
 \title{get weights of all neighbors of a set of nodes}
 \usage{
 adjacency(x, ...)
+
+adjacency(x, ...)
 }
 \arguments{
-\item{x}{the neighbor graph}
+\item{x}{An object representing nearest neighbors.}
+
+\item{...}{Further arguments passed to or from other methods.}
+}
+\value{
+An adjacency matrix.
 }
 \description{
 get weights of all neighbors of a set of nodes
+
+Create an adjacency matrix
 }

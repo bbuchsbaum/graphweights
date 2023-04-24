@@ -9,7 +9,6 @@
 #'
 #' @return The graph Laplacian matrix of the given weight matrix.
 #'
-#' @examples
 #' @export
 laplacian <- function(x,...) UseMethod("laplacian")
 
@@ -65,15 +64,35 @@ adjacency <- function(x,...) UseMethod("adjacency")
 #' @export
 non_neighbors<- function(x,...) UseMethod("non_neighbors")
 
-node_density <- function(x, i, ...) UseMethod("node_density")
+# node_density <- function(x, i, ...) UseMethod("node_density")
 
+#' Class Means
+#'
+#' A generic function to compute the mean of each class.
+#'
+#' @param x An object.
+#' @param i The index of the class for which the mean is to be computed.
+#' @param ... Additional arguments passed to specific methods.
+#'
+#' @return A matrix or data frame representing the means of each class, the structure of which depends on the input object's class.
+#'
+#' @export
 class_means <- function(x, i, ...) UseMethod("class_means")
 
+#' Number of Classes
+#'
+#' A generic function to compute the number of classes in a graph.
+#'
+#' @param x An object.
+#'
+#' @return The number of classes in the input object.
+#'
+#' @export
 nclasses <- function(x) UseMethod("nclasses")
 
-interclass_density <- function(x, X,...) UseMethod("interclass_density")
-
-intraclass_density <- function(x, X,...) UseMethod("intraclass_density")
+# interclass_density <- function(x, X,...) UseMethod("interclass_density")
+#
+# intraclass_density <- function(x, X,...) UseMethod("intraclass_density")
 
 #' Within-Class Neighbors
 #'
@@ -88,32 +107,33 @@ intraclass_density <- function(x, X,...) UseMethod("intraclass_density")
 #' @export
 within_class_neighbors <- function(x, ng, ...) UseMethod("within_class_neighbors")
 
+
+#' Between-Class Neighbors
+#'
+#' A generic function to compute the between-class neighbors of a graph.
+#'
+#' @param x An object.
+#' @param ng A neighbor graph object.
+#' @param ... Additional arguments passed to specific methods.
+#'
+#' @return An object representing the between-class neighbors of the input graph, the structure of which depends on the input object's class.
+#'
+#' @export
 between_class_neighbors <- function(x, ng,...) UseMethod("between_class_neighbors")
 
-intraclass_pairs <- function(x,...) UseMethod("intraclass_pairs")
+# intraclass_pairs <- function(x,...) UseMethod("intraclass_pairs")
+# interclass_pairs <- function(x,...) UseMethod("interclass_pairs")
 
-interclass_pairs <- function(x,...) UseMethod("interclass_pairs")
-
+#' Edges for Graph-Like Objects
+#'
+#' Retrieve the edges of a graph-like object.
+#'
+#' @param x A graph-like object.
+#' @param ... Further arguments passed to or from other methods.
+#'
+#' @return A matrix containing the edges of the graph-like object.
 #' @export
 edges <- function(x, ...) UseMethod("edges")
-
-#' @export
-search_result <- function(x, result, ...) UseMethod("search_result")
-
-#' @export
-dist_to_sim <- function(x, ...) UseMethod("dist_to_sim")
-
-#' @export
-find_nn <- function(x, ...) UseMethod("find_nn")
-
-#' @export
-find_nn_among <- function(x, ...) UseMethod("find_nn_among")
-
-#' @export
-find_nn_between <- function(x, ...) UseMethod("find_nn_between")
-
-
-
 
 #' Neighbor Graph
 #'
@@ -126,5 +146,71 @@ find_nn_between <- function(x, ...) UseMethod("find_nn_between")
 #'
 #' @export
 neighbor_graph <- function(x, ...) UseMethod("neighbor_graph")
+
+#' Search result for nearest neighbor search
+#'
+#' @param x An object of class "nnsearcher".
+#' @param result The result from the nearest neighbor search.
+#'
+#' @return An object with the class "nn_search".
+#' @export
+search_result <- function(x, result) {
+  UseMethod("search_result")
+}
+
+#' Convert distance to similarity
+#'
+#' @param x An object representing a distance matrix.
+#' @param ... Further arguments passed to or from other methods.
+#'
+#' @return A similarity matrix.
+#' @export
+dist_to_sim <- function(x, ...) {
+  UseMethod("dist_to_sim")
+}
+
+#' Create an adjacency matrix
+#'
+#' @param x An object representing nearest neighbors.
+#' @param ... Further arguments passed to or from other methods.
+#'
+#' @return An adjacency matrix.
+#' @export
+adjacency <- function(x, ...) {
+  UseMethod("adjacency")
+}
+
+#' Find nearest neighbors
+#'
+#' @param x An object of class "nnsearcher".
+#' @param ... Further arguments passed to or from other methods.
+#'
+#' @return A nearest neighbors result object.
+#' @export
+find_nn <- function(x, ...) {
+  UseMethod("find_nn")
+}
+
+#' Find nearest neighbors among a subset
+#'
+#' @param x An object of class "nnsearcher" or "class_graph".
+#' @param ... Further arguments passed to or from other methods.
+#'
+#' @return A nearest neighbors result object.
+#' @export
+find_nn_among <- function(x, ...) {
+  UseMethod("find_nn_among")
+}
+
+#' Find nearest neighbors between two sets of data points
+#'
+#' @param x An object of class "nnsearcher".
+#' @param ... Further arguments passed to or from other methods.
+#'
+#' @return A nearest neighbors result object.
+#' @export
+find_nn_between <- function(x, ...) {
+  UseMethod("find_nn_between")
+}
 
 

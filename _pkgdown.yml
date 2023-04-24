@@ -2,3 +2,65 @@ url: https://bbuchsbaum.github.io/graphweights/
 template:
   bootstrap: 5
 
+
+reference:
+- title: "Graph and adjacency matrix construction"
+  desc: >
+    "Functions for constructing graphs and adjacency matrices."
+  contents:
+      - neighbor_graph
+      - spatial_adjacency
+      - temporal_adjacency
+      - threshold_adjacency
+      - weighted_spatial_adjacency
+- title: "Kernel and similarity functions"
+  desc: >
+    "Functions for calculating kernel and similarity values."
+  contents:
+    - heat_kernel
+    - inverse_heat_kernel
+    - normalized_heat_kernel
+    - weighted_factor_sim
+- title: "Laplacian and related functions"
+  desc: >
+    "Functions for working with Laplacian matrices."
+  contents:
+    - laplacian
+    - spatial_lap_of_gauss
+    - spatial_laplacian
+    - temporal_laplacian
+- title: "Neighbor-related functions"
+  desc: >
+    "Functions for working with neighbors and neighborhood graphs."
+  contents:
+    - neighbors
+    - non_neighbors
+    - within_class_neighbors
+- title: "Search and indexing functions"
+  desc: >
+    "Functions for searching, indexing, and working with search results."
+  contents:
+    - indices_to_sparse
+    - nnsearcher
+    - search_result
+- title: "Spatial and temporal functions"
+  desc: >
+    "Functions for working with spatial and temporal data."
+  contents:
+    - spatial_autocor
+    - spatial_constraints
+    - spatial_smoother
+    - spatial_weights
+    - temporal_autocor
+- title: "Utility and miscellaneous functions"
+  desc: >
+    "Various utility and miscellaneous functions."
+  contents:
+    - make_doubly_stochastic
+    - nclasses
+    - nvertices
+    - pairwise_adjacency
+    - psparse
+    - triplet_to_matrix
+
+

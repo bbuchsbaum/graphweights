@@ -4,7 +4,7 @@
 \alias{node_density.neighbor_graph}
 \title{Node Density for neighbor_graph Objects}
 \usage{
-\method{node_density}{neighbor_graph}(x, X)
+node_density.neighbor_graph(x, X)
 }
 \arguments{
 \item{x}{A neighbor_graph object.}

@@ -125,6 +125,25 @@ between_class_neighbors.class_graph <- function(x, ng) {
 }
 
 
+#' Compute Discriminating Distance for Similarity Graph
+#'
+#' This function computes a discriminating distance matrix for the similarity graph based on the class labels.
+#' It adjusts the similarity graph by modifying the weights within and between classes, making it more suitable for
+#' tasks like classification and clustering.
+#'
+#' @param X A numeric matrix or data frame containing the data points.
+#' @param k An integer representing the number of nearest neighbors to consider. Default is the number of unique labels divided by 2.
+#' @param sigma A numeric value representing the scaling factor for the heat kernel. If not provided, it will be estimated.
+#' @param labels A factor or numeric vector containing the class labels for each data point.
+#'
+#' @return A discriminating distance matrix in the form of a numeric matrix.
+#'
+#' @examples
+#' X <- matrix(rnorm(100*100), 100, 100)
+#' labels <- factor(rep(1:5, each=20))
+#' sigma <- 0.7
+#' D <- discriminating_distance(X, k=length(labels)/2, sigma, labels)
+#'
 #' @export
 discriminating_distance <- function(X, k=length(labels)/2, sigma,labels) {
   #Wknn <- graph_weights(X)
@@ -152,25 +171,33 @@ discriminating_distance <- function(X, k=length(labels)/2, sigma,labels) {
   Wall
 }
 
-#' Compute similarity graph weighted by class structure
+#' Compute Similarity Graph Weighted by Class Structure
 #'
-#' @param X
-#' @param k
-#' @param sigma
-#' @param cg
+#' This function computes a similarity graph that is weighted by the class structure of the data.
+#' It is useful for preserving the local similarity and diversity within the data, making it
+#' suitable for tasks like face and handwriting digits recognition.
+#'
+#' @param X A numeric matrix or data frame containing the data points.
+#' @param k An integer representing the number of nearest neighbors to consider. Default is the number of unique labels divided by 2.
+#' @param sigma A numeric value representing the scaling factor for the heat kernel.
+#' @param cg A class_graph object computed from the labels.
+#' @param threshold A numeric value representing the threshold for the class graph. Default is 0.01.
+#'
+#' @return A weighted similarity graph in the form of a matrix.
 #'
 #' @examples
-#'
-#' X <- matrix(rnorm(100*100), 100,100)
+#' X <- matrix(rnorm(100*100), 100, 100)
 #' labels <- factor(rep(1:5, each=20))
 #' cg <- class_graph(labels)
-#' sigma <- .7
+#' sigma <- 0.7
+#' W <- discriminating_simililarity(X, k=length(labels)/2, sigma, cg)
+#'
+#' @references
+#' Local similarity and diversity preserving discriminant projection for face and
+#' handwriting digits recognition
 #'
 #' @export
-#'
-## ref: Local similarity and diversity preserving discriminant projection for face and
-## handwriting digits recognition
-discriminating_simililarity <- function(X, k=length(labels)/2, sigma,cg, threshold=.01) {
+discriminating_simililarity <- function(X, k=length(labels)/2, sigma, cg, threshold=.01) {
   #Wknn <- graph_weights(X)
 
   Wall <- graph_weights(X, k=k, weight_mode="heat", neighbor_mode="knn",sigma=sigma)

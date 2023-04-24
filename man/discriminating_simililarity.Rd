@@ -2,7 +2,7 @@
 % Please edit documentation in R/class_graph.R
 \name{discriminating_simililarity}
 \alias{discriminating_simililarity}
-\title{Compute similarity graph weighted by class structure}
+\title{Compute Similarity Graph Weighted by Class Structure}
 \usage{
 discriminating_simililarity(
   X,
@@ -13,16 +13,33 @@ discriminating_simililarity(
 )
 }
 \arguments{
-\item{cg}{}
+\item{X}{A numeric matrix or data frame containing the data points.}
+
+\item{k}{An integer representing the number of nearest neighbors to consider. Default is the number of unique labels divided by 2.}
+
+\item{sigma}{A numeric value representing the scaling factor for the heat kernel.}
+
+\item{cg}{A class_graph object computed from the labels.}
+
+\item{threshold}{A numeric value representing the threshold for the class graph. Default is 0.01.}
+}
+\value{
+A weighted similarity graph in the form of a matrix.
 }
 \description{
-Compute similarity graph weighted by class structure
+This function computes a similarity graph that is weighted by the class structure of the data.
+It is useful for preserving the local similarity and diversity within the data, making it
+suitable for tasks like face and handwriting digits recognition.
 }
 \examples{
-
-X <- matrix(rnorm(100*100), 100,100)
+X <- matrix(rnorm(100*100), 100, 100)
 labels <- factor(rep(1:5, each=20))
 cg <- class_graph(labels)
-sigma <- .7
+sigma <- 0.7
+W <- discriminating_simililarity(X, k=length(labels)/2, sigma, cg)
 
+}
+\references{
+Local similarity and diversity preserving discriminant projection for face and
+handwriting digits recognition
 }
