@@ -2,12 +2,12 @@
 % Please edit documentation in R/all_generic.R
 \name{nvertices}
 \alias{nvertices}
-\title{Number of Vertices in neighbor_graph Objects}
+\title{Number of Vertices in Graph-like Objects}
 \usage{
 nvertices(x, ...)
 }
 \arguments{
-\item{x}{A neighbor_graph object.}
+\item{x}{an object with a neighborhood}
 
 \item{...}{Additional arguments (currently ignored).}
 }

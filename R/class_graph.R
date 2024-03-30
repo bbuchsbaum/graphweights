@@ -1,4 +1,4 @@
-#' Construct a class_graph
+#' Construct a Class Graph
 #'
 #' A graph in which members of the same class have edges.
 #'
@@ -6,13 +6,15 @@
 #' @param sparse A logical value, indicating whether to use sparse matrices in the computation. Default is TRUE.
 #'
 #' @return A class_graph object, which is a list containing the following components:
-#'   - adjacency: A matrix representing the adjacency of the graph.
-#'   - params: A list of parameters used in the construction of the graph.
-#'   - labels: A vector of class labels.
-#'   - class_indices: A list of vectors, each containing the indices of elements belonging to a specific class.
-#'   - class_freq: A table of frequencies for each class.
-#'   - levels: A vector of unique class labels.
-#'   - classes: A character string indicating the type of graph ("class_graph").
+#' \itemize{
+#'   \item{adjacency}{A matrix representing the adjacency of the graph.}
+#'   \item{params}{A list of parameters used in the construction of the graph.}
+#'   \item{labels}{A vector of class labels.}
+#'   \item{class_indices}{A list of vectors, each containing the indices of elements belonging to a specific class.}
+#'   \item{class_freq}{A table of frequencies for each class.}
+#'   \item{levels}{A vector of unique class labels.}
+#'   \item{classes}{A character string indicating the type of graph ("class_graph").}
+#' }
 #'
 #' @importFrom Matrix sparseVector tcrossprod Matrix t
 #'
@@ -60,40 +62,40 @@ class_means.class_graph <- function(x, X) {
 }
 
 
-heterogeneous_neighbors.class_graph <- function(x, X, k, weight_mode="binary", sigma=.7) {
-  allind <- 1:nrow(X)
-  cind <- x$class_indices
-  ## this could be done set-wise, e.g. levels by level
-  out <- do.call(rbind, lapply(cind, function(ci) {
-    query <- X[ci,]
-    others <- which(!(allind %in% ci))
+# heterogeneous_neighbors.class_graph <- function(x, X, k, weight_mode="binary", sigma=.7) {
+#   allind <- 1:nrow(X)
+#   cind <- x$class_indices
+#   ## this could be done set-wise, e.g. levels by level
+#   out <- do.call(rbind, lapply(cind, function(ci) {
+#     query <- X[ci,]
+#     others <- which(!(allind %in% ci))
+#
+#     m <- weighted_knnx(X[others,,drop=FALSE], query,k=k,
+#                   FUN=get_neighbor_fun(weight_mode, len=nrow(X), sigma=sigma), as="index_sim")
+#     ## HER
+#   }))
+#
+#   ng <- neighbor_graph(igraph::graph_from_data_frame(out,directed=FALSE))
+#
+# }
 
-    m <- weighted_knnx(X[others,,drop=FALSE], query,k=k,
-                  FUN=get_neighbor_fun(weight_mode, len=nrow(X), sigma=sigma), as="index_sim")
-    ## HER
-  }))
-
-  ng <- neighbor_graph(igraph::graph_from_data_frame(out,directed=FALSE))
-
-}
-
-homogeneous_neighbors.class_graph <- function(x, X, k, weight_mode="heat", sigma=1) {
-
-  cind <- x$class_indices
-  out <- do.call(rbind, lapply(cind, function(ci) {
-    m <- weighted_knn(X[ci,,drop=FALSE], k=k,
-                       FUN=get_neighbor_fun(weight_mode, len=length(cind), sigma=sigma), as="sparse")
-
-
-    Tm <- as_triplet(m)
-    Tm[,1] <- ci[Tm[,1]]
-    Tm[,2] <- ci[Tm[,2]]
-    Tm
-  }))
-
-  ng <- neighbor_graph(igraph::graph_from_data_frame(out,directed=FALSE))
-
-}
+# homogeneous_neighbors.class_graph <- function(x, X, k, weight_mode="heat", sigma=1) {
+#
+#   cind <- x$class_indices
+#   out <- do.call(rbind, lapply(cind, function(ci) {
+#     m <- weighted_knn(X[ci,,drop=FALSE], k=k,
+#                        FUN=get_neighbor_fun(weight_mode, len=length(cind), sigma=sigma), as="sparse")
+#
+#
+#     Tm <- as_triplet(m)
+#     Tm[,1] <- ci[Tm[,1]]
+#     Tm[,2] <- ci[Tm[,2]]
+#     Tm
+#   }))
+#
+#   ng <- neighbor_graph(igraph::graph_from_data_frame(out,directed=FALSE))
+#
+# }
 
 
 #' Within-Class Neighbors for class_graph Objects

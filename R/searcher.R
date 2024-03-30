@@ -1,10 +1,18 @@
+#' @import RcppHNSW
+nnsearcher <- function(X, labels=1:nrow(labels), ...,
+                       distance=c("l2", "euclidean", "cosine", "ip"), M=16, ef=200) {
+  distance <- match.arg(distance)
+  X <- as.matrix(X)
+  ann <- RcppHNSW::hnsw_build(X, distance, ef=ef, M=M)
 
-
-neighbor_graph.nnsearch <- function(x, method = c("heat", "binary", "normalized", "cosine", "correlation"),
-                                                      sigma=1) {
-
-  method <- match.arg(method)
-  x2 <- dist_to_sim(x, method,sigma)
+  structure(list(
+    X=X,
+    labels=labels,
+    ann=ann,
+    distance=distance,
+    ef=ef,
+    M=M),
+    class="nnsearcher")
 }
 
 #' @export
@@ -40,22 +48,7 @@ adjacency.nnsearch <- function(x, idim=nrow(x$idx), jdim=max(x$idx), return_trip
   indices_to_sparse(as.matrix(x$idx), as.matrix(x$dist), return_triplet=FALSE, idim=idim, jdim=jdim)
 }
 
-#' @import RcppHNSW
-nnsearcher <- function(X, labels=1:nrow(labels), ...,
-                     distance=c("l2", "euclidean", "cosine", "ip"), M=16, ef=200) {
-  distance <- match.arg(distance)
-  X <- as.matrix(X)
-  ann <- RcppHNSW::hnsw_build(X, distance, ef=ef, M=M)
 
-  structure(list(
-    X=X,
-    labels=labels,
-    ann=ann,
-    distance=distance,
-    ef=ef,
-    M=M),
-    class="nnsearcher")
-}
 
 #' @export
 find_nn.nnsearcher <- function(x, query=NULL, k=5) {

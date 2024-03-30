@@ -8,6 +8,7 @@ repulse_weight <- function(x1,x2, sigma=10) {
   1/(sigma + num/denom)
 }
 
+
 #' This function creates a repulsion graph, which is a graph where edges between vertices of different classes are emphasized, while edges within the same class are suppressed.
 #'
 #' @param W The adjacency matrix (weighted or binary) representing the relationships between vertices in the input graph.

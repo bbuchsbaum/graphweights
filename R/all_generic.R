@@ -13,11 +13,11 @@
 laplacian <- function(x,...) UseMethod("laplacian")
 
 
-#' Number of Vertices in neighbor_graph Objects
+#' Number of Vertices in Graph-like Objects
 #'
 #' Retrieve the number of vertices in a neighbor_graph object.
 #'
-#' @param x A neighbor_graph object.
+#' @param x an object with a neighborhood
 #' @param ... Additional arguments (currently ignored).
 #'
 #' @return The number of vertices in the neighbor_graph object.
