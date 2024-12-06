@@ -1,18 +1,44 @@
-#' Compute a spatial autocorrelation matrix
+#' Compute a Spatial Autocorrelation Matrix
 #'
-#' This function computes a spatial autocorrelation matrix using a radius-based nearest neighbor search.
-#' The function leverages the mgcv package to fit a generalized additive model (GAM) to the data
-#' and constructs the autocorrelation matrix using the fitted model.
+#' @description
+#' Computes a spatial autocorrelation matrix using radius-based nearest neighbor search
+#' and Generalized Additive Models (GAM). The function first samples points within
+#' the specified radius, fits a GAM to model the spatial correlation, and then
+#' constructs the autocorrelation matrix.
 #'
-#' @param X A numeric matrix or data.frame, where each column represents a variable and each row represents an observation.
-#' @param cds A numeric matrix or data.frame of spatial coordinates (x, y, or more dimensions) with the same number of rows as X.
-#' @param radius A positive numeric value representing the search radius for the radius-based nearest neighbor search. Default is 8.
-#' @param nsamples A positive integer indicating the number of samples to be taken for fitting the GAM. Default is 1000.
+#' @details
+#' The function performs the following steps:
+#' 1. Conducts radius-based nearest neighbor search using HNSW
+#' 2. Samples points and computes correlations within the radius
+#' 3. Fits a GAM to model the spatial correlation decay
+#' 4. Constructs a sparse matrix representing spatial autocorrelation
 #'
-#' @return A sparse matrix representing the spatial autocorrelation matrix for the input data.
+#' @param X A numeric matrix or data frame where each column represents a variable
+#'   and each row represents an observation.
+#' @param cds A numeric matrix or data frame of spatial coordinates (x, y, or more
+#'   dimensions) with the same number of rows as X.
+#' @param radius A positive numeric value specifying the search radius for the
+#'   radius-based nearest neighbor search. Default is 8.
+#' @param nsamples A positive integer indicating the number of samples for fitting
+#'   the GAM. Default is 1000. If the number of rows in cds is less than nsamples,
+#'   all points will be used.
+#'
+#' @return A sparse Matrix object representing the spatial autocorrelation matrix,
+#'   where each element (i,j) represents the predicted correlation between points
+#'   i and j based on their spatial distance.
+#'
+#' @examples
+#' \dontrun{
+#' # Create sample data
+#' n <- 100
+#' coords <- matrix(runif(n*2), n, 2)
+#' X <- matrix(rnorm(n*5), n, 5)
+#'
+#' # Compute spatial autocorrelation
+#' autocor_mat <- spatial_autocor(X, coords, radius=5, nsamples=500)
+#' }
 #'
 #' @importFrom mgcv gam
-#' @importFrom rflann RadiusSearch
 #' @importFrom Matrix sparseMatrix
 #' @importFrom assertthat assert_that
 #' @export
@@ -22,47 +48,107 @@ spatial_autocor <- function(X, cds, radius=8, nsamples=1000) {
     nsamples <- nrow(cds)
   }
 
-  nabe <- rflann::RadiusSearch(cds, cds,radius=radius)
-  ids <- sample(1:nrow(nabe$indices), nsamples)
+  # Use HNSW for radius search instead of rflann
+  nabe <- hnsw_radius_search(cds, cds, radius=radius, max_neighbors=100)
+  ids <- sample(1:length(nabe$indices), nsamples)
 
   ret <- do.call(rbind, lapply(ids, function(id) {
-    ind <- nabe$indices[id,]
-    d <- nabe$distances[id,]
-    valmat <- X[,ind[-1]]
-    vals <- X[,ind[1]]
-    cvals <- cor(vals,valmat)
-    data.frame(cor=as.vector(cvals), d=sqrt(d[-1]))
+    ind <- nabe$indices[[id]]
+    d <- nabe$distances[[id]]
+    if (length(ind) > 1) {  # Only process if we have neighbors
+      valmat <- X[,ind[-1], drop=FALSE]
+      vals <- X[,ind[1], drop=FALSE]
+      cvals <- cor(vals, valmat)
+      data.frame(cor=as.vector(cvals), d=sqrt(d[-1]))
+    } else {
+      data.frame(cor=numeric(0), d=numeric(0))
+    }
   }))
 
-  gam.1 <- gam(cor ~ s(d), data=ret)
+  # Only proceed if we have data points
+  if (nrow(ret) > 0) {
+    gam.1 <- gam(cor ~ s(d), data=ret)
 
-  trip <- do.call(rbind, lapply(1:nrow(cds), function(i) {
-    i <- nabe$indices[i,1]
-    j <- nabe$indices[i,-1]
-    d <- sqrt(nabe$distances[i,-1])
-    cbind(i,j,d)
-  }))
+    trip <- do.call(rbind, lapply(1:nrow(cds), function(i) {
+      inds <- nabe$indices[[i]]
+      if (length(inds) > 1) {  # Only process if we have neighbors
+        i <- inds[1]
+        j <- inds[-1]
+        d <- sqrt(nabe$distances[[i]][-1])
+        cbind(i, j, d)
+      }
+    }))
 
-  trip[,3] <- predict(gam.1, newdata=data.frame(d=trip[,3]))
-  smat <- Matrix::sparseMatrix(i=trip[,1], j=trip[,2], x=trip[,3], dims=c(nrow(cds),
-                                                                  nrow(cds)))
-
-  smat
+    if (!is.null(trip) && nrow(trip) > 0) {
+      trip[,3] <- predict(gam.1, newdata=data.frame(d=trip[,3]))
+      smat <- Matrix::sparseMatrix(i=trip[,1], j=trip[,2], x=trip[,3], 
+                                 dims=c(nrow(cds), nrow(cds)))
+      return(smat)
+    }
+  }
+  
+  # Return empty sparse matrix if no valid correlations found
+  Matrix::sparseMatrix(i=integer(0), j=integer(0), x=numeric(0), 
+                      dims=c(nrow(cds), nrow(cds)))
 }
 
 
-#' Compute a pairwise adjacency matrix for multiple graphs
+#' Compute Pairwise Adjacency Matrix for Multiple Graphs
 #'
-#' This function computes a pairwise adjacency matrix for multiple graphs with a given set of spatial coordinates
-#' and feature vectors. The function takes two user-defined functions to compute within-graph and between-graph
-#' similarity measures.
+#' @description
+#' Computes a pairwise adjacency matrix for multiple graphs using spatial coordinates
+#' and feature vectors. The function allows custom similarity measures for both
+#' within-graph and between-graph comparisons.
 #'
-#' @param Xcoords A list of numeric matrices or data.frames containing the spatial coordinates of the nodes of each graph.
-#' @param Xfeats A list of numeric matrices or data.frames containing the feature vectors for the nodes of each graph.
-#' @param fself A function that computes similarity for nodes within the same graph (e.g., Xi_1, Xi_2).
-#' @param fbetween A function that computes similarity for nodes across graphs (e.g., Xi_1, Xj_1).
+#' @details
+#' The function constructs a block matrix where:
+#' * Diagonal blocks represent within-graph similarities (computed using fself)
+#' * Off-diagonal blocks represent between-graph similarities (computed using fbetween)
+#' The resulting matrix is symmetric and preserves the graph structure of the input data.
 #'
-#' @return A sparse matrix representing the pairwise adjacency matrix for the input graphs.
+#' @param Xcoords A list of numeric matrices or data frames, where each element
+#'   contains the spatial coordinates of nodes for one graph.
+#' @param Xfeats A list of numeric matrices or data frames, where each element
+#'   contains the feature vectors for nodes of one graph. Must have the same length
+#'   as Xcoords.
+#' @param fself A function that computes similarity for nodes within the same graph.
+#'   Should take arguments (coords, feats) and return a sparse similarity matrix.
+#' @param fbetween A function that computes similarity for nodes between different graphs.
+#'   Should take arguments (coords1, coords2, feats1, feats2) and return a sparse
+#'   similarity matrix.
+#'
+#' @return A sparse Matrix object representing the pairwise adjacency matrix for all
+#'   input graphs combined. The matrix dimensions are (N1 + N2 + ... + Nk) x (N1 + N2 + ... + Nk),
+#'   where Ni is the number of nodes in graph i.
+#'
+#' @examples
+#' \dontrun{
+#' # Create sample data for two graphs
+#' coords1 <- matrix(runif(20), 10, 2)
+#' coords2 <- matrix(runif(16), 8, 2)
+#' feats1 <- matrix(rnorm(30), 10, 3)
+#' feats2 <- matrix(rnorm(24), 8, 3)
+#'
+#' # Define similarity functions
+#' fself <- function(coords, feats) {
+#'   # Example similarity computation within graph
+#'   dist_mat <- as.matrix(dist(coords))
+#'   exp(-dist_mat^2)
+#' }
+#'
+#' fbetween <- function(coords1, coords2, feats1, feats2) {
+#'   # Example similarity computation between graphs
+#'   dist_mat <- as.matrix(dist(rbind(coords1, coords2)))
+#'   exp(-dist_mat^2)
+#' }
+#'
+#' # Compute pairwise adjacency
+#' adj_mat <- pairwise_adjacency(
+#'   list(coords1, coords2),
+#'   list(feats1, feats2),
+#'   fself, fbetween
+#' )
+#' }
 #'
 #' @importFrom assertthat assert_that
 #' @importFrom Matrix sparseMatrix
@@ -106,12 +192,18 @@ pairwise_adjacency <- function(Xcoords, Xfeats, fself, fbetween) {
   tot <- rbind(w,bet)
   ret <- sparseMatrix(i=tot[,1], j=tot[,2], x=tot[,3])
   ret
-
 }
 
-#' Compute the spatial Laplacian matrix of a coordinate matrix
+
+#' Compute the Spatial Laplacian Matrix of a Coordinate Matrix
 #'
-#' This function computes the spatial Laplacian matrix of a given coordinate matrix using specified parameters.
+#' @description
+#' Computes the spatial Laplacian matrix of a given coordinate matrix using specified parameters.
+#'
+#' @details
+#' The function first computes the spatial adjacency matrix using the specified parameters,
+#' and then constructs the Laplacian matrix as the difference between the diagonal matrix
+#' of row sums and the adjacency matrix.
 #'
 #' @param coord_mat A numeric matrix representing coordinates
 #' @param dthresh Numeric, the distance threshold for adjacency (default is 1.42)
@@ -142,9 +234,14 @@ spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27,weight_mode=c("bin
 }
 
 
-#' Compute the spatial Laplacian of Gaussian for a coordinate matrix
+#' Compute the Spatial Laplacian of Gaussian for a Coordinate Matrix
 #'
-#' This function computes the spatial Laplacian of Gaussian for a given coordinate matrix using a specified sigma value.
+#' @description
+#' Computes the spatial Laplacian of Gaussian for a given coordinate matrix using a specified sigma value.
+#'
+#' @details
+#' The function first computes the spatial Laplacian matrix using the specified sigma value,
+#' and then multiplies it with the spatial smoother matrix computed using the same sigma value.
 #'
 #' @param coord_mat A numeric matrix representing coordinates
 #' @param sigma Numeric, the sigma parameter for the Gaussian smoother (default is 2)
@@ -166,9 +263,14 @@ spatial_lap_of_gauss <- function(coord_mat, sigma=2) {
   lap %*% adj
 }
 
-#' Compute the Difference of Gaussians for a coordinate matrix
+#' Compute the Difference of Gaussians for a Coordinate Matrix
 #'
-#' This function computes the Difference of Gaussians for a given coordinate matrix using specified sigma values and the number of nearest neighbors.
+#' @description
+#' Computes the Difference of Gaussians for a given coordinate matrix using specified sigma values and the number of nearest neighbors.
+#'
+#' @details
+#' The function first computes two spatial smoother matrices using the specified sigma values,
+#' and then subtracts the second matrix from the first.
 #'
 #' @param coord_mat A numeric matrix representing coordinates
 #' @param sigma1 Numeric, the first sigma parameter for the Gaussian smoother (default is 2)
@@ -195,9 +297,14 @@ difference_of_gauss <- function(coord_mat, sigma1=2, sigma2=sigma1 * 1.6, nnk=3^
 
 
 
-#' Compute the spatial smoother matrix for a coordinate matrix
+#' Compute the Spatial Smoother Matrix for a Coordinate Matrix
 #'
-#' This function computes the spatial smoother matrix for a given coordinate matrix using specified parameters.
+#' @description
+#' Computes the spatial smoother matrix for a given coordinate matrix using specified parameters.
+#'
+#' @details
+#' The function first computes the spatial adjacency matrix using the specified parameters,
+#' and then normalizes the matrix to make it doubly stochastic.
 #'
 #' @param coord_mat A numeric matrix representing coordinates
 #' @param sigma Numeric, the sigma parameter for the Gaussian smoother (default is 5)
@@ -232,10 +339,14 @@ spatial_smoother <- function(coord_mat, sigma=5, nnk=3^(ncol(coord_mat)), stocha
 }
 
 
-#' Compute the spatial adjacency matrix for a coordinate matrix
+#' Compute the Spatial Adjacency Matrix for a Coordinate Matrix
 #'
-#' This function computes the spatial adjacency matrix for a given coordinate matrix using specified parameters.
-#' Adjacency is determined by distance threshold and the maximum number of neighbors.
+#' @description
+#' Computes the spatial adjacency matrix for a given coordinate matrix using specified parameters.
+#'
+#' @details
+#' The function first computes the spatial adjacency matrix using the specified parameters,
+#' and then normalizes the matrix to make it row-stochastic.
 #'
 #' @param coord_mat A numeric matrix representing the spatial coordinates
 #' @param dthresh Numeric, the distance threshold defining the radius of the neighborhood (default is sigma*3)
@@ -248,7 +359,6 @@ spatial_smoother <- function(coord_mat, sigma=5, nnk=3^(ncol(coord_mat)), stocha
 #'
 #' @return A sparse symmetric matrix representing the computed spatial adjacency
 #'
-#' @importFrom rflann RadiusSearch
 #' @importFrom Matrix sparseMatrix
 #' @export
 #'
@@ -281,9 +391,12 @@ spatial_adjacency <- function(coord_mat, dthresh=sigma*3, nnk=27, weight_mode=c(
 }
 
 
-#' Compute the doubly stochastic matrix from a given matrix
+#' Compute the Doubly Stochastic Matrix from a Given Matrix
 #'
-#' This function iteratively computes the doubly stochastic matrix from a given input matrix.
+#' @description
+#' Iteratively computes the doubly stochastic matrix from a given input matrix.
+#'
+#' @details
 #' A doubly stochastic matrix is a matrix in which both row and column elements sum to 1.
 #'
 #' @param A A numeric matrix for which to compute the doubly stochastic matrix
@@ -330,17 +443,16 @@ make_doubly_stochastic <- function(A, iter=30) {
 
 #' Normalize Adjacency Matrix
 #'
-#' This function normalizes an adjacency matrix by dividing each element by the product of the square root of the corresponding row and column sums.
+#' @description
+#' Normalizes an adjacency matrix by dividing each element by the product of the square root of the corresponding row and column sums.
+#'
+#' @details
 #' Optionally, it can also symmetrize the normalized matrix by averaging it with its transpose.
 #'
 #' @param sm A sparse adjacency matrix representing the graph.
 #' @param symmetric A logical value indicating whether to symmetrize the matrix after normalization (default: TRUE).
 #'
 #' @return A normalized and, if requested, symmetrized adjacency matrix.
-#'
-#' @examples
-#' A <- matrix(runif(100), 10, 10)
-#' A_normalized <- normalize_adjacency(A)
 #'
 #' @importFrom Matrix rowSums
 #' @export
@@ -357,7 +469,14 @@ normalize_adjacency <- function(sm, symmetric=TRUE) {
   sm
 }
 
-#' Compute the adjacency between two adjacency matrices weighted by two corresponding feature matrices.
+#' Compute the Adjacency between Two Adjacency Matrices Weighted by Two Corresponding Feature Matrices.
+#'
+#' @description
+#' Computes the adjacency between two adjacency matrices weighted by two corresponding feature matrices.
+#'
+#' @details
+#' The function first computes the spatial adjacency matrix between the two sets of points,
+#' and then weights the matrix using the feature matrices.
 #'
 #' @param coord_mat1 the first coordinate matrix (the query)
 #' @param coord_mat2 the second coordinate matrix (the reference)
@@ -397,8 +516,10 @@ cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
   assert_that(alpha >= 0 && alpha <=1)
   assert_that(dthresh > 0)
 
-  full_nn <- rflann::RadiusSearch(coord_mat1, coord_mat2, radius=dthresh^2,
-                                  max_neighbour=nnk)
+  full_nn <- hnsw_radius_search(coord_mat1, coord_mat2, 
+                               radius=dthresh^2, 
+                               max_neighbors=nnk,
+                               distance="l2")
 
   weight_mode <- match.arg(weight_mode)
 
@@ -429,7 +550,12 @@ cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
 
 #' Bilateral Spatial Smoother
 #'
-#' This function computes a bilateral smoothing of the input data, which combines spatial and feature information to provide a smoothed representation of the data.
+#' @description
+#' Computes a bilateral smoothing of the input data, which combines spatial and feature information to provide a smoothed representation of the data.
+#'
+#' @details
+#' The function first computes the spatial adjacency matrix using the specified parameters,
+#' and then weights the matrix using the feature matrix.
 #'
 #' @param coord_mat A matrix with the spatial coordinates of the data points, where each row represents a point and each column represents a coordinate dimension.
 #' @param feature_mat A matrix with the feature vectors of the data points, where each row represents a point and each column represents a feature dimension.
@@ -451,7 +577,10 @@ bilateral_smoother <- function(coord_mat, feature_mat, nnk=27, s_sigma=2.5, f_si
   assert_that(nnk >= 4)
 
   ## find the set of spatial nearest neighbors
-  full_nn <- rflann::RadiusSearch(coord_mat, coord_mat, radius=(s_sigma*2.5)^2, max_neighbour=nnk)
+  full_nn <- hnsw_radius_search(coord_mat, coord_mat, 
+                               radius=(s_sigma*2.5)^2, 
+                               max_neighbors=nnk,
+                               distance="l2")
 
   nels <- sum(sapply(full_nn$indices, length))
 
@@ -465,12 +594,16 @@ bilateral_smoother <- function(coord_mat, feature_mat, nnk=27, s_sigma=2.5, f_si
   }
 
   sm
-
 }
 
 #' Weighted Spatial Adjacency
 #'
+#' @description
 #' Constructs a spatial adjacency matrix, where weights are determined by a secondary feature matrix.
+#'
+#' @details
+#' The function first computes the spatial adjacency matrix using the specified parameters,
+#' and then weights the matrix using the feature matrix.
 #'
 #' @param coord_mat A matrix with the spatial coordinates of the data points, where each row represents a point and each column represents a coordinate dimension.
 #' @param feature_mat A matrix with the feature vectors of the data points, where each row represents a point and each column represents a feature dimension. The number of rows in feature_mat must be equal to the number of rows in coord_mat.
@@ -501,16 +634,18 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
                                        normalized=FALSE,
                                        stochastic=FALSE) {
 
-
   assert_that(nrow(feature_mat) == nrow(coord_mat))
   assert_that(alpha >= 0 && alpha <=1)
   assert_that(dthresh > 0)
 
   ## find the set of spatial nearest neighbors
-  full_nn <- rflann::RadiusSearch(coord_mat, coord_mat, radius=dthresh^2, max_neighbour=nnk)
+  full_nn <- hnsw_radius_search(coord_mat, coord_mat, 
+                               radius=dthresh^2, 
+                               max_neighbors=nnk,
+                               distance="l2")
+
   weight_mode <- match.arg(weight_mode)
   alpha2 <- 1-alpha
-
 
   nels <- sum(sapply(full_nn$indices, length))
 
@@ -534,14 +669,18 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
   }
 
   sm
-
 }
 
 
 
 #' Cross Spatial Adjacency
 #'
+#' @description
 #' Constructs a cross spatial adjacency matrix between two sets of points, where weights are determined by spatial relationships.
+#'
+#' @details
+#' The function first computes the spatial adjacency matrix between the two sets of points,
+#' and then normalizes the matrix to make it row-stochastic.
 #'
 #' @param coord_mat1 A matrix with the spatial coordinates of the first set of data points, where each row represents a point and each column represents a coordinate dimension.
 #' @param coord_mat2 A matrix with the spatial coordinates of the second set of data points, where each row represents a point and each column represents a coordinate dimension.
@@ -564,9 +703,10 @@ cross_spatial_adjacency <- function(coord_mat1, coord_mat2, dthresh=sigma*3,
                                     sigma=5,
                                     normalized=TRUE) {
 
-
-  full_nn <- rflann::RadiusSearch(coord_mat1, coord_mat2, radius=dthresh^2,
-                                  max_neighbour=nnk)
+  full_nn <- hnsw_radius_search(coord_mat1, coord_mat2, 
+                               radius=dthresh^2, 
+                               max_neighbors=nnk,
+                               distance="l2")
 
   weight_mode <- match.arg(weight_mode)
 
@@ -585,4 +725,3 @@ cross_spatial_adjacency <- function(coord_mat1, coord_mat2, dthresh=sigma*3,
 
   sm
 }
-

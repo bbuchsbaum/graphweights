@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{spatial_laplacian}
 \alias{spatial_laplacian}
-\title{Compute the spatial Laplacian matrix of a coordinate matrix}
+\title{Compute the Spatial Laplacian Matrix of a Coordinate Matrix}
 \usage{
 spatial_laplacian(
   coord_mat,
@@ -33,7 +33,12 @@ spatial_laplacian(
 A sparse symmetric matrix representing the computed spatial Laplacian
 }
 \description{
-This function computes the spatial Laplacian matrix of a given coordinate matrix using specified parameters.
+Computes the spatial Laplacian matrix of a given coordinate matrix using specified parameters.
+}
+\details{
+The function first computes the spatial adjacency matrix using the specified parameters,
+and then constructs the Laplacian matrix as the difference between the diagonal matrix
+of row sums and the adjacency matrix.
 }
 \examples{
 # Create an example coordinate matrix

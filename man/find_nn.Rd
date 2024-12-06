@@ -17,3 +17,11 @@ A nearest neighbors result object.
 \description{
 Find nearest neighbors
 }
+\examples{
+# Create an object of class "nnsearcher"
+nn <- nnsearcher()
+
+# Find nearest neighbors
+result <- find_nn(nn)
+
+}

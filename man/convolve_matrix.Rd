@@ -7,15 +7,49 @@
 convolve_matrix(X, Kern, normalize = FALSE)
 }
 \arguments{
-\item{X}{A data matrix to be convolved.}
+\item{X}{A data matrix to be convolved}
 
-\item{Kern}{A kernel matrix used for the convolution.}
+\item{Kern}{A kernel matrix used for the convolution}
 
-\item{normalize}{A logical flag indicating whether to normalize the kernel matrix before performing the convolution (default: FALSE).}
+\item{normalize}{Logical; whether to normalize the kernel matrix (default: FALSE)}
 }
 \value{
-A matrix resulting from the convolution of the data matrix `X` with the kernel matrix `Kern`.
+A matrix resulting from the convolution X * Kern
 }
 \description{
-Performs a convolution operation on a given data matrix `X` using a specified kernel matrix `Kern`.
+Performs a convolution operation between a data matrix and a kernel matrix,
+with optional kernel normalization. This function is useful for applying
+smoothing or feature transformation operations in graph-based learning.
+}
+\details{
+The convolution operation performs matrix multiplication between the input
+data matrix and the kernel matrix: X * Kern. When normalize=TRUE, the kernel
+is first normalized using the degree matrix, which can help prevent numerical
+instabilities and ensure proper scaling.
+
+Performance characteristics:
+* Time complexity: O(n*m*k) where n,m,k are matrix dimensions
+* Space complexity: O(n*m) for the output matrix
+* Most efficient when matrices are sparse
+
+Common use cases:
+* Smoothing feature matrices using graph kernels
+* Applying diffusion operations in semi-supervised learning
+* Feature transformation in spectral methods
+}
+\examples{
+# Create sample data
+X <- matrix(rnorm(20), 4, 5)
+Kern <- matrix(runif(25), 5, 5)
+
+# Basic convolution
+result <- convolve_matrix(X, Kern)
+
+# Normalized convolution
+result_norm <- convolve_matrix(X, Kern, normalize = TRUE)
+
+}
+\seealso{
+* \code{\link{create_label_matrix}} for creating similarity matrices
+* \code{\link{expand_label_similarity}} for expanding label relationships
 }

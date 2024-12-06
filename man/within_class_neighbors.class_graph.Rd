@@ -4,16 +4,28 @@
 \alias{within_class_neighbors.class_graph}
 \title{Within-Class Neighbors for class_graph Objects}
 \usage{
-\method{within_class_neighbors}{class_graph}(x, ng)
+\method{within_class_neighbors}{class_graph}(x, ng, ...)
 }
 \arguments{
-\item{x}{A class_graph object.}
+\item{x}{A class_graph object containing class membership information.}
 
-\item{ng}{A neighbor graph object.}
+\item{ng}{A neighbor_graph object containing the base network structure.}
+
+\item{...}{Additional arguments passed to methods (currently unused).}
 }
 \value{
-A neighbor_graph object representing the within-class neighbors of the input class_graph.
+A neighbor_graph object containing only within-class connections.
 }
 \description{
-Compute the within-class neighbors of a class_graph object.
+Computes a neighbor graph that only includes connections between vertices of the same class.
+This is useful for analyzing class-specific network structures.
+}
+\examples{
+# Create example data
+data(iris)
+X <- as.matrix(iris[, 1:4])
+cg <- class_graph(iris$Species)
+ng <- neighbor_graph(X)
+within_ng <- within_class_neighbors(cg, ng)
+
 }

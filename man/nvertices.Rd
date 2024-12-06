@@ -7,15 +7,16 @@
 nvertices(x, ...)
 }
 \arguments{
-\item{x}{an object with a neighborhood}
+\item{x}{An object with a neighborhood structure.}
 
-\item{...}{Additional arguments (currently ignored).}
+\item{...}{Additional arguments passed to methods (currently ignored).}
 }
 \value{
-The number of vertices in the neighbor_graph object.
+An integer representing the number of vertices in the graph.
 }
 \description{
-Retrieve the number of vertices in a neighbor_graph object.
+Retrieve the number of vertices in a graph-like object. This function is a generic method
+that works with various types of graph representations.
 }
 \examples{
 # Create a small example graph

@@ -2,24 +2,68 @@
 % Please edit documentation in R/spatial_weights.R
 \name{pairwise_adjacency}
 \alias{pairwise_adjacency}
-\title{Compute a pairwise adjacency matrix for multiple graphs}
+\title{Compute Pairwise Adjacency Matrix for Multiple Graphs}
 \usage{
 pairwise_adjacency(Xcoords, Xfeats, fself, fbetween)
 }
 \arguments{
-\item{Xcoords}{A list of numeric matrices or data.frames containing the spatial coordinates of the nodes of each graph.}
+\item{Xcoords}{A list of numeric matrices or data frames, where each element
+contains the spatial coordinates of nodes for one graph.}
 
-\item{Xfeats}{A list of numeric matrices or data.frames containing the feature vectors for the nodes of each graph.}
+\item{Xfeats}{A list of numeric matrices or data frames, where each element
+contains the feature vectors for nodes of one graph. Must have the same length
+as Xcoords.}
 
-\item{fself}{A function that computes similarity for nodes within the same graph (e.g., Xi_1, Xi_2).}
+\item{fself}{A function that computes similarity for nodes within the same graph.
+Should take arguments (coords, feats) and return a sparse similarity matrix.}
 
-\item{fbetween}{A function that computes similarity for nodes across graphs (e.g., Xi_1, Xj_1).}
+\item{fbetween}{A function that computes similarity for nodes between different graphs.
+Should take arguments (coords1, coords2, feats1, feats2) and return a sparse
+similarity matrix.}
 }
 \value{
-A sparse matrix representing the pairwise adjacency matrix for the input graphs.
+A sparse Matrix object representing the pairwise adjacency matrix for all
+  input graphs combined. The matrix dimensions are (N1 + N2 + ... + Nk) x (N1 + N2 + ... + Nk),
+  where Ni is the number of nodes in graph i.
 }
 \description{
-This function computes a pairwise adjacency matrix for multiple graphs with a given set of spatial coordinates
-and feature vectors. The function takes two user-defined functions to compute within-graph and between-graph
-similarity measures.
+Computes a pairwise adjacency matrix for multiple graphs using spatial coordinates
+and feature vectors. The function allows custom similarity measures for both
+within-graph and between-graph comparisons.
+}
+\details{
+The function constructs a block matrix where:
+* Diagonal blocks represent within-graph similarities (computed using fself)
+* Off-diagonal blocks represent between-graph similarities (computed using fbetween)
+The resulting matrix is symmetric and preserves the graph structure of the input data.
+}
+\examples{
+\dontrun{
+# Create sample data for two graphs
+coords1 <- matrix(runif(20), 10, 2)
+coords2 <- matrix(runif(16), 8, 2)
+feats1 <- matrix(rnorm(30), 10, 3)
+feats2 <- matrix(rnorm(24), 8, 3)
+
+# Define similarity functions
+fself <- function(coords, feats) {
+  # Example similarity computation within graph
+  dist_mat <- as.matrix(dist(coords))
+  exp(-dist_mat^2)
+}
+
+fbetween <- function(coords1, coords2, feats1, feats2) {
+  # Example similarity computation between graphs
+  dist_mat <- as.matrix(dist(rbind(coords1, coords2)))
+  exp(-dist_mat^2)
+}
+
+# Compute pairwise adjacency
+adj_mat <- pairwise_adjacency(
+  list(coords1, coords2),
+  list(feats1, feats2),
+  fself, fbetween
+)
+}
+
 }

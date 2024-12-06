@@ -7,19 +7,45 @@
 \method{neighbor_graph}{Matrix}(x, params = list(), type = NULL, classes = NULL, ...)
 }
 \arguments{
-\item{x}{A Matrix object.}
+\item{x}{A Matrix object representing an adjacency matrix}
 
-\item{params}{A list of parameters.}
+\item{params}{A list of parameters used in graph construction (default: empty list)}
 
-\item{type}{A character string specifying the type of graph.}
+\item{type}{A character string specifying the type of graph (optional)}
 
-\item{classes}{A character vector specifying additional classes for the object.}
+\item{classes}{A character vector specifying additional classes to be added to
+the object (optional)}
 
-\item{...}{Additional arguments.}
+\item{...}{Additional arguments to be stored in the neighbor_graph object}
 }
 \value{
-A neighbor_graph object.
+A neighbor_graph object with the following components:
+  * G: An igraph object created from the adjacency matrix
+  * params: List of parameters used in graph construction
+  * Additional components specified via ...
 }
 \description{
-Create a neighbor_graph object from a Matrix object.
+Creates a neighbor_graph object from a Matrix object representing an adjacency matrix.
+}
+\details{
+Converts an adjacency matrix into a neighbor_graph object by first creating an
+intermediate igraph representation. The matrix is interpreted as an undirected,
+weighted graph where non-zero entries indicate edges and their weights.
+}
+\examples{
+# Create a simple adjacency matrix
+adj_mat <- Matrix::sparseMatrix(
+  i = c(1,2,2,3),
+  j = c(2,1,3,2),
+  x = c(1,1,1,1),
+  dims = c(3,3)
+)
+
+# Convert to neighbor_graph
+ng <- neighbor_graph(adj_mat)
+
+}
+\seealso{
+* \code{\link{neighbor_graph.igraph}} for creating from igraph objects
+* \code{\link{adjacency.neighbor_graph}} for extracting adjacency information
 }

@@ -19,36 +19,104 @@ spatial_constraints(
 )
 }
 \arguments{
-\item{coords}{The spatial coordinates as a matrix with rows as objects and columns as dimensions; or as a list of matrices where each element of the list contains the coordinates for a block.}
+\item{coords}{A matrix or list of matrices containing spatial coordinates:
+* Matrix: rows are objects, columns are spatial dimensions (e.g., x, y, z)
+* List: each element is a matrix of coordinates for one block}
 
-\item{nblocks}{The number of coordinate blocks. Default is 1.}
+\item{nblocks}{Integer specifying number of data blocks (default: 1)
+* 1: Single block analysis
+* >1: Multi-block analysis with between-block constraints}
 
-\item{sigma_within}{The bandwidth of the within-block smoother. Default is 5.}
+\item{sigma_within}{Numeric bandwidth for within-block spatial kernel (default: 5)
+* Larger values: Smoother spatial relationships
+* Smaller values: More localized relationships}
 
-\item{sigma_between}{The bandwidth of the between-block smoother. Default is 1.}
+\item{sigma_between}{Numeric bandwidth for between-block spatial kernel (default: 1)
+* Controls strength of connections between blocks
+* Smaller values create more separation between blocks}
 
-\item{shrinkage_factor}{The amount of shrinkage towards the spatial block average. Default is 0.1.}
+\item{shrinkage_factor}{Numeric between 0 and 1 (default: 0.1)
+* Controls balance between within/between block constraints
+* 0: Only within-block constraints
+* 1: Maximum between-block influence}
 
-\item{nnk_within}{The maximum number of nearest neighbors for within-block smoother. Default is 27.}
+\item{nnk_within}{Integer maximum nearest neighbors within blocks (default: 27)
+* Limits computational complexity
+* Should be large enough to ensure connectivity}
 
-\item{nnk_between}{The maximum number of nearest neighbors for between-block smoother. Default is 1.}
+\item{nnk_between}{Integer maximum nearest neighbors between blocks (default: 1)
+* Controls sparsity of between-block connections
+* Smaller values create sparser connections}
 
-\item{weight_mode_within}{The within-block nearest neighbor weight mode ("heat" or "binary"). Default is "heat".}
+\item{weight_mode_within}{Character specifying within-block weight type:
+* "heat": Gaussian kernel weights (default)
+* "binary": Binary weights for thresholded connections}
 
-\item{weight_mode_between}{The between-block nearest neighbor weight mode ("heat" or "binary"). Default is "binary".}
+\item{weight_mode_between}{Character specifying between-block weight type:
+* "heat": Gaussian kernel weights
+* "binary": Binary weights (default)}
 
-\item{variable_weights}{A vector of per-variable weights. Default is 1.}
+\item{variable_weights}{Numeric vector of weights per variable (default: 1)
+* Length must match total number of variables
+* Allows differential weighting of variables}
 
-\item{verbose}{A boolean indicating whether to print progress messages. Default is FALSE.}
+\item{verbose}{Logical for progress messages (default: FALSE)}
 }
 \value{
-A sparse matrix representing the spatial constraints for the provided data blocks.
+A sparse Matrix object representing spatial constraints where:
+  * Positive values indicate spatial relationships
+  * Larger values indicate stronger relationships
+  * Matrix is normalized by its largest eigenvalue
 }
 \description{
-This function creates a sparse matrix of spatial constraints for a set of data blocks. The spatial constraints matrix is useful in applications like image segmentation, where spatial information is crucial for identifying different regions in the image.
+Creates a sparse matrix of spatial constraints that captures the spatial relationships
+between data points within and between blocks. This is particularly useful in applications
+such as image segmentation, spatial clustering, and spatially-aware dimensionality reduction.
 }
-\section{Details}{
+\details{
+The function constructs a spatial constraint matrix by:
+1. Computing within-block spatial relationships using a Gaussian kernel
+2. Computing between-block spatial relationships (if nblocks > 1)
+3. Balancing within and between-block relationships using shrinkage
+4. Normalizing the final matrix by its largest eigenvalue
 
-The function computes within-block and between-block constraints based on the provided coordinates, bandwidths, and other input parameters. It then balances the within-block and between-block constraints using a shrinkage factor, and normalizes the resulting matrix by the first eigenvalue.
+The spatial relationships are computed based on:
+* Within-block: Closer points have stronger connections
+* Between-block: Connections between blocks are controlled by sigma_between
+* Shrinkage: Controls the balance between within and between-block relationships
+
+Common use cases include:
+* Image segmentation: Group pixels based on spatial proximity
+* fMRI analysis: Model spatial relationships between brain regions
+* Spatial clustering: Incorporate spatial constraints in clustering
+* Dimensionality reduction: Preserve spatial structure in low-dimensional embeddings
 }
+\examples{
+# Example 1: Simple 2D grid
+coords <- expand.grid(x = 1:10, y = 1:10)
+S <- spatial_constraints(as.matrix(coords), 
+                        sigma_within = 2,
+                        nnk_within = 8)
 
+# Example 2: Multi-block analysis
+block1 <- expand.grid(x = 1:5, y = 1:5)
+block2 <- expand.grid(x = 6:10, y = 6:10)
+coords <- list(as.matrix(block1), as.matrix(block2))
+S <- spatial_constraints(coords,
+                        nblocks = 2,
+                        sigma_within = 2,
+                        sigma_between = 1,
+                        shrinkage_factor = 0.2)
+
+# Example 3: 3D neuroimaging-like data
+coords3d <- expand.grid(x = 1:5, y = 1:5, z = 1:5)
+S <- spatial_constraints(as.matrix(coords3d),
+                        sigma_within = 3,
+                        nnk_within = 26,
+                        weight_mode_within = "heat")
+
+}
+\seealso{
+* \code{\link{feature_weighted_spatial_constraints}} for feature-aware constraints
+* \code{\link{neighbor_graph}} for graph construction
+}

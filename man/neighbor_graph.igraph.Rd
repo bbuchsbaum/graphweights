@@ -7,19 +7,45 @@
 \method{neighbor_graph}{igraph}(x, params = list(), type = NULL, classes = NULL, ...)
 }
 \arguments{
-\item{x}{An igraph object.}
+\item{x}{An igraph object representing the graph structure}
 
-\item{params}{A list of parameters.}
+\item{params}{A list of parameters used in graph construction (default: empty list)}
 
-\item{type}{A character string specifying the type of graph.}
+\item{type}{A character string specifying the type of graph (optional)}
 
-\item{classes}{A character vector specifying additional classes for the object.}
+\item{classes}{A character vector specifying additional classes to be added to
+the object (optional)}
 
-\item{...}{Additional arguments.}
+\item{...}{Additional arguments to be stored in the neighbor_graph object}
 }
 \value{
-A neighbor_graph object.
+A neighbor_graph object with the following components:
+  * G: The underlying igraph object
+  * params: List of parameters used in graph construction
+  * Additional components specified via ...
 }
 \description{
-Create a neighbor_graph object from an igraph object.
+Creates a neighbor_graph object from an existing igraph object, providing a consistent
+interface for graph-based operations in the graphweights package.
+}
+\details{
+The neighbor_graph class provides a unified interface for working with neighborhood
+relationships in graph structures. This constructor creates a neighbor_graph from
+an existing igraph object, preserving its structure while adding functionality
+specific to neighborhood-based operations.
+}
+\examples{
+\dontrun{
+# Create a simple igraph object
+library(igraph)
+g <- make_ring(10)
+
+# Convert to neighbor_graph
+ng <- neighbor_graph(g)
+}
+
+}
+\seealso{
+* \code{\link{neighbor_graph.Matrix}} for creating from adjacency matrices
+* \code{\link{adjacency.neighbor_graph}} for extracting adjacency information
 }

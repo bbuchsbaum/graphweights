@@ -7,13 +7,39 @@
 \method{adjacency}{neighbor_graph}(x, attr = "weight")
 }
 \arguments{
-\item{x}{A neighbor_graph object.}
+\item{x}{A neighbor_graph object}
 
-\item{attr}{A character string specifying the attribute to use for the adjacency matrix.}
+\item{attr}{A character string specifying the edge attribute to use as weights
+(default: "weight")}
 }
 \value{
-A Matrix object representing the adjacency matrix.
+A sparse Matrix object representing the adjacency matrix where:
+  * Non-zero entries indicate edges
+  * Values correspond to edge weights (if weighted)
+  * The matrix is symmetric for undirected graphs
 }
 \description{
-Extract the adjacency matrix from a neighbor_graph object.
+Extracts the adjacency matrix representation from a neighbor_graph object,
+optionally using a specific edge attribute for weights.
+}
+\details{
+The adjacency matrix represents the graph structure where each entry (i,j)
+indicates the presence and weight of an edge between vertices i and j.
+For unweighted graphs, non-zero entries are 1. For weighted graphs,
+the entries correspond to the specified edge attribute.
+}
+\examples{
+\dontrun{
+# Create a neighbor graph
+g <- make_ring(5)
+ng <- neighbor_graph(g)
+
+# Extract adjacency matrix
+adj_mat <- adjacency(ng)
+}
+
+}
+\seealso{
+* \code{\link{laplacian.neighbor_graph}} for computing the Laplacian matrix
+* \code{\link{neighbors.neighbor_graph}} for finding neighboring vertices
 }

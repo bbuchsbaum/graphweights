@@ -15,11 +15,8 @@ normalize_adjacency(sm, symmetric = TRUE)
 A normalized and, if requested, symmetrized adjacency matrix.
 }
 \description{
-This function normalizes an adjacency matrix by dividing each element by the product of the square root of the corresponding row and column sums.
-Optionally, it can also symmetrize the normalized matrix by averaging it with its transpose.
+Normalizes an adjacency matrix by dividing each element by the product of the square root of the corresponding row and column sums.
 }
-\examples{
-A <- matrix(runif(100), 10, 10)
-A_normalized <- normalize_adjacency(A)
-
+\details{
+Optionally, it can also symmetrize the normalized matrix by averaging it with its transpose.
 }

@@ -30,7 +30,11 @@ bilateral_smoother(
 A sparse adjacency matrix representing the smoothed data.
 }
 \description{
-This function computes a bilateral smoothing of the input data, which combines spatial and feature information to provide a smoothed representation of the data.
+Computes a bilateral smoothing of the input data, which combines spatial and feature information to provide a smoothed representation of the data.
+}
+\details{
+The function first computes the spatial adjacency matrix using the specified parameters,
+and then weights the matrix using the feature matrix.
 }
 \examples{
 coord_mat <- as.matrix(expand.grid(1:10, 1:10))

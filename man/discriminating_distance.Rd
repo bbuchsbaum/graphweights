@@ -7,26 +7,34 @@
 discriminating_distance(X, k = length(labels)/2, sigma, labels)
 }
 \arguments{
-\item{X}{A numeric matrix or data frame containing the data points.}
+\item{X}{A numeric matrix or data frame where rows are observations and columns are features.}
 
-\item{k}{An integer representing the number of nearest neighbors to consider. Default is the number of unique labels divided by 2.}
+\item{k}{Integer; number of nearest neighbors to consider. Defaults to half the number of labels.}
 
-\item{sigma}{A numeric value representing the scaling factor for the heat kernel. If not provided, it will be estimated.}
+\item{sigma}{Numeric; scaling factor for the heat kernel. If missing, it will be estimated from the data.}
 
-\item{labels}{A factor or numeric vector containing the class labels for each data point.}
+\item{labels}{Factor or vector containing class labels for each observation.}
 }
 \value{
-A discriminating distance matrix in the form of a numeric matrix.
+A numeric matrix representing the discriminating distances between observations.
 }
 \description{
-This function computes a discriminating distance matrix for the similarity graph based on the class labels.
-It adjusts the similarity graph by modifying the weights within and between classes, making it more suitable for
-tasks like classification and clustering.
+Computes a discriminating distance matrix for a similarity graph based on class labels.
+The function modifies the weights within and between classes to enhance class discrimination,
+making it particularly useful for classification and clustering tasks.
 }
 \examples{
-X <- matrix(rnorm(100*100), 100, 100)
-labels <- factor(rep(1:5, each=20))
-sigma <- 0.7
-D <- discriminating_distance(X, k=length(labels)/2, sigma, labels)
+# Create example data
+set.seed(123)
+X <- matrix(rnorm(100 * 4), 100, 4)
+labels <- factor(rep(1:5, each = 20))
 
+# Compute discriminating distance
+D <- discriminating_distance(X, k = 10, sigma = 0.7, labels = labels)
+
+}
+\references{
+Cai, D., He, X., Zhou, K., Han, J., & Bao, H. (2007). 
+Locality Sensitive Discriminant Analysis. 
+In IJCAI (Vol. 2007, pp. 708-713).
 }

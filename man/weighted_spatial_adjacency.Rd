@@ -47,6 +47,10 @@ A sparse adjacency matrix with weighted spatial relationships.
 \description{
 Constructs a spatial adjacency matrix, where weights are determined by a secondary feature matrix.
 }
+\details{
+The function first computes the spatial adjacency matrix using the specified parameters,
+and then weights the matrix using the feature matrix.
+}
 \examples{
 coord_mat <- as.matrix(expand.grid(x=1:9, y=1:9, z=1:9))
 fmat <- matrix(rnorm(nrow(coord_mat) * 100), nrow(coord_mat), 100)

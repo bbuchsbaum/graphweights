@@ -4,31 +4,42 @@
 \alias{class_graph}
 \title{Construct a Class Graph}
 \usage{
-class_graph(labels, sparse = TRUE)
+class_graph(labels, sparse = TRUE, self_connections = FALSE)
 }
 \arguments{
-\item{labels}{A vector of class labels.}
+\item{labels}{A vector of class labels that will be converted to factors if not already.}
 
-\item{sparse}{A logical value, indicating whether to use sparse matrices in the computation. Default is TRUE.}
+\item{sparse}{Logical; whether to use sparse matrices in the computation. Default is TRUE.
+Using sparse matrices can significantly reduce memory usage for large datasets.}
+
+\item{self_connections}{Logical; whether to include self-connections (diagonal elements set to 1).
+Default is FALSE, following standard graph theory conventions.}
 }
 \value{
-A class_graph object, which is a list containing the following components:
+A `class_graph` object, which is a list containing:
 \itemize{
-  \item{adjacency}{A matrix representing the adjacency of the graph.}
-  \item{params}{A list of parameters used in the construction of the graph.}
+  \item{adjacency}{A matrix representing the adjacency structure of the graph.}
+  \item{params}{A list of parameters used in graph construction.}
   \item{labels}{A vector of class labels.}
-  \item{class_indices}{A list of vectors, each containing the indices of elements belonging to a specific class.}
-  \item{class_freq}{A table of frequencies for each class.}
+  \item{class_indices}{A list of vectors containing indices for each class.}
+  \item{class_freq}{A table of class frequencies.}
   \item{levels}{A vector of unique class labels.}
-  \item{classes}{A character string indicating the type of graph ("class_graph").}
+  \item{classes}{Character string "class_graph" indicating the object type.}
 }
 }
 \description{
-A graph in which members of the same class have edges.
+Creates a graph structure where edges connect members of the same class. This is useful
+for various machine learning tasks where class relationships need to be preserved.
 }
 \examples{
+# Create a simple class graph from iris dataset
 data(iris)
-labels <- iris[,5]
+labels <- iris$Species
+
+# Without self-connections (default)
 cg <- class_graph(labels)
+
+# With self-connections
+cg_self <- class_graph(labels, self_connections = TRUE)
 
 }

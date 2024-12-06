@@ -7,13 +7,32 @@
 \method{non_neighbors}{neighbor_graph}(x, i)
 }
 \arguments{
-\item{x}{A neighbor_graph object.}
+\item{x}{A neighbor_graph object}
 
-\item{i}{The index of the node for which non-neighboring nodes will be returned.}
+\item{i}{Integer specifying the vertex index for which to find non-neighbors}
 }
 \value{
-A list of node indices that are not neighbors of the given node.
+A numeric vector containing indices of vertices that are not neighbors
+  of the specified vertex i
 }
 \description{
-Retrieve the non-neighboring nodes of a given node in a neighbor_graph object.
+Identifies vertices that are not connected to a specified vertex in the graph.
+}
+\details{
+For a given vertex i, returns all vertices that do not share an edge with i.
+This is useful for finding disconnected components or analyzing graph structure.
+}
+\examples{
+\dontrun{
+# Create a neighbor graph
+g <- make_ring(5)
+ng <- neighbor_graph(g)
+
+# Find non-neighbors of vertex 1
+non_n <- non_neighbors(ng, 1)
+}
+
+}
+\seealso{
+* \code{\link{neighbors.neighbor_graph}} for finding neighboring vertices
 }

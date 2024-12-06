@@ -17,3 +17,11 @@ A nearest neighbors result object.
 \description{
 Find nearest neighbors between two sets of data points
 }
+\examples{
+# Create an object of class "nnsearcher"
+nn <- nnsearcher()
+
+# Find nearest neighbors between two sets of data points
+result <- find_nn_between(nn)
+
+}

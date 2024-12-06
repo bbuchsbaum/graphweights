@@ -7,11 +7,32 @@
 \method{edges}{neighbor_graph}(x)
 }
 \arguments{
-\item{x}{A neighbor_graph object.}
+\item{x}{A neighbor_graph object}
 }
 \value{
-A matrix containing the edges of the neighbor_graph object.
+A numeric matrix with two columns:
+  * Column 1: Source vertex indices
+  * Column 2: Target vertex indices
 }
 \description{
-Retrieve the edges of a neighbor_graph object.
+Retrieves all edges from a neighbor_graph object as a two-column matrix.
+}
+\details{
+Returns a matrix where each row represents an edge, with the first column
+containing the source vertex index and the second column containing the
+target vertex index.
+}
+\examples{
+\dontrun{
+# Create a neighbor graph
+g <- make_ring(5)
+ng <- neighbor_graph(g)
+
+# Get all edges
+edges <- edges(ng)
+}
+
+}
+\seealso{
+* \code{\link{neighbors.neighbor_graph}} for finding neighboring vertices
 }

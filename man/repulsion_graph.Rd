@@ -2,7 +2,7 @@
 % Please edit documentation in R/repulsion.R
 \name{repulsion_graph}
 \alias{repulsion_graph}
-\title{This function creates a repulsion graph, which is a graph where edges between vertices of different classes are emphasized, while edges within the same class are suppressed.}
+\title{Create a Repulsion Graph}
 \usage{
 repulsion_graph(
   W,
@@ -13,36 +13,84 @@ repulsion_graph(
 )
 }
 \arguments{
-\item{W}{The adjacency matrix (weighted or binary) representing the relationships between vertices in the input graph.}
+\item{W}{A weighted adjacency matrix (class Matrix) or neighbor_graph object
+representing the base similarity graph}
 
-\item{cg}{The class graph indicating the pairwise relationships among node classes.}
+\item{cg}{A class_graph object indicating pairwise relationships among node classes}
 
-\item{method}{A character string indicating the method used to create the repulsion graph. Can be either "binary" or "weighted". Default is "binary".}
+\item{method}{Character string specifying the repulsion method:
+* "binary": Creates a binary repulsion graph
+* "weighted": Creates a weighted repulsion graph (default)}
 
-\item{threshold}{A numeric value used to filter the adjacency matrix. Edges with weights below this threshold will be ignored. Default is 0.}
+\item{threshold}{Numeric threshold for filtering edge weights (default: 0).
+Edges with weights <= threshold are removed}
 
-\item{norm_fac}{A numeric value used to normalize the weights in the adjacency matrix when the method is set to "weighted". Default is 1.}
+\item{norm_fac}{Numeric normalization factor for edge weights in weighted method
+(default: 1). Higher values reduce edge weights}
 }
 \value{
-A `neighbor_graph` object representing the repulsion graph.
+A neighbor_graph object representing the repulsion graph where:
+  * Edges between same-class vertices are removed
+  * Between-class edges are preserved (binary) or scaled (weighted)
+  * The graph maintains the same number of vertices as the input
 }
 \description{
-This function creates a repulsion graph, which is a graph where edges between vertices of different classes are emphasized, while edges within the same class are suppressed.
+Creates a repulsion graph that emphasizes edges between vertices of different
+classes while suppressing edges within the same class. This is particularly
+useful for semi-supervised learning and graph-based classification tasks where
+class boundaries need to be emphasized.
+}
+\details{
+A repulsion graph modifies an input similarity graph by incorporating class
+information to enhance between-class edges and suppress within-class edges.
+This is achieved by:
+
+1. Binary method:
+   * Removes all edges between vertices of the same class
+   * Preserves edges between different classes
+
+2. Weighted method:
+   * Scales edge weights by a normalization factor
+   * Removes within-class edges
+   * Preserves between-class edge structure
+
+Common use cases:
+* Semi-supervised learning with graph-based methods
+* Enhancing class separation in spectral clustering
+* Feature selection based on class discrimination
+* Graph-based dimensionality reduction
 }
 \examples{
-# Example with random data
-X <- matrix(rnorm(100*100), 100, 100)
-labels <- factor(rep(1:5, each=20))
-cg <- class_graph(labels)
-W <- graph_weights(X, k=10)
-R <- repulsion_graph(W, cg, method="weighted")
-
-# Example with iris dataset
+# Example 1: Using iris dataset
 data(iris)
-X2 <- as.matrix(iris[, 1:4])
-labels <- iris[, 5]
-cg <- class_graph(labels)
-W <- graph_weights(X2, k=6)
-R <- repulsion_graph(W, cg, method="weighted")
+X <- as.matrix(iris[, 1:4])
+labels <- iris$Species
 
+# Create base similarity graph
+W <- graph_weights(X, k = 6)
+
+# Create class graph
+cg <- class_graph(labels)
+
+# Create binary repulsion graph
+R_bin <- repulsion_graph(W, cg, method = "binary")
+
+# Create weighted repulsion graph
+R_wt <- repulsion_graph(W, cg, method = "weighted", norm_fac = 2)
+
+# Example 2: Custom data with multiple classes
+set.seed(123)
+X <- matrix(rnorm(100 * 10), 100, 10)  # 100 samples, 10 features
+labels <- factor(rep(1:5, each = 20))   # 5 classes
+
+# Create graphs
+W <- graph_weights(X, k = 8)
+cg <- class_graph(labels)
+R <- repulsion_graph(W, cg, method = "weighted", threshold = 0.1)
+
+}
+\seealso{
+* \code{\link{class_graph}} for creating class relationship graphs
+* \code{\link{graph_weights}} for creating base similarity graphs
+* \code{\link{neighbor_graph}} for the base graph class
 }

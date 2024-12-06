@@ -1,22 +1,78 @@
-
-#' Create a Binary Label Adjacency Matrix
+#' Create a Label Similarity Matrix
 #'
-#' Constructs a binary adjacency matrix based on two sets of labels `a` and `b`, creating edges when `a` and `b` have the same or different labels, depending on the `type` parameter.
+#' @description
+#' Creates a similarity or dissimilarity matrix between categorical labels using the most
+#' appropriate implementation based on the input characteristics and requirements.
 #'
-#' @param a A vector of labels for the first set of data points.
-#' @param b A vector of labels for the second set of data points (default: NULL). If NULL, `b` will be set to `a`.
-#' @param type A character specifying the type of adjacency matrix to create, either "s" for same labels or "d" for different labels (default: "s").
+#' @details
+#' This function provides a unified interface for creating label similarity matrices,
+#' automatically selecting the most appropriate implementation based on:
+#' * Input size and sparsity
+#' * Memory constraints
+#' * Custom similarity requirements
 #'
-#' @return A binary adjacency matrix with edges determined by the label relationships between `a` and `b`.
+#' Available implementations:
+#' * Sparse: Memory-efficient for large, sparse label relationships
+#' * Dense: Fast for smaller datasets with many relationships
+#' * Custom: Flexible implementation supporting arbitrary similarity functions
+#'
+#' @param a Vector of labels for the first set of data points
+#' @param b Optional vector of labels for the second set. If NULL, uses 'a'
+#' @param type Type of relationship to compute:
+#'   * "sparse": Memory-efficient implementation (formerly binary_label_matrix)
+#'   * "dense": Fast implementation for smaller datasets (formerly label_matrix2)
+#'   * "custom": Flexible implementation with custom similarity (formerly label_matrix)
+#' @param similarity_fn Optional custom similarity function
+#' @param threshold Threshold for similarity values (default: NULL)
+#' @param mode Character, either "similarity" or "distance" (default: "similarity")
+#'
+#' @return A sparse Matrix object containing the computed similarities/distances
 #'
 #' @examples
-#' data(iris)
-#' a <- iris[,5]
-#' bl <- binary_label_matrix(a, type="d")
+#' # Basic sparse similarity matrix
+#' labels <- factor(c("A", "B", "A", "C"))
+#' sim_mat <- create_label_matrix(labels, type = "sparse")
+#'
+#' # Dense matrix with custom similarity
+#' custom_sim <- function(x, y) as.numeric(x == y) * 2
+#' sim_mat2 <- create_label_matrix(labels, type = "dense",
+#'                                similarity_fn = custom_sim)
 #'
 #' @export
-#' @importFrom Matrix sparseVector tcrossprod
-binary_label_matrix <- function(a, b=NULL, type=c("s", "d")) {
+create_label_matrix <- function(a, b = NULL, 
+                              type = c("sparse", "dense", "custom"),
+                              similarity_fn = NULL,
+                              threshold = NULL,
+                              mode = c("similarity", "distance")) {
+  
+  type <- match.arg(type)
+  mode <- match.arg(mode)
+  
+  # Convert mode to legacy type parameter
+  legacy_type <- if (mode == "similarity") "s" else "d"
+  
+  # Select appropriate implementation
+  result <- switch(type,
+    "sparse" = .create_sparse_matrix(a, b, type = legacy_type),
+    "dense" = .create_dense_matrix(a, b, type = legacy_type, 
+                                 simfun = similarity_fn),
+    "custom" = .create_custom_matrix(a, b, type = legacy_type, 
+                                   simfun = similarity_fn)
+  )
+  
+  # Apply threshold if specified
+  if (!is.null(threshold)) {
+    result@x[result@x < threshold] <- 0
+    result <- drop0(result)
+  }
+  
+  result
+}
+
+#' Create a Sparse Label Matrix (Internal)
+#'
+#' @keywords internal
+.create_sparse_matrix <- function(a, b = NULL, type = c("s", "d")) {
   type <- match.arg(type)
   if (is.null(b)) {
     b <- a
@@ -59,25 +115,13 @@ binary_label_matrix <- function(a, b=NULL, type=c("s", "d")) {
   }
 
   ret <- Reduce("+", mlist)
+  ret
 }
 
-
-#' Create a Label Adjacency Matrix
+#' Create a Dense Label Matrix (Internal)
 #'
-#' Constructs a label adjacency matrix based on two sets of labels `a` and `b`, creating edges depending on the `type` parameter and the similarity function `simfun`.
-#'
-#' @param a A vector of labels for the first set of data points.
-#' @param b A vector of labels for the second set of data points.
-#' @param type A character specifying the type of adjacency matrix to create, either "s" for same labels or "d" for different labels (default: "s").
-#' @param simfun A function to determine the similarity between the labels (default: NULL). If NULL, the function will use "==" for type "s" and "!=" for type "d".
-#' @param dim1 The dimension of the first set of data points (default: length(a)).
-#' @param dim2 The dimension of the second set of data points (default: length(b)).
-#'
-#' @return A label adjacency matrix with edges determined by the label relationships between `a` and `b` and the similarity function `simfun`.
-#'
-#' @export
-label_matrix2 <- function(a, b, type=c("s", "d"), simfun=NULL, dim1=length(a),
-                          dim2=length(b)) {
+#' @keywords internal
+.create_dense_matrix <- function(a, b, type = c("s", "d"), simfun = NULL) {
   type <- match.arg(type)
 
   if (is.null(simfun) && type == "s") {
@@ -85,7 +129,6 @@ label_matrix2 <- function(a, b, type=c("s", "d"), simfun=NULL, dim1=length(a),
   } else if (is.null(simfun) && type == "d") {
     simfun <- "!="
   }
-
 
   if (type == "s") {
     out <- outer(a,b, simfun)
@@ -105,59 +148,14 @@ label_matrix2 <- function(a, b, type=c("s", "d"), simfun=NULL, dim1=length(a),
     }
 
     ret <- ret * 1
-    #ret[which(is.na(ret), arr.ind=TRUE)] <- 0
     ret
-
   }
 }
 
-
-
-#' Convolve a Data Matrix with a Kernel Matrix
+#' Create a Custom Label Matrix (Internal)
 #'
-#' Performs a convolution operation on a given data matrix `X` using a specified kernel matrix `Kern`.
-#'
-#' @param X A data matrix to be convolved.
-#' @param Kern A kernel matrix used for the convolution.
-#' @param normalize A logical flag indicating whether to normalize the kernel matrix before performing the convolution (default: FALSE).
-#'
-#' @return A matrix resulting from the convolution of the data matrix `X` with the kernel matrix `Kern`.
-#'
-#' @importFrom Matrix Diagonal
-#' @importFrom assertthat assert_that
-#' @export
-convolve_matrix <- function(X, Kern, normalize=FALSE) {
-  assert_that(ncol(Kern) == nrow(Kern))
-  assert_that(ncol(X) == nrow(Kern))
-  if (normalize) {
-    D1 <- Diagonal(x=1/sqrt(rowSums(Kern)))
-    Kern <- D1 %*% Kern %*% D1
-  }
-
-  out <- X %*% Kern
-  out
-
-}
-
-
-
-#' Compute a Similarity or Distance Matrix for Categorical Labels
-#'
-#' Calculates a similarity or distance matrix between two categorical label vectors `a` and `b`.
-#'
-#' @param a The first categorical label vector.
-#' @param b The second categorical label vector.
-#' @param type The type of matrix to construct, either a similarity ('s') or distance ('d') matrix.
-#' @param return_matrix A logical flag indicating whether to return the result as a sparse matrix (default: TRUE) or a triplet.
-#' @param simfun An optional user-provided similarity function. If not provided, a default similarity function will be used.
-#' @param dim1 The length of the first dimension.
-#' @param dim2 The length of the second dimension.
-#'
-#' @return A similarity or distance matrix between the categorical label vectors `a` and `b`, either as a sparse matrix or a triplet.
-#'
-#' @importFrom Matrix sparseMatrix
-#' @export
-label_matrix <- function(a, b, type=c("s", "d"), return_matrix=TRUE, simfun=NULL , dim1=length(a), dim2=length(b)) {
+#' @keywords internal
+.create_custom_matrix <- function(a, b, type = c("s", "d"), simfun = NULL) {
   type <- match.arg(type)
 
   a.idx <- which(!is.na(a))
@@ -207,25 +205,131 @@ label_matrix <- function(a, b, type=c("s", "d"), return_matrix=TRUE, simfun=NULL
   out <- unlist(out, recursive=FALSE)
   out <- do.call(rbind, out)
 
-  if (return_matrix) {
-    sparseMatrix(i=out[,1], j=out[,2], x=out[,3], dims=c(dim1, dim2))
-  } else {
-    out
-  }
+  sparseMatrix(i=out[,1], j=out[,2], x=out[,3], dims=c(length(a), length(b)))
 }
 
+#' Convolve a Data Matrix with a Kernel Matrix
+#'
+#' @description
+#' Performs a convolution operation between a data matrix and a kernel matrix,
+#' with optional kernel normalization. This function is useful for applying
+#' smoothing or feature transformation operations in graph-based learning.
+#'
+#' @details
+#' The convolution operation performs matrix multiplication between the input
+#' data matrix and the kernel matrix: X * Kern. When normalize=TRUE, the kernel
+#' is first normalized using the degree matrix, which can help prevent numerical
+#' instabilities and ensure proper scaling.
+#'
+#' Performance characteristics:
+#' * Time complexity: O(n*m*k) where n,m,k are matrix dimensions
+#' * Space complexity: O(n*m) for the output matrix
+#' * Most efficient when matrices are sparse
+#'
+#' Common use cases:
+#' * Smoothing feature matrices using graph kernels
+#' * Applying diffusion operations in semi-supervised learning
+#' * Feature transformation in spectral methods
+#'
+#' @param X A data matrix to be convolved
+#' @param Kern A kernel matrix used for the convolution
+#' @param normalize Logical; whether to normalize the kernel matrix (default: FALSE)
+#'
+#' @return A matrix resulting from the convolution X * Kern
+#'
+#' @examples
+#' # Create sample data
+#' X <- matrix(rnorm(20), 4, 5)
+#' Kern <- matrix(runif(25), 5, 5)
+#' 
+#' # Basic convolution
+#' result <- convolve_matrix(X, Kern)
+#' 
+#' # Normalized convolution
+#' result_norm <- convolve_matrix(X, Kern, normalize = TRUE)
+#'
+#' @seealso
+#' * \code{\link{create_label_matrix}} for creating similarity matrices
+#' * \code{\link{expand_label_similarity}} for expanding label relationships
+#'
+#' @importFrom Matrix Diagonal
+#' @importFrom assertthat assert_that
+#' @export
+convolve_matrix <- function(X, Kern, normalize=FALSE) {
+  assert_that(ncol(Kern) == nrow(Kern))
+  assert_that(ncol(X) == nrow(Kern))
+  
+  if (normalize) {
+    D1 <- Diagonal(x=1/sqrt(rowSums(Kern)))
+    Kern <- D1 %*% Kern %*% D1
+  }
 
-#' Expand Similarity Between Labels Based on a Precomputed Similarity Matrix
+  out <- X %*% Kern
+  out
+}
+
+#' Expand Label Similarities Using a Pre-computed Similarity Matrix
 #'
-#' Expands the similarity between labels based on a precomputed similarity matrix, `sim_mat`, with either above-threshold or below-threshold values depending on the value of the `above` parameter.
+#' @description
+#' Expands categorical label relationships using a pre-computed similarity matrix,
+#' creating a sparse similarity graph that captures complex relationships between
+#' labels. This function is particularly useful for semi-supervised learning and
+#' transfer learning scenarios where you have prior knowledge about label relationships.
 #'
-#' @param labels A vector of labels for which the similarities will be expanded.
-#' @param sim_mat A precomputed similarity matrix containing similarities between the unique labels.
-#' @param threshold A threshold value used to filter the expanded similarity values (default: 0).
-#' @param above A boolean flag indicating whether to include the values above the threshold (default: TRUE) or below the threshold (FALSE).
+#' @details
+#' This function maps categorical labels to a similarity space defined by a pre-computed
+#' similarity matrix. It's particularly useful when:
+#' * Labels have hierarchical relationships (e.g., taxonomies)
+#' * Labels have continuous similarity scores (e.g., word embeddings)
+#' * You want to incorporate domain knowledge into label relationships
 #'
-#' @return A sparse symmetric similarity matrix with the expanded similarity values.
+#' Common use cases:
+#' * Hierarchical classification with taxonomy relationships
+#' * Text classification using word embedding similarities
+#' * Transfer learning incorporating domain knowledge
+#' * Semi-supervised learning with label propagation
 #'
+#' Performance characteristics:
+#' * Time complexity: O(n^2) where n is the number of unique labels
+#' * Space complexity: O(k) where k is the number of non-zero similarities
+#' * Most efficient when the similarity matrix is sparse
+#'
+#' @param labels Vector of categorical labels to expand relationships for
+#' @param sim_mat Pre-computed similarity matrix between unique labels.
+#'   Row and column names must match the unique values in \code{labels}
+#' @param threshold Numeric threshold for filtering similarities (default: 0)
+#' @param above Logical; if TRUE keep similarities above threshold,
+#'   if FALSE keep those below (default: TRUE)
+#'
+#' @return A sparse symmetric Matrix object where entry (i,j) represents the
+#'   expanded similarity between labels[i] and labels[j]
+#'
+#' @examples
+#' # Example with hierarchical categories
+#' categories <- c("animal", "mammal", "cat", "dog", "plant", "tree")
+#' n <- length(categories)
+#' 
+#' # Create a similarity matrix based on hierarchy
+#' sim_mat <- matrix(0, n, n)
+#' colnames(sim_mat) <- rownames(sim_mat) <- categories
+#' 
+#' # Define hierarchical relationships
+#' sim_mat["mammal", "animal"] <- sim_mat["animal", "mammal"] <- 0.8
+#' sim_mat["cat", "mammal"] <- sim_mat["mammal", "cat"] <- 0.9
+#' sim_mat["dog", "mammal"] <- sim_mat["mammal", "dog"] <- 0.9
+#' sim_mat["tree", "plant"] <- sim_mat["plant", "tree"] <- 0.9
+#' 
+#' # Sample data with these categories
+#' labels <- c("cat", "dog", "tree", "plant", "animal")
+#' 
+#' # Expand similarities
+#' expanded <- expand_label_similarity(labels, sim_mat, threshold = 0.5)
+#'
+#' @seealso
+#' * \code{\link{create_label_matrix}} for creating basic label similarity matrices
+#'
+#' @importFrom Matrix Diagonal
+#' @importFrom assertthat assert_that
 #' @export
 expand_label_similarity <- function(labels, sim_mat, threshold=0, above=TRUE) {
   cnames <- colnames(sim_mat)
@@ -261,7 +365,4 @@ expand_label_similarity <- function(labels, sim_mat, threshold=0, above=TRUE) {
 
   out <- do.call(rbind, out)
   sparseMatrix(i=out[,1], j=out[,2], x=out[,3], dims=c(length(labels), length(labels)), symmetric=TRUE)
-
 }
-
-

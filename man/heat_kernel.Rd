@@ -2,29 +2,45 @@
 % Please edit documentation in R/knn_weights.R
 \name{heat_kernel}
 \alias{heat_kernel}
-\title{Compute the Heat Kernel}
+\title{Heat Kernel Function}
 \usage{
 heat_kernel(x, sigma = 1)
 }
 \arguments{
-\item{x}{A numeric vector or matrix representing the distances between data points.}
+\item{x}{A numeric vector or matrix of distances between points}
 
-\item{sigma}{The bandwidth of the heat kernel, a positive scalar value. Default is 1.}
+\item{sigma}{Positive numeric value specifying the bandwidth parameter (default: 1).
+Larger values result in slower decay of similarity with distance.}
 }
 \value{
-A numeric vector or matrix with the same dimensions as the input `x`, containing the computed heat kernel values.
+A numeric vector or matrix of the same dimensions as x containing the computed
+  heat kernel values in the range [0,1].
 }
 \description{
-This function computes the heat kernel, which is a radial basis function that can be used for smoothing, interpolation, and approximation tasks. The heat kernel is defined as exp(-x^2/(2*sigma^2)), where x is the distance and sigma is the bandwidth. It acts as a similarity measure for points in a space, assigning high values for close points and low values for distant points.
+Computes the heat kernel, which is a radial basis function commonly used in machine learning
+and graph-based algorithms. The heat kernel measures similarity between points based on
+their Euclidean distance, with a bandwidth parameter controlling the scale of similarity.
 }
-\section{Details}{
-
-The heat kernel is widely used in various applications, including machine learning, computer graphics, and image processing. It can be employed in kernel methods, such as kernel PCA, Gaussian process regression, and support vector machines, to capture the local structure of the data. The heat kernel's behavior is controlled by the bandwidth parameter sigma, which determines the smoothness of the resulting function.
+\details{
+The heat kernel is defined as:
+\deqn{K(x) = exp(-x^2/(2\sigma^2))}
+where x is the distance between points and \eqn{\sigma} is the bandwidth parameter.
+The kernel assigns higher values to points that are closer together and lower values
+to points that are further apart, with the rate of decay controlled by sigma.
 }
-
 \examples{
-x <- seq(-3, 3, length.out = 100)
+# Simple example with a sequence of distances
+x <- seq(0, 5, length.out = 100)
 y <- heat_kernel(x, sigma = 1)
-plot(x, y, type = "l", main = "Heat Kernel")
+plot(x, y, type = "l", main = "Heat Kernel", xlab = "Distance", ylab = "Similarity")
 
+# Example with a distance matrix
+X <- matrix(rnorm(20), ncol = 2)
+D <- as.matrix(dist(X))
+K <- heat_kernel(D, sigma = 0.5)
+
+}
+\seealso{
+\code{\link{estimate_sigma}} for estimating an appropriate bandwidth parameter
+\code{\link{normalized_heat_kernel}} for a normalized version of the heat kernel
 }

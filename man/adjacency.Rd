@@ -2,7 +2,7 @@
 % Please edit documentation in R/all_generic.R
 \name{adjacency}
 \alias{adjacency}
-\title{get weights of all neighbors of a set of nodes}
+\title{Get Weights of Neighboring Vertices}
 \usage{
 adjacency(x, ...)
 
@@ -12,12 +12,30 @@ adjacency(x, ...)
 \item{x}{An object representing nearest neighbors.}
 
 \item{...}{Further arguments passed to or from other methods.}
+
+\item{i}{The vertex or vertices for which to find the neighbor weights.}
 }
 \value{
+A list where each element contains the weights of neighbors for the 
+        corresponding input vertex.
+
 An adjacency matrix.
 }
 \description{
-get weights of all neighbors of a set of nodes
+Retrieves the weights of all neighbors for a specified set of nodes in a graph.
+}
+\examples{
+# Create a weighted neighbor graph
+w <- matrix(c(0, 0.5, 0.3, 0.5, 0, 0.2, 0.3, 0.2, 0), nrow = 3)
+g <- neighbor_graph(w)
 
-Create an adjacency matrix
+# Get neighbor weights for vertex 1
+weights <- adjacency(g, 1)
+
+# Create an object representing nearest neighbors
+nn <- nnsearcher()
+
+# Create adjacency matrix
+adj <- adjacency(nn)
+
 }
