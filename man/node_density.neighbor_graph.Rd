@@ -7,43 +7,13 @@
 node_density.neighbor_graph(x, X)
 }
 \arguments{
-\item{x}{A neighbor_graph object}
+\item{x}{A neighbor_graph object.}
 
-\item{X}{A numeric matrix where rows represent data points and columns represent features}
+\item{X}{A data matrix containing the data points.}
 }
 \value{
-A numeric vector containing the computed density for each node
+A numeric vector containing the node densities.
 }
 \description{
-Computes the local density around each node based on the distances to its neighbors
-in the feature space.
-}
-\details{
-For each node i, computes the average squared Euclidean distance to its neighbors,
-normalized by the square of the number of neighbors. This provides a measure of
-how densely packed the neighborhood is in the feature space.
-
-The density for node i is computed as:
-d_i = 1/(k_i^2) * sum((x_j - x_i)^2) for all neighbors j
-where:
-* k_i is the number of neighbors of node i
-* x_i is the feature vector of node i
-* x_j are the feature vectors of the neighbors
-}
-\examples{
-\dontrun{
-# Create data matrix
-X <- matrix(rnorm(50), 10, 5)
-
-# Create neighbor graph
-g <- make_ring(10)
-ng <- neighbor_graph(g)
-
-# Compute node densities
-densities <- node_density(ng, X)
-}
-
-}
-\seealso{
-* \code{\link{neighbors.neighbor_graph}} for finding neighboring vertices
+Compute the node density for a neighbor_graph object.
 }

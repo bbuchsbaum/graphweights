@@ -2,61 +2,29 @@
 % Please edit documentation in R/temporal_weights.R
 \name{temporal_autocor}
 \alias{temporal_autocor}
-\title{Compute Temporal Autocorrelation Matrix}
+\title{Compute the temporal autocorrelation of a matrix}
 \usage{
 temporal_autocor(X, window = 3, inverse = FALSE)
 }
 \arguments{
-\item{X}{A numeric matrix where rows represent observations and columns represent
-time points. Each row should contain a separate time series.}
+\item{X}{A numeric matrix for which to compute the temporal autocorrelation}
 
-\item{window}{Integer specifying the window size for computing autocorrelation.
-Must be greater than 1 and less than the number of columns in X. Controls how
-many time lags to consider. Default is 3.}
+\item{window}{integer, the window size for computing the autocorrelation, must be between 1 and ncol(X) (default is 3)}
 
-\item{inverse}{Logical indicating whether to compute the inverse of the correlation
-matrix using shrinkage estimation. This can be useful when the correlation
-matrix is ill-conditioned. Default is FALSE.}
+\item{inverse}{logical, whether to compute the inverse of the correlation matrix (default is FALSE)}
 }
 \value{
-A sparse symmetric Matrix object representing the temporal autocorrelation.
-  The matrix has dimensions ncol(X) x ncol(X), where element (i,j) represents
-  the average correlation between time points i and j within the specified window.
+A sparse symmetric matrix representing the computed temporal autocorrelation
 }
 \description{
-Computes the temporal autocorrelation matrix of a multivariate time series using
-a sliding window approach. The function can optionally compute the inverse
-correlation matrix using shrinkage estimation.
-}
-\details{
-The function performs the following steps:
-1. Computes the correlation matrix of the input data
-2. Optionally inverts the correlation matrix using shrinkage estimation
-3. Constructs a band sparse matrix where each band represents correlations
-   at different time lags up to the specified window size
-
-The resulting matrix captures the temporal dependencies in the data at different
-time lags, which can be useful for time series analysis, signal processing,
-and temporal pattern recognition.
+This function computes the temporal autocorrelation of a given matrix using a specified window size and
+optionally inverts the correlation matrix.
 }
 \examples{
-\dontrun{
-# Generate example multivariate time series data
-n_series <- 10
-n_timepoints <- 20
-X <- matrix(rnorm(n_series * n_timepoints), 
-           nrow = n_series, 
-           ncol = n_timepoints)
+# Create an example matrix
+X <- matrix(rnorm(50), nrow = 10, ncol = 5)
 
-# Compute temporal autocorrelation with window size 3
-autocor <- temporal_autocor(X, window = 3)
+# Compute the temporal autocorrelation
+result <- temporal_autocor(X, window = 2)
 
-# Compute inverse temporal autocorrelation
-inv_autocor <- temporal_autocor(X, window = 3, inverse = TRUE)
-}
-
-}
-\seealso{
-* \code{\link{temporal_adjacency}} for computing temporal adjacency matrices
-* \code{\link{temporal_laplacian}} for computing temporal Laplacian matrices
 }

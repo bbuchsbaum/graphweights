@@ -19,11 +19,3 @@ An object representing the between-class neighbors of the input graph, the struc
 \description{
 A generic function to compute the between-class neighbors of a graph.
 }
-\examples{
-# Create an example graph
-g <- neighbor_graph(make_ring(5))
-
-# Compute between-class neighbors
-between_n <- between_class_neighbors(g, ng)
-
-}

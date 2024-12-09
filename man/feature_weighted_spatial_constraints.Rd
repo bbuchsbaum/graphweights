@@ -25,109 +25,56 @@ feature_weighted_spatial_constraints(
 )
 }
 \arguments{
-\item{coords}{Matrix of spatial coordinates:
-* Rows: Data points
-* Columns: Spatial dimensions (e.g., x, y, z)}
+\item{coords}{The spatial coordinates as a matrix with rows as objects and columns as dimensions.}
 
-\item{feature_mats}{List of feature matrices:
-* Each matrix contains features for one block
-* Rows correspond to spatial coordinates}
+\item{feature_mats}{A list of feature matrices, one for each data block.}
 
-\item{sigma_within}{Numeric spatial bandwidth within blocks (default: 5)
-* Controls spatial smoothing within blocks}
+\item{sigma_within}{The bandwidth of the within-block smoother. Default is 5.}
 
-\item{sigma_between}{Numeric spatial bandwidth between blocks (default: 3)
-* Controls spatial connections between blocks}
+\item{sigma_between}{The bandwidth of the between-block smoother. Default is 3.}
 
-\item{wsigma_within}{Numeric feature bandwidth within blocks (default: 0.73)
-* Controls feature similarity sensitivity within blocks}
+\item{wsigma_within}{The bandwidth of the within-block feature weights. Default is 0.73.}
 
-\item{wsigma_between}{Numeric feature bandwidth between blocks (default: 0.73)
-* Controls feature similarity sensitivity between blocks}
+\item{wsigma_between}{The bandwidth of the between-block feature weights. Default is 0.73.}
 
-\item{alpha_within}{Numeric between 0 and 1 (default: 0.5)
-* 0: Only spatial information within blocks
-* 1: Only feature information within blocks}
+\item{alpha_within}{The scaling factor for within-block feature weights. Default is 0.5.}
 
-\item{alpha_between}{Numeric between 0 and 1 (default: 0.5)
-* 0: Only spatial information between blocks
-* 1: Only feature information between blocks}
+\item{alpha_between}{The scaling factor for between-block feature weights. Default is 0.5.}
 
-\item{shrinkage_factor}{Numeric between 0 and 1 (default: 0.1)
-* Controls balance between within/between block constraints}
+\item{shrinkage_factor}{The amount of shrinkage towards the spatial block average. Default is 0.1.}
 
-\item{nnk_within}{Integer maximum neighbors within blocks (default: 27)}
+\item{nnk_within}{The maximum number of nearest neighbors for within-block smoother. Default is 27.}
 
-\item{nnk_between}{Integer maximum neighbors between blocks (default: 27)}
+\item{nnk_between}{The maximum number of nearest neighbors for between-block smoother. Default is 27.}
 
-\item{maxk_within}{Integer maximum neighbors for feature computation (default: nnk_within)}
+\item{maxk_within}{The maximum number of nearest neighbors for within-block computation. Default is `nnk_within`.}
 
-\item{maxk_between}{Integer maximum neighbors for feature computation (default: nnk_between)}
+\item{maxk_between}{The maximum number of nearest neighbors for between-block computation. Default is `nnk_between`.}
 
-\item{weight_mode_within}{Character weight type within blocks (default: "heat")}
+\item{weight_mode_within}{The within-block nearest neighbor weight mode ("heat" or "binary"). Default is "heat".}
 
-\item{weight_mode_between}{Character weight type between blocks (default: "binary")}
+\item{weight_mode_between}{The between-block nearest neighbor weight mode ("heat" or "binary"). Default is "binary".}
 
-\item{variable_weights}{Numeric vector of weights per variable (default: ones)}
+\item{variable_weights}{A vector of per-variable weights. Default is a vector of ones with length equal to the product of the number of columns in the `coords` matrix and the length of `feature_mats`.}
 
-\item{verbose}{Logical for progress messages (default: FALSE)}
+\item{verbose}{A boolean indicating whether to print progress messages. Default is FALSE.}
 }
 \value{
-A sparse Matrix object representing feature-weighted spatial constraints where:
-  * Values represent combined spatial-feature relationships
-  * Matrix is normalized by its largest eigenvalue
+A sparse matrix representing the feature-weighted spatial constraints for the provided data blocks.
 }
 \description{
-Creates a sparse matrix of spatial constraints that incorporates both spatial proximity
-and feature similarity between data points. This is particularly useful when both
-spatial location and feature characteristics are important for defining relationships
-between data points.
+This function creates a sparse matrix of feature-weighted spatial constraints for a set of data blocks. The feature-weighted spatial constraints matrix is useful in applications like image segmentation and analysis, where both spatial and feature information are crucial for identifying different regions in the image.
 }
-\details{
-The function combines spatial and feature information by:
-1. Computing spatial relationships using coordinate information
-2. Computing feature similarities using provided feature matrices
-3. Combining spatial and feature information using scaling parameters
-4. Balancing within and between-block relationships
+\section{Details}{
 
-Feature weighting is controlled by:
-* wsigma parameters: Control the sensitivity to feature differences
-* alpha parameters: Balance between spatial and feature information
-
-Common applications include:
-* Image segmentation with multiple channels
-* Multi-modal neuroimaging analysis
-* Spatial-temporal data analysis
-* Pattern recognition in spatial data
+The function computes within-block and between-block constraints based on the provided coordinates, feature matrices, and other input parameters. It balances the within-block and between-block constraints using a shrinkage factor, and normalizes the resulting matrix by the first eigenvalue. The function also takes into account the weights of the variables in the provided feature matrices.
 }
+
 \examples{
-# Example 1: Image segmentation with RGB channels
-coords <- expand.grid(x = 1:10, y = 1:10)
-# Create random RGB values for each pixel
-features <- matrix(runif(100 * 3), 100, 3)
-S <- feature_weighted_spatial_constraints(
-  as.matrix(coords),
-  list(features),
-  sigma_within = 2,
-  wsigma_within = 0.5,
-  alpha_within = 0.3
-)
+coords <- as.matrix(expand.grid(1:10, 1:10))
+fmats <- replicate(20, matrix(rnorm(100*10), 10, 100), simplify=FALSE)
+conmat <- feature_weighted_spatial_constraints(coords, fmats)
 
-# Example 2: Multi-modal analysis
-coords <- expand.grid(x = 1:5, y = 1:5)
-features1 <- matrix(rnorm(25 * 4), 25, 4)  # First modality
-features2 <- matrix(rnorm(25 * 3), 25, 3)  # Second modality
-S <- feature_weighted_spatial_constraints(
-  as.matrix(coords),
-  list(features1, features2),
-  sigma_within = 2,
-  sigma_between = 1,
-  alpha_within = 0.4,
-  alpha_between = 0.6
-)
+conmat <- feature_weighted_spatial_constraints(coords, fmats, maxk_between=4, maxk_within=2,sigma_between=5, nnk_between=60)
 
-}
-\seealso{
-* \code{\link{spatial_constraints}} for purely spatial constraints
-* \code{\link{neighbor_graph}} for graph construction
 }

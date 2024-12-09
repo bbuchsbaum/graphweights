@@ -17,11 +17,3 @@ A nearest neighbors result object.
 \description{
 Find nearest neighbors among a subset
 }
-\examples{
-# Create an object of class "nnsearcher"
-nn <- nnsearcher()
-
-# Find nearest neighbors among a subset
-result <- find_nn_among(nn)
-
-}

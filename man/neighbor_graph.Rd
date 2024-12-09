@@ -17,8 +17,3 @@ A neighbor_graph object, the structure of which depends on the input object's cl
 \description{
 A generic function to create a neighbor_graph object.
 }
-\examples{
-# Create a neighbor graph
-ng <- neighbor_graph(make_ring(5))
-
-}

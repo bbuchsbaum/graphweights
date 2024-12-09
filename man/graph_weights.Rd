@@ -2,7 +2,7 @@
 % Please edit documentation in R/knn_weights.R
 \name{graph_weights}
 \alias{graph_weights}
-\title{Graph-based Weight Matrix Construction}
+\title{Convert a Data Matrix to an Adjacency Graph}
 \usage{
 graph_weights(
   X,
@@ -17,82 +17,41 @@ graph_weights(
 )
 }
 \arguments{
-\item{X}{Numeric matrix where rows are instances and columns are features}
+\item{X}{A data matrix where each row represents an instance and each column represents a variable. Similarity is computed over instances.}
 
-\item{k}{Integer specifying the number of nearest neighbors (default: 5)}
+\item{k}{An integer representing the number of neighbors (ignored when neighbor_mode is not 'epsilon').}
 
-\item{neighbor_mode}{Character string specifying the neighbor selection method:
-"knn" or "epsilon"}
+\item{neighbor_mode}{A character string specifying the method for assigning weights to neighbors, either "supervised", "knn", "knearest_misses", or "epsilon".}
 
-\item{weight_mode}{Character string specifying the weight computation method:
-"heat", "normalized", "binary", "euclidean", "cosine", or "correlation"}
+\item{weight_mode}{A character string specifying the weight mode: binary (1 if neighbor, 0 otherwise), 'heat', 'normalized', 'euclidean', 'cosine', or 'correlation'.}
 
-\item{type}{Character string specifying the neighbor relationship type:
-"normal" (standard k-NN), "mutual" (mutual k-NN), or "asym" (asymmetric)}
+\item{type}{A character string specifying the nearest neighbor policy, one of: normal, mutual, asym.}
 
-\item{sigma}{Numeric bandwidth parameter for heat kernel (if NULL, estimated from data)}
+\item{sigma}{A numeric parameter for the heat kernel (exp(-dist/(2*sigma^2))).}
 
-\item{eps}{Numeric epsilon value for epsilon-neighborhood (not implemented)}
+\item{eps}{A numeric value representing the neighborhood radius when neighbor_mode is 'epsilon' (not implemented).}
 
-\item{labels}{Optional factor vector of instance labels for supervised methods}
+\item{labels}{A factor vector representing the class of the categories when weight_mode is 'supervised' with nrow(labels) equal to nrow(X).}
 
-\item{...}{Additional arguments passed to internal functions}
+\item{...}{Additional parameters passed to the internal functions.}
 }
 \value{
-An object of class "neighbor_graph" containing:
-\itemize{
-  \item A sparse weight matrix representing the graph
-  \item Parameters used to construct the graph
-}
+An adjacency graph based on the specified neighbor and weight modes.
 }
 \description{
-Constructs a weight matrix representing similarities between instances in a dataset
-using various neighborhood and weighting schemes. This is particularly useful
-for creating adjacency matrices for graph-based learning algorithms.
+Convert a data matrix with n instances and p features to an n-by-n adjacency graph using specified neighbor and weight modes.
 }
 \details{
-The function provides several methods for constructing the weight matrix:
-
-\strong{Neighbor Modes:}
-\itemize{
-  \item \code{knn}: k-nearest neighbors approach
-  \item \code{epsilon}: epsilon-neighborhood approach (not yet implemented)
-}
-
-\strong{Weight Modes:}
-\itemize{
-  \item \code{heat}: Heat kernel weights
-  \item \code{normalized}: Normalized heat kernel weights
-  \item \code{binary}: Binary weights (1 for neighbors, 0 otherwise)
-  \item \code{euclidean}: Euclidean distances as weights
-  \item \code{cosine}: Cosine similarity weights
-  \item \code{correlation}: Correlation-based weights
-}
+This function converts a data matrix with n instances and p features into an adjacency graph. The adjacency graph is created
+based on the specified neighbor and weight modes. The neighbor mode determines how neighbors are assigned weights, and the weight
+mode defines the method used to compute weights.
 }
 \examples{
-# Generate example data
-set.seed(123)
-X <- matrix(rnorm(100 * 10), nrow = 100)
+# Sample data
+X <- matrix(rnorm(100*100), 100, 100)
+sm <- graph_weights(X, neighbor_mode="knn", weight_mode="normalized", k=3)
 
-# Create graph with heat kernel weights
-g1 <- graph_weights(X, k = 5, neighbor_mode = "knn",
-                   weight_mode = "heat")
-
-# Create graph with binary weights and mutual neighbors
-g2 <- graph_weights(X, k = 5, neighbor_mode = "knn",
-                   weight_mode = "binary", type = "mutual")
-
-# Create graph with normalized weights and labels
-labels <- factor(rep(1:2, each = 50))
-g3 <- graph_weights(X, k = 5, neighbor_mode = "knn",
-                   weight_mode = "normalized", labels = labels)
-
-}
-\references{
-Luxburg, U. (2007). A tutorial on spectral clustering.
-Statistics and Computing, 17(4), 395-416.
-}
-\seealso{
-\code{\link{heat_kernel}} for the heat kernel function
-\code{\link{estimate_sigma}} for bandwidth parameter estimation
+labels <- factor(rep(letters[1:4], 5))
+sm3 <- graph_weights(X, neighbor_mode="knn", k=3, labels=labels, weight_mode="cosine")
+sm4 <- graph_weights(X, neighbor_mode="knn", k=100, labels=labels, weight_mode="cosine")
 }

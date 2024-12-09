@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{cross_weighted_spatial_adjacency}
 \alias{cross_weighted_spatial_adjacency}
-\title{Compute the Adjacency between Two Adjacency Matrices Weighted by Two Corresponding Feature Matrices.}
+\title{Compute the adjacency between two adjacency matrices weighted by two corresponding feature matrices.}
 \usage{
 cross_weighted_spatial_adjacency(
   coord_mat1,
@@ -41,11 +41,7 @@ cross_weighted_spatial_adjacency(
 \item{normalized}{whether to normalize the rows to sum to 1}
 }
 \description{
-Computes the adjacency between two adjacency matrices weighted by two corresponding feature matrices.
-}
-\details{
-The function first computes the spatial adjacency matrix between the two sets of points,
-and then weights the matrix using the feature matrices.
+Compute the adjacency between two adjacency matrices weighted by two corresponding feature matrices.
 }
 \examples{
 

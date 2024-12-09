@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{difference_of_gauss}
 \alias{difference_of_gauss}
-\title{Compute the Difference of Gaussians for a Coordinate Matrix}
+\title{Compute the Difference of Gaussians for a coordinate matrix}
 \usage{
 difference_of_gauss(
   coord_mat,
@@ -24,11 +24,7 @@ difference_of_gauss(
 A sparse symmetric matrix representing the computed Difference of Gaussians
 }
 \description{
-Computes the Difference of Gaussians for a given coordinate matrix using specified sigma values and the number of nearest neighbors.
-}
-\details{
-The function first computes two spatial smoother matrices using the specified sigma values,
-and then subtracts the second matrix from the first.
+This function computes the Difference of Gaussians for a given coordinate matrix using specified sigma values and the number of nearest neighbors.
 }
 \examples{
 # Create an example coordinate matrix

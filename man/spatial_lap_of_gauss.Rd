@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{spatial_lap_of_gauss}
 \alias{spatial_lap_of_gauss}
-\title{Compute the Spatial Laplacian of Gaussian for a Coordinate Matrix}
+\title{Compute the spatial Laplacian of Gaussian for a coordinate matrix}
 \usage{
 spatial_lap_of_gauss(coord_mat, sigma = 2)
 }
@@ -15,11 +15,7 @@ spatial_lap_of_gauss(coord_mat, sigma = 2)
 A sparse symmetric matrix representing the computed spatial Laplacian of Gaussian
 }
 \description{
-Computes the spatial Laplacian of Gaussian for a given coordinate matrix using a specified sigma value.
-}
-\details{
-The function first computes the spatial Laplacian matrix using the specified sigma value,
-and then multiplies it with the spatial smoother matrix computed using the same sigma value.
+This function computes the spatial Laplacian of Gaussian for a given coordinate matrix using a specified sigma value.
 }
 \examples{
 # Create an example coordinate matrix

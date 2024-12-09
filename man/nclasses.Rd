@@ -15,11 +15,3 @@ The number of classes in the input object.
 \description{
 A generic function to compute the number of classes in a graph.
 }
-\examples{
-# Create an example graph
-g <- neighbor_graph(make_ring(5))
-
-# Compute number of classes
-n_classes <- nclasses(g)
-
-}

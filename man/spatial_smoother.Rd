@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{spatial_smoother}
 \alias{spatial_smoother}
-\title{Compute the Spatial Smoother Matrix for a Coordinate Matrix}
+\title{Compute the spatial smoother matrix for a coordinate matrix}
 \usage{
 spatial_smoother(
   coord_mat,
@@ -24,11 +24,7 @@ spatial_smoother(
 A sparse symmetric matrix representing the computed spatial smoother
 }
 \description{
-Computes the spatial smoother matrix for a given coordinate matrix using specified parameters.
-}
-\details{
-The function first computes the spatial adjacency matrix using the specified parameters,
-and then normalizes the matrix to make it doubly stochastic.
+This function computes the spatial smoother matrix for a given coordinate matrix using specified parameters.
 }
 \examples{
 # Create an example coordinate matrix

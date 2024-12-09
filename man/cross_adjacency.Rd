@@ -10,9 +10,7 @@ cross_adjacency(
   k = 5,
   FUN = heat_kernel,
   type = c("normal", "mutual", "asym"),
-  as = c("igraph", "sparse", "index_sim"),
-  ef = 200,
-  M = 16
+  as = c("igraph", "sparse", "index_sim")
 )
 }
 \arguments{
@@ -27,10 +25,6 @@ cross_adjacency(
 \item{type}{A character string indicating the type of adjacency to compute. One of "normal", "mutual", or "asym" (default: "normal").}
 
 \item{as}{A character string indicating the format of the output. One of "igraph", "sparse", or "index_sim" (default: "igraph").}
-
-\item{ef}{Search parameter that controls speed/accuracy trade-off (default: 200).}
-
-\item{M}{Parameter that controls index size/speed trade-off (default: 16).}
 }
 \value{
 If 'as' is "index_sim", a two-column matrix where the first column contains the indices of nearest neighbors and the second column contains the corresponding kernel values.

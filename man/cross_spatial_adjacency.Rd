@@ -35,10 +35,6 @@ A sparse cross adjacency matrix with weighted spatial relationships between the 
 \description{
 Constructs a cross spatial adjacency matrix between two sets of points, where weights are determined by spatial relationships.
 }
-\details{
-The function first computes the spatial adjacency matrix between the two sets of points,
-and then normalizes the matrix to make it row-stochastic.
-}
 \examples{
 coord_mat1 <- as.matrix(expand.grid(x=1:5, y=1:5, z=1:5))
 coord_mat2 <- as.matrix(expand.grid(x=6:10, y=6:10, z=6:10))

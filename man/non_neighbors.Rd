@@ -2,29 +2,15 @@
 % Please edit documentation in R/all_generic.R
 \name{non_neighbors}
 \alias{non_neighbors}
-\title{Get Indices of Non-Neighbors}
+\title{get indices of the non-neighbors of a set of nodes}
 \usage{
 non_neighbors(x, ...)
 }
 \arguments{
-\item{x}{A neighbor graph object.}
+\item{x}{the neighbor graph}
 
-\item{...}{Additional arguments passed to methods.}
-
-\item{i}{The vertex or vertices for which to find the non-neighbors.}
-}
-\value{
-A list where each element contains the indices of non-neighbors for the 
-        corresponding input vertex.
+\item{...}{extra args}
 }
 \description{
-Retrieves the indices of non-neighbors for a specified set of nodes in a graph.
-}
-\examples{
-# Create a neighbor graph
-ng <- neighbor_graph(matrix(c(0, 1, 1, 0, 1, 0, 1, 0, 0), nrow = 3, byrow = TRUE))
-
-# Get non-neighbors of vertex 1
-non_n <- non_neighbors(ng, 1)
-
+get indices of the non-neighbors of a set of nodes
 }

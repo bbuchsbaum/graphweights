@@ -2,68 +2,35 @@
 % Please edit documentation in R/commute_time.R
 \name{commute_time_distance}
 \alias{commute_time_distance}
-\title{Compute Commute-Time Distances in a Graph}
+\title{Compute the commute-time distance between nodes in a graph}
 \usage{
 commute_time_distance(A, ncomp = nrow(A) - 1)
 }
 \arguments{
-\item{A}{A symmetric, non-negative matrix or Matrix object representing the adjacency
-matrix of the graph. The matrix should be square and have the same number of rows
-and columns.}
+\item{A}{A symmetric, non-negative matrix representing the adjacency matrix of the graph}
 
-\item{ncomp}{Integer specifying the number of eigenvectors to use in the computation.
-Default is (nrow(A) - 1). Must be less than the number of nodes in the graph.}
+\item{ncomp}{Integer, number of components to use in the computation, default is (nrow(A) - 1)}
 }
 \value{
-A list with class c("commute_time", "list") containing:
-\describe{
-  \item{eigenvectors}{A matrix where columns are the eigenvectors of the normalized adjacency matrix}
-  \item{eigenvalues}{A numeric vector of eigenvalues in decreasing order}
-  \item{cds}{A matrix containing the commute-time distance coordinates. Each row
-             represents a node, and the Euclidean distance between rows approximates
-             the commute-time distance between nodes}
-  \item{gap}{The eigenvalue gap between the two largest eigenvalues, which can be
-             used as a measure of graph connectivity}
-}
+A list with the following components:
+  \item{eigenvectors}{Matrix, eigenvectors of the matrix M}
+  \item{eigenvalues}{Vector, eigenvalues of the matrix M}
+  \item{cds}{Matrix, the computed commute-time distances}
+  \item{gap}{Numeric, the gap between the two largest eigenvalues}
+  The returned object has class "commute_time" and "list".
 }
 \description{
-Computes the commute-time distances between nodes in an undirected, weighted graph.
-The commute-time distance between two nodes is the expected time it takes for a random
-walk to travel from one node to the other and back. This implementation uses
-eigendecomposition of the normalized adjacency matrix.
-}
-\details{
-The commute-time distance is computed using the following steps:
-1. Normalize the adjacency matrix using degree-based normalization
-2. Compute the eigendecomposition of the normalized matrix
-3. Transform the eigenvectors to obtain the commute-time embedding
-
-The resulting distances are invariant to graph scale and capture both
-direct connections and indirect paths between nodes.
+This function computes the commute-time distance between nodes in a graph using either eigenvalue or
+pseudoinverse methods.
 }
 \examples{
-# Create a simple undirected graph adjacency matrix
+# Create an example adjacency matrix
 A <- matrix(c(0, 1, 1, 0,
-              1, 0, 1, 1,
-              1, 1, 0, 1,
-              0, 1, 1, 0), nrow = 4, byrow = TRUE)
+             1, 0, 1, 1,
+             1, 1, 0, 1,
+             0, 1, 1, 0), nrow = 4, byrow = TRUE)
 
-# Compute commute-time distances
+# Compute the commute-time distance
 result <- commute_time_distance(A)
 
-# Extract the distance coordinates
-coords <- result$cds
-
-# The Euclidean distance between rows i and j of coords
-# approximates the commute-time distance between nodes i and j
-
-}
-\references{
-Fouss, F., Pirotte, A., Renders, J. M., & Saerens, M. (2007).
-Random-walk computation of similarities between nodes of a graph with application to
-collaborative recommendation. IEEE Transactions on Knowledge and Data Engineering,
-19(3), 355-369.
-}
-\seealso{
-\code{\link[RSpectra]{eigs}} for the underlying eigendecomposition computation
 }

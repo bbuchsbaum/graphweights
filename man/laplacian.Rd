@@ -12,15 +12,8 @@ laplacian(x, ...)
 \item{...}{Additional arguments to be passed to specific implementations of the laplacian method.}
 }
 \value{
-A matrix representing the graph Laplacian of the input weight matrix.
+The graph Laplacian matrix of the given weight matrix.
 }
 \description{
-This function computes the graph Laplacian of a given weight matrix. The graph Laplacian is defined as 
-the difference between the degree matrix and the adjacency matrix.
-}
-\examples{
-# Create a simple weight matrix
-w <- matrix(c(0, 1, 1, 1, 0, 1, 1, 1, 0), nrow = 3)
-L <- laplacian(w)
-
+This function computes the graph Laplacian of a given weight matrix. The graph Laplacian is defined as the difference between the degree matrix and the adjacency matrix.
 }

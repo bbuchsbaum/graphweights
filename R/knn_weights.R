@@ -1,3 +1,5 @@
+
+
 #' @keywords internal
 as_triplet <- function(M) {
   tm <- as(M, "dgTMatrix")
@@ -27,41 +29,22 @@ indices_to_sparse <- function(nn.index, hval, return_triplet=FALSE,
   }
 }
 
-#' Heat Kernel Function
+#' Compute the Heat Kernel
 #'
-#' @description
-#' Computes the heat kernel, which is a radial basis function commonly used in machine learning
-#' and graph-based algorithms. The heat kernel measures similarity between points based on
-#' their Euclidean distance, with a bandwidth parameter controlling the scale of similarity.
+#' This function computes the heat kernel, which is a radial basis function that can be used for smoothing, interpolation, and approximation tasks. The heat kernel is defined as exp(-x^2/(2*sigma^2)), where x is the distance and sigma is the bandwidth. It acts as a similarity measure for points in a space, assigning high values for close points and low values for distant points.
 #'
-#' @details
-#' The heat kernel is defined as:
-#' \deqn{K(x) = exp(-x^2/(2\sigma^2))}
-#' where x is the distance between points and \eqn{\sigma} is the bandwidth parameter.
-#' The kernel assigns higher values to points that are closer together and lower values
-#' to points that are further apart, with the rate of decay controlled by sigma.
+#' @section Details:
+#' The heat kernel is widely used in various applications, including machine learning, computer graphics, and image processing. It can be employed in kernel methods, such as kernel PCA, Gaussian process regression, and support vector machines, to capture the local structure of the data. The heat kernel's behavior is controlled by the bandwidth parameter sigma, which determines the smoothness of the resulting function.
 #'
-#' @param x A numeric vector or matrix of distances between points
-#' @param sigma Positive numeric value specifying the bandwidth parameter (default: 1).
-#'   Larger values result in slower decay of similarity with distance.
+#' @param x A numeric vector or matrix representing the distances between data points.
+#' @param sigma The bandwidth of the heat kernel, a positive scalar value. Default is 1.
 #'
-#' @return A numeric vector or matrix of the same dimensions as x containing the computed
-#'   heat kernel values in the range [0,1].
+#' @return A numeric vector or matrix with the same dimensions as the input `x`, containing the computed heat kernel values.
 #'
 #' @examples
-#' # Simple example with a sequence of distances
-#' x <- seq(0, 5, length.out = 100)
+#' x <- seq(-3, 3, length.out = 100)
 #' y <- heat_kernel(x, sigma = 1)
-#' plot(x, y, type = "l", main = "Heat Kernel", xlab = "Distance", ylab = "Similarity")
-#'
-#' # Example with a distance matrix
-#' X <- matrix(rnorm(20), ncol = 2)
-#' D <- as.matrix(dist(X))
-#' K <- heat_kernel(D, sigma = 0.5)
-#'
-#' @seealso
-#' \code{\link{estimate_sigma}} for estimating an appropriate bandwidth parameter
-#' \code{\link{normalized_heat_kernel}} for a normalized version of the heat kernel
+#' plot(x, y, type = "l", main = "Heat Kernel")
 #'
 #' @export
 heat_kernel <- function(x, sigma=1) {
@@ -127,78 +110,156 @@ get_neighbor_fun <- function(weight_mode=c("heat", "binary", "normalized", "eucl
 }
 
 
-#' Graph-based Weight Matrix Construction
+#' Compute Similarity Matrix for Factors in a Data Frame
 #'
-#' @description
-#' Constructs a weight matrix representing similarities between instances in a dataset
-#' using various neighborhood and weighting schemes. This is particularly useful
-#' for creating adjacency matrices for graph-based learning algorithms.
+#' Calculate the similarity matrix for a set of factors in a data frame using various similarity methods.
 #'
+#' @param des A data frame containing factors for which the similarity matrix will be computed.
+#' @param method A character vector specifying the method used for computing the similarity. The available methods are:
+#'   \itemize{
+#'     \item "Jaccard" - Jaccard similarity coefficient
+#'     \item "Rogers" - Rogers and Tanimoto similarity coefficient
+#'     \item "simple matching" - Simple matching coefficient
+#'     \item "Dice" - Dice similarity coefficient
+#'   }
+#' @return A similarity matrix computed using the specified method for the factors in the data frame.
 #' @details
-#' The function provides several methods for constructing the weight matrix:
+#' The \code{factor_sim} function computes the similarity matrix for a set of factors in a data frame using the chosen method.
+#' The function first converts the data frame into a model matrix, then calculates the similarity matrix using the \code{proxy::simil}
+#' function from the \code{proxy} package.
 #'
-#' \strong{Neighbor Modes:}
-#' \itemize{
-#'   \item \code{knn}: k-nearest neighbors approach
-#'   \item \code{epsilon}: epsilon-neighborhood approach (not yet implemented)
-#' }
-#'
-#' \strong{Weight Modes:}
-#' \itemize{
-#'   \item \code{heat}: Heat kernel weights
-#'   \item \code{normalized}: Normalized heat kernel weights
-#'   \item \code{binary}: Binary weights (1 for neighbors, 0 otherwise)
-#'   \item \code{euclidean}: Euclidean distances as weights
-#'   \item \code{cosine}: Cosine similarity weights
-#'   \item \code{correlation}: Correlation-based weights
-#' }
-#'
-#' @param X Numeric matrix where rows are instances and columns are features
-#' @param k Integer specifying the number of nearest neighbors (default: 5)
-#' @param neighbor_mode Character string specifying the neighbor selection method:
-#'   "knn" or "epsilon"
-#' @param weight_mode Character string specifying the weight computation method:
-#'   "heat", "normalized", "binary", "euclidean", "cosine", or "correlation"
-#' @param type Character string specifying the neighbor relationship type:
-#'   "normal" (standard k-NN), "mutual" (mutual k-NN), or "asym" (asymmetric)
-#' @param sigma Numeric bandwidth parameter for heat kernel (if NULL, estimated from data)
-#' @param eps Numeric epsilon value for epsilon-neighborhood (not implemented)
-#' @param labels Optional factor vector of instance labels for supervised methods
-#' @param ... Additional arguments passed to internal functions
-#'
-#' @return An object of class "neighbor_graph" containing:
-#' \itemize{
-#'   \item A sparse weight matrix representing the graph
-#'   \item Parameters used to construct the graph
-#' }
-#'
-#' @examples
-#' # Generate example data
-#' set.seed(123)
-#' X <- matrix(rnorm(100 * 10), nrow = 100)
-#'
-#' # Create graph with heat kernel weights
-#' g1 <- graph_weights(X, k = 5, neighbor_mode = "knn",
-#'                    weight_mode = "heat")
-#'
-#' # Create graph with binary weights and mutual neighbors
-#' g2 <- graph_weights(X, k = 5, neighbor_mode = "knn",
-#'                    weight_mode = "binary", type = "mutual")
-#'
-#' # Create graph with normalized weights and labels
-#' labels <- factor(rep(1:2, each = 50))
-#' g3 <- graph_weights(X, k = 5, neighbor_mode = "knn",
-#'                    weight_mode = "normalized", labels = labels)
-#'
-#' @seealso
-#' \code{\link{heat_kernel}} for the heat kernel function
-#' \code{\link{estimate_sigma}} for bandwidth parameter estimation
-#'
-#' @references
-#' Luxburg, U. (2007). A tutorial on spectral clustering.
-#' Statistics and Computing, 17(4), 395-416.
+#' The function supports four similarity methods: Jaccard, Rogers, simple matching, and Dice. The choice of method depends on the
+#' specific use case and the desired properties of the similarity measure.
 #'
 #' @export
+#' @examples
+#' # Sample data
+#' des <- data.frame(
+#'   var1 = factor(c("a", "b", "a", "b", "a")),
+#'   var2 = factor(c("c", "c", "d", "d", "d"))
+#' )
+#'
+#' # Compute similarity matrix using Jaccard method
+#' sim_jaccard <- factor_sim(des, method = "Jaccard")
+#'
+#' # Compute similarity matrix using Dice method
+#' sim_dice <- factor_sim(des, method = "Dice")
+factor_sim <- function(des, method=c("Jaccard", "Rogers", "simple matching", "Dice")) {
+  Fmat <- do.call(cbind, lapply(1:ncol(des), function(i) {
+    nam <- colnames(des)[i]
+    model.matrix(as.formula(paste("~ ", nam, " -1")), data=des)
+  }))
+
+  proxy::simil(Fmat, method=method)
+}
+
+
+#' Compute Weighted Similarity Matrix for Factors in a Data Frame
+#'
+#' Calculate the weighted similarity matrix for a set of factors in a data frame.
+#'
+#' @param des A data frame containing factors for which the weighted similarity matrix will be computed.
+#' @param wts A numeric vector of weights corresponding to the factors in the data frame. The default is equal weights for all factors.
+#' @return A weighted similarity matrix computed for the factors in the data frame.
+#'
+#' @export
+#' @examples
+#' # Sample data
+#' des <- data.frame(
+#'   var1 = factor(c("a", "b", "a", "b", "a")),
+#'   var2 = factor(c("c", "c", "d", "d", "d"))
+#' )
+#'
+#' # Compute similarity matrix with default equal weights
+#' sim_default_weights <- weighted_factor_sim(des)
+#'
+#' # Compute similarity matrix with custom weights
+#' sim_custom_weights <- weighted_factor_sim(des, wts = c(0.7, 0.3))
+weighted_factor_sim <- function(des, wts=rep(1, ncol(des))/ncol(des)) {
+  wts <- wts/sum(wts)
+  Fmat <- lapply(1:ncol(des), function(i) {
+    nam <- colnames(des)[i]
+    labs <- des[[nam]]
+    label_matrix(labs, labs) * wts[i]
+  })
+
+  Reduce("+", Fmat)
+}
+
+
+#' Estimate Bandwidth Parameter (Sigma) for the Heat Kernel
+#'
+#' Estimate a reasonable bandwidth parameter (sigma) for the heat kernel based on a data matrix and the specified quantile of the frequency distribution of distances.
+#'
+#' @param X A data matrix where samples are rows and features are columns.
+#' @param prop A numeric value representing the quantile of the frequency distribution of distances used to determine the bandwidth parameter. Default is 0.25.
+#' @param nsamples An integer representing the number of samples to draw from the data matrix. Default is 500.
+#' @param normalized A logical value indicating whether to normalize the data. Default is FALSE.
+#'
+#' @return A numeric value representing the estimated bandwidth parameter (sigma) for the heat kernel.
+#' @export
+#'
+#' @examples
+#' # Sample data
+#' X <- matrix(rnorm(1000), nrow=100, ncol=10)
+#'
+#' # Estimate sigma with default parameters
+#' sigma_default <- estimate_sigma(X)
+#'
+#' # Estimate sigma with custom quantile and number of samples
+#' sigma_custom <- estimate_sigma(X, prop=0.3, nsamples=300)
+estimate_sigma <- function(X, prop=.25, nsamples=500, normalized=FALSE) {
+  ## estimate sigma
+  if (nrow(X) <= 500) {
+    nsamples <- nrow(X)
+    sam <- 1:nrow(X)
+  } else {
+    nsamples <- min(nsamples, nrow(X))
+    sam <- sample(1:nrow(X), nsamples)
+  }
+
+  d <- dist(X[sam,])
+
+  qs <- quantile(d[d!=0],seq(prop, 1,by=.1))
+  if (all(is.na(qs))) {
+    stop("could not estimate sigma, all quantiles are NA ...")
+  } else {
+    qs <- qs[!is.na(qs)]
+    qs[1]
+  }
+}
+
+
+#' Convert a Data Matrix to an Adjacency Graph
+#'
+#' Convert a data matrix with n instances and p features to an n-by-n adjacency graph using specified neighbor and weight modes.
+#'
+#' @details
+#' This function converts a data matrix with n instances and p features into an adjacency graph. The adjacency graph is created
+#' based on the specified neighbor and weight modes. The neighbor mode determines how neighbors are assigned weights, and the weight
+#' mode defines the method used to compute weights.
+#'
+#' @param X A data matrix where each row represents an instance and each column represents a variable. Similarity is computed over instances.
+#' @param k An integer representing the number of neighbors (ignored when neighbor_mode is not 'epsilon').
+#' @param neighbor_mode A character string specifying the method for assigning weights to neighbors, either "supervised", "knn", "knearest_misses", or "epsilon".
+#' @param weight_mode A character string specifying the weight mode: binary (1 if neighbor, 0 otherwise), 'heat', 'normalized', 'euclidean', 'cosine', or 'correlation'.
+#' @param type A character string specifying the nearest neighbor policy, one of: normal, mutual, asym.
+#' @param sigma A numeric parameter for the heat kernel (exp(-dist/(2*sigma^2))).
+#' @param eps A numeric value representing the neighborhood radius when neighbor_mode is 'epsilon' (not implemented).
+#' @param labels A factor vector representing the class of the categories when weight_mode is 'supervised' with nrow(labels) equal to nrow(X).
+#' @param ... Additional parameters passed to the internal functions.
+#'
+#' @return An adjacency graph based on the specified neighbor and weight modes.
+#' @export
+#'
+#' @examples
+#' # Sample data
+#' X <- matrix(rnorm(100*100), 100, 100)
+#' sm <- graph_weights(X, neighbor_mode="knn", weight_mode="normalized", k=3)
+#'
+#' labels <- factor(rep(letters[1:4], 5))
+#' sm3 <- graph_weights(X, neighbor_mode="knn", k=3, labels=labels, weight_mode="cosine")
+#' sm4 <- graph_weights(X, neighbor_mode="knn", k=100, labels=labels, weight_mode="cosine")
 graph_weights <- function(X, k=5, neighbor_mode=c("knn", "epsilon"),
                           weight_mode=c("heat", "normalized", "binary", "euclidean",
                                         "cosine", "correlation"),
@@ -298,35 +359,28 @@ threshold_adjacency <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
 #' @param FUN A kernel function to apply to the Euclidean distances between data points (default: heat_kernel).
 #' @param type A character string indicating the type of adjacency to compute. One of "normal", "mutual", or "asym" (default: "normal").
 #' @param as A character string indicating the format of the output. One of "igraph", "sparse", or "index_sim" (default: "igraph").
-#' @param ef Search parameter that controls speed/accuracy trade-off (default: 200).
-#' @param M Parameter that controls index size/speed trade-off (default: 16).
 #'
 #' @return If 'as' is "index_sim", a two-column matrix where the first column contains the indices of nearest neighbors and the second column contains the corresponding kernel values.
 #'         If 'as' is "igraph", an igraph object representing the cross adjacency graph.
 #'         If 'as' is "sparse", a sparse adjacency matrix.
-#'
-#' @importFrom RcppHNSW hnsw_knn
 #' @export
 cross_adjacency <- function(X, Y, k=5, FUN=heat_kernel, type=c("normal", "mutual", "asym"),
-                          as=c("igraph", "sparse", "index_sim"), ef=200, M=16) {
+                          as=c("igraph", "sparse", "index_sim")) {
 
   assert_that(k > 0 && k <= nrow(X))
 
   as <- match.arg(as)
   type <- match.arg(type)
 
-  # Build index and search using RcppHNSW
-  nn <- RcppHNSW::hnsw_knn(X, query = Y, k = k + 1, distance = "l2", ef = ef, M = M)
-  
-  # RcppHNSW returns squared L2 distances, so we need to take sqrt
-  # Also add small epsilon to avoid numerical issues
-  nnd <- sqrt(nn$dist[, 2:ncol(nn$dist), drop=FALSE] + 1e-16)
-  nni <- nn$idx[, 2:ncol(nn$idx), drop=FALSE]
+  nn <- rflann::Neighbour(as.matrix(Y), X, k=k+1)
+  nnd <- sqrt(nn$distances[, 2:ncol(nn$distances),drop=FALSE] + 1e-16)
+  nni <- nn$indices[, 2:ncol(nn$indices),drop=FALSE]
   hval <- FUN(nnd)
 
   if (as == "index_sim") {
     return(cbind(as.vector(nni), as.vector(hval)))
   }
+
 
   W <- if (k == 1) {
     indices_to_sparse(as.matrix(nni), as.matrix(hval), idim=nrow(X), jdim=nrow(X))
@@ -347,82 +401,76 @@ cross_adjacency <- function(X, Y, k=5, FUN=heat_kernel, type=c("normal", "mutual
   } else {
     gg
   }
+
 }
 
-#' Compute weighted k-nearest neighbors using HNSW
+#' Weighted k-Nearest Neighbors
 #'
-#' @param X A matrix where each row is a data point
-#' @param k Number of nearest neighbors (default: 5)
-#' @param FUN Function to compute weights from distances (default: heat_kernel)
-#' @param type Type of neighborhood relationship: "normal", "mutual", or "asym"
-#' @param as Output format: "igraph" or "sparse"
-#' @param ... Additional parameters passed to FUN
-#' @importFrom RcppHNSW hnsw_build hnsw_search
+#' This function computes a weighted k-nearest neighbors graph or adjacency matrix from a data matrix.
+#' The function takes into account the Euclidean distance between instances and applies a kernel function
+#' to convert the distances into similarities.
+#'
+#' @param X A data matrix where rows are instances and columns are features.
+#' @param k An integer specifying the number of nearest neighbors to consider (default: 5).
+#' @param FUN A kernel function used to convert Euclidean distances into similarities (default: heat_kernel).
+#' @param type A character string indicating the type of k-nearest neighbors graph to compute. One of "normal", "mutual", or "asym" (default: "normal").
+#' @param as A character string specifying the format of the output. One of "igraph" or "sparse" (default: "igraph").
+#' @param ... Additional arguments passed to the nearest neighbor search function (rflann::Neighbour).
+#'
+#' @return If 'as' is "igraph", an igraph object representing the weighted k-nearest neighbors graph.
+#'         If 'as' is "sparse", a sparse adjacency matrix.
+#'
+#' @examples
+#' X <- matrix(rnorm(10 * 10), 10, 10)
+#' w <- weighted_knn(X, k = 5)
+#'
+#' @importFrom assertthat assert_that
+#' @importFrom igraph graph_from_adjacency_matrix as_adjacency_matrix
 #' @importFrom Matrix sparseMatrix
+#' @importFrom rflann Neighbour
 #' @export
 weighted_knn <- function(X, k=5, FUN=heat_kernel,
-                        type=c("normal", "mutual", "asym"),
-                        as=c("igraph", "sparse"),
-                        ...) {
-  
+                         type=c("normal", "mutual", "asym"),
+                         as=c("igraph", "sparse"),
+                         ...) {
   assert_that(k > 0 && k <= nrow(X))
-  type <- match.arg(type)
   as <- match.arg(as)
-  
-  # Build HNSW index
-  ann <- hnsw_build(X, distance = "l2", M = 16, ef = 100)
-  
-  # Search for k nearest neighbors
-  nn_results <- hnsw_search(X, ann, k = k + 1)  # +1 because first neighbor is self
-  
-  # Remove self-connections (first column)
-  nn_index <- nn_results$idx[, -1, drop=FALSE]
-  nn_dist <- sqrt(nn_results$dist[, -1, drop=FALSE])  # Convert from squared L2 to Euclidean
-  
-  # Apply weight function to distances
-  hval <- apply(nn_dist, 2, FUN, ...)
-  
-  # Convert to sparse matrix format
-  n <- nrow(X)
-  M <- indices_to_sparse(nn_index, hval, return_triplet=TRUE, idim=n, jdim=n)
-  
-  if (type == "mutual") {
-    # For mutual kNN, only keep edges that appear in both directions
-    M_sparse <- triplet_to_matrix(M, c(n,n))
-    M_t <- t(M_sparse)
-    M_mutual <- M_sparse * (M_sparse > 0 & M_t > 0)
-    M_mutual <- (M_mutual + t(M_mutual))/2
-    
-    if (as == "igraph") {
-      M_mutual <- as(M_mutual, "dgTMatrix")
-      ret <- graph_from_adjacency_matrix(M_mutual, mode="undirected", weighted=TRUE)
-    } else {
-      ret <- M_mutual
-    }
-  } else if (type == "normal") {
-    # For normal kNN, make it symmetric by averaging with transpose
-    M_sparse <- triplet_to_matrix(M, c(n,n))
-    M_sym <- (M_sparse + t(M_sparse))/2
-    
-    if (as == "igraph") {
-      M_sym <- as(M_sym, "dgTMatrix")
-      ret <- graph_from_adjacency_matrix(M_sym, mode="undirected", weighted=TRUE)
-    } else {
-      ret <- M_sym
-    }
+
+
+  type <- match.arg(type)
+  #nn <- FNN::get.knn(X, k=k)
+  #nn <- nabor::knn(X, k=k)
+  nn <- rflann::Neighbour(X, X,k=min(k+1, nrow(X)), ...)
+  #nnd <- nn$nn.dist + 1e-16
+
+  nnd <- sqrt(nn$distances[, 2:ncol(nn$distances),drop=FALSE] + 1e-16)
+  nni <- nn$indices[, 2:ncol(nn$indices), drop=FALSE]
+  hval <- FUN(nnd)
+
+  #W <- indices_to_sparse(nn$nn.index, hval)
+  W <- if (k == 1) {
+    indices_to_sparse(as.matrix(nni), as.matrix(hval), idim=nrow(X), jdim=nrow(X))
   } else {
-    # For asymmetric kNN, keep it as is
-    M_sparse <- triplet_to_matrix(M, c(n,n))
-    
-    if (as == "igraph") {
-      M_sparse <- as(M_sparse, "dgTMatrix")
-      ret <- graph_from_adjacency_matrix(M_sparse, mode="directed", weighted=TRUE)
-    } else {
-      ret <- M_sparse
-    }
+    indices_to_sparse(nni, hval, idim=nrow(X), jdim=nrow(X))
   }
-  
-  ret
+
+  ##bW <- W != 0
+  ##tmp <- as(x$G, "dgTMatrix")
+  ## should return the raw distances?
+
+  gg <- if (type == "normal") {
+    igraph::graph_from_adjacency_matrix(W, weighted=TRUE, mode="max")
+  } else if (type == "mutual") {
+    igraph::graph_from_adjacency_matrix(W, weighted=TRUE, mode="min")
+  } else if (type == "asym") {
+    igraph::graph_from_adjacency_matrix(W, weighted=TRUE, mode="directed")
+  }
+
+  if (as == "sparse") {
+    igraph::as_adjacency_matrix(gg, attr="weight")
+  } else {
+    gg
+  }
 }
 
 #' Apply a Function to Non-Zero Elements in a Sparse Matrix
@@ -460,137 +508,37 @@ psparse <- function(M, FUN, return_triplet=FALSE) {
 
 
 
-#' Estimate Optimal Bandwidth Parameter for Heat Kernel
-#'
-#' @description
-#' Estimates an appropriate bandwidth parameter (sigma) for the heat kernel
-#' based on the distribution of pairwise distances in the data. This is a crucial
-#' parameter that affects the scale at which similarities are measured.
-#'
-#' @details
-#' The function estimates sigma by:
-#' 1. Computing pairwise distances between points (or a sample of points)
-#' 2. Finding the specified quantile of non-zero distances
-#' This approach helps choose a sigma value that's appropriate for the scale
-#' of the data.
-#'
-#' @param X Numeric matrix where rows are instances and columns are features
-#' @param prop Numeric value in (0,1) specifying the quantile to use (default: 0.25)
-#' @param nsamples Integer specifying maximum number of samples to use (default: 500)
-#' @param normalized Logical indicating whether distances should be computed on
-#'   normalized data (default: FALSE)
-#'
-#' @return Numeric value representing the estimated optimal bandwidth parameter
-#'
-#' @examples
-#' # Generate example data
-#' set.seed(123)
-#' X <- matrix(rnorm(1000 * 10), nrow = 1000)
-#'
-#' # Estimate sigma with default parameters
-#' sigma1 <- estimate_sigma(X)
-#'
-#' # Estimate sigma with different quantile
-#' sigma2 <- estimate_sigma(X, prop = 0.1)
-#'
-#' # Estimate sigma for normalized data
-#' sigma3 <- estimate_sigma(X, normalized = TRUE)
-#'
-#' @export
-estimate_sigma <- function(X, prop=.25, nsamples=500, normalized=FALSE) {
-  ## estimate sigma
-  if (nrow(X) <= 500) {
-    nsamples <- nrow(X)
-    sam <- 1:nrow(X)
-  } else {
-    nsamples <- min(nsamples, nrow(X))
-    sam <- sample(1:nrow(X), nsamples)
-  }
+# psparse <- function(..., fun=c("max", "min"), na.rm=FALSE, return_triplet=FALSE) {
+#   fun <- match.arg(fun)
+#   # check that all matrices have conforming sizes
+#   num.rows <- unique(sapply(list(...), nrow))
+#   num.cols <- unique(sapply(list(...), ncol))
+#   stopifnot(length(num.rows) == 1)
+#   stopifnot(length(num.cols) == 1)
+#
+#   cat.summary <- do.call(rbind, lapply(list(...), summary))
+#
+#
+#   out.summary <- if (fun == "min") {
+#     aggregate(x ~ i + j, data = cat.summary, FUN=function(x) {
+#       if (length(x) == 1) 0 else x[1]
+#     })
+#   } else {
+#     aggregate(x ~ i + j, data = cat.summary, FUN=max, na.rm)
+#   }
+#
+#   if (return_triplet) {
+#     cbind(i=out.summary$i, j=out.summary$j, x=out.summary$x)
+#   } else {
+#     sparseMatrix(i = out.summary$i,
+#                  j = out.summary$j,
+#                  x = out.summary$x,
+#                  dims = c(num.rows, num.cols))
+#   }
+# }
+#
+# pmin.sparse <- function(..., na.rm = FALSE, return_triplet=FALSE) { psparse(..., fun="min", return_triplet=return_triplet) }
+#
+# pmax.sparse <- function(..., na.rm = FALSE, return_triplet=FALSE) { psparse(..., fun="max", return_triplet=return_triplet ) }
+#
 
-  d <- dist(X[sam,])
-
-  qs <- quantile(d[d!=0],seq(prop, 1,by=.1))
-  if (all(is.na(qs))) {
-    stop("could not estimate sigma, all quantiles are NA ...")
-  } else {
-    qs <- qs[!is.na(qs)]
-    qs[1]
-  }
-}
-
-
-#' Compute Similarity Matrix for Factors in a Data Frame
-#'
-#' Calculate the similarity matrix for a set of factors in a data frame using various similarity methods.
-#'
-#' @param des A data frame containing factors for which the similarity matrix will be computed.
-#' @param method A character vector specifying the method used for computing the similarity. The available methods are:
-#'   \itemize{
-#'     \item "Jaccard" - Jaccard similarity coefficient
-#'     \item "Rogers" - Rogers and Tanimoto similarity coefficient
-#'     \item "simple matching" - Simple matching coefficient
-#'     \item "Dice" - Dice similarity coefficient
-#'   }
-#' @return A similarity matrix computed using the specified method for the factors in the data frame.
-#' @details
-#' The \code{factor_sim} function computes the similarity matrix for a set of factors in a data frame using the chosen method.
-#' The function first converts the data frame into a model matrix, then calculates the similarity matrix using the \code{proxy::simil}
-#' function from the \code{proxy} package.
-#'
-#' The function supports four similarity methods: Jaccard, Rogers, simple matching, and Dice. The choice of method depends on the
-#' specific use case and the desired properties of the similarity measure.
-#'
-#' @export
-#' @examples
-#' # Sample data
-#' des <- data.frame(
-#'   var1 = factor(c("a", "b", "a", "b", "a")),
-#'   var2 = factor(c("c", "c", "d", "d", "d"))
-#' )
-#'
-#' # Compute similarity matrix using Jaccard method
-#' sim_jaccard <- factor_sim(des, method = "Jaccard")
-#'
-#' # Compute similarity matrix using Dice method
-#' sim_dice <- factor_sim(des, method = "Dice")
-factor_sim <- function(des, method=c("Jaccard", "Rogers", "simple matching", "Dice")) {
-  Fmat <- do.call(cbind, lapply(1:ncol(des), function(i) {
-    nam <- colnames(des)[i]
-    model.matrix(as.formula(paste("~ ", nam, " -1")), data=des)
-  }))
-
-  proxy::simil(Fmat, method=method)
-}
-
-
-#' Compute Weighted Similarity Matrix for Factors in a Data Frame
-#'
-#' Calculate the weighted similarity matrix for a set of factors in a data frame.
-#'
-#' @param des A data frame containing factors for which the weighted similarity matrix will be computed.
-#' @param wts A numeric vector of weights corresponding to the factors in the data frame. The default is equal weights for all factors.
-#' @return A weighted similarity matrix computed for the factors in the data frame.
-#'
-#' @export
-#' @examples
-#' # Sample data
-#' des <- data.frame(
-#'   var1 = factor(c("a", "b", "a", "b", "a")),
-#'   var2 = factor(c("c", "c", "d", "d", "d"))
-#' )
-#'
-#' # Compute similarity matrix with default equal weights
-#' sim_default_weights <- weighted_factor_sim(des)
-#'
-#' # Compute similarity matrix with custom weights
-#' sim_custom_weights <- weighted_factor_sim(des, wts = c(0.7, 0.3))
-weighted_factor_sim <- function(des, wts=rep(1, ncol(des))/ncol(des)) {
-  wts <- wts/sum(wts)
-  Fmat <- lapply(1:ncol(des), function(i) {
-    nam <- colnames(des)[i]
-    labs <- des[[nam]]
-    label_matrix(labs, labs) * wts[i]
-  })
-
-  Reduce("+", Fmat)
-}

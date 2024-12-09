@@ -17,11 +17,3 @@ A matrix containing the edges of the graph-like object.
 \description{
 Retrieve the edges of a graph-like object.
 }
-\examples{
-# Create a graph-like object
-g <- neighbor_graph(make_ring(5))
-
-# Retrieve edges
-edges <- edges(g)
-
-}

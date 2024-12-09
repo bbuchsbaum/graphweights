@@ -19,11 +19,3 @@ A matrix or data frame representing the means of each class, the structure of wh
 \description{
 A generic function to compute the mean of each class.
 }
-\examples{
-# Create an example object
-obj <- data.frame(x = c(1, 2, 3, 4, 5), y = c(2, 3, 5, 7, 11))
-
-# Compute class means
-means <- class_means(obj, 1)
-
-}

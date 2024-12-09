@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{spatial_adjacency}
 \alias{spatial_adjacency}
-\title{Compute the Spatial Adjacency Matrix for a Coordinate Matrix}
+\title{Compute the spatial adjacency matrix for a coordinate matrix}
 \usage{
 spatial_adjacency(
   coord_mat,
@@ -36,11 +36,8 @@ spatial_adjacency(
 A sparse symmetric matrix representing the computed spatial adjacency
 }
 \description{
-Computes the spatial adjacency matrix for a given coordinate matrix using specified parameters.
-}
-\details{
-The function first computes the spatial adjacency matrix using the specified parameters,
-and then normalizes the matrix to make it row-stochastic.
+This function computes the spatial adjacency matrix for a given coordinate matrix using specified parameters.
+Adjacency is determined by distance threshold and the maximum number of neighbors.
 }
 \examples{
 coord_mat = as.matrix(expand.grid(x=1:6, y=1:6))

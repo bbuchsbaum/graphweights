@@ -17,14 +17,3 @@ An object with the class "nn_search".
 \description{
 Search result for nearest neighbor search
 }
-\examples{
-# Create an object of class "nnsearcher"
-nn <- nnsearcher()
-
-# Perform nearest neighbor search
-result <- find_nn(nn)
-
-# Create search result object
-search_result <- search_result(nn, result)
-
-}

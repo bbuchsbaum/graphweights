@@ -2,21 +2,20 @@
 % Please edit documentation in R/all_generic.R
 \name{nvertices}
 \alias{nvertices}
-\title{Number of Vertices in Graph-like Objects}
+\title{Number of Vertices in neighbor_graph Objects}
 \usage{
 nvertices(x, ...)
 }
 \arguments{
-\item{x}{An object with a neighborhood structure.}
+\item{x}{A neighbor_graph object.}
 
-\item{...}{Additional arguments passed to methods (currently ignored).}
+\item{...}{Additional arguments (currently ignored).}
 }
 \value{
-An integer representing the number of vertices in the graph.
+The number of vertices in the neighbor_graph object.
 }
 \description{
-Retrieve the number of vertices in a graph-like object. This function is a generic method
-that works with various types of graph representations.
+Retrieve the number of vertices in a neighbor_graph object.
 }
 \examples{
 # Create a small example graph

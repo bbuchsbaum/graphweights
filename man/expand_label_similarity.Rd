@@ -2,71 +2,22 @@
 % Please edit documentation in R/label_sim.R
 \name{expand_label_similarity}
 \alias{expand_label_similarity}
-\title{Expand Label Similarities Using a Pre-computed Similarity Matrix}
+\title{Expand Similarity Between Labels Based on a Precomputed Similarity Matrix}
 \usage{
 expand_label_similarity(labels, sim_mat, threshold = 0, above = TRUE)
 }
 \arguments{
-\item{labels}{Vector of categorical labels to expand relationships for}
+\item{labels}{A vector of labels for which the similarities will be expanded.}
 
-\item{sim_mat}{Pre-computed similarity matrix between unique labels.
-Row and column names must match the unique values in \code{labels}}
+\item{sim_mat}{A precomputed similarity matrix containing similarities between the unique labels.}
 
-\item{threshold}{Numeric threshold for filtering similarities (default: 0)}
+\item{threshold}{A threshold value used to filter the expanded similarity values (default: 0).}
 
-\item{above}{Logical; if TRUE keep similarities above threshold,
-if FALSE keep those below (default: TRUE)}
+\item{above}{A boolean flag indicating whether to include the values above the threshold (default: TRUE) or below the threshold (FALSE).}
 }
 \value{
-A sparse symmetric Matrix object where entry (i,j) represents the
-  expanded similarity between labels[i] and labels[j]
+A sparse symmetric similarity matrix with the expanded similarity values.
 }
 \description{
-Expands categorical label relationships using a pre-computed similarity matrix,
-creating a sparse similarity graph that captures complex relationships between
-labels. This function is particularly useful for semi-supervised learning and
-transfer learning scenarios where you have prior knowledge about label relationships.
-}
-\details{
-This function maps categorical labels to a similarity space defined by a pre-computed
-similarity matrix. It's particularly useful when:
-* Labels have hierarchical relationships (e.g., taxonomies)
-* Labels have continuous similarity scores (e.g., word embeddings)
-* You want to incorporate domain knowledge into label relationships
-
-Common use cases:
-* Hierarchical classification with taxonomy relationships
-* Text classification using word embedding similarities
-* Transfer learning incorporating domain knowledge
-* Semi-supervised learning with label propagation
-
-Performance characteristics:
-* Time complexity: O(n^2) where n is the number of unique labels
-* Space complexity: O(k) where k is the number of non-zero similarities
-* Most efficient when the similarity matrix is sparse
-}
-\examples{
-# Example with hierarchical categories
-categories <- c("animal", "mammal", "cat", "dog", "plant", "tree")
-n <- length(categories)
-
-# Create a similarity matrix based on hierarchy
-sim_mat <- matrix(0, n, n)
-colnames(sim_mat) <- rownames(sim_mat) <- categories
-
-# Define hierarchical relationships
-sim_mat["mammal", "animal"] <- sim_mat["animal", "mammal"] <- 0.8
-sim_mat["cat", "mammal"] <- sim_mat["mammal", "cat"] <- 0.9
-sim_mat["dog", "mammal"] <- sim_mat["mammal", "dog"] <- 0.9
-sim_mat["tree", "plant"] <- sim_mat["plant", "tree"] <- 0.9
-
-# Sample data with these categories
-labels <- c("cat", "dog", "tree", "plant", "animal")
-
-# Expand similarities
-expanded <- expand_label_similarity(labels, sim_mat, threshold = 0.5)
-
-}
-\seealso{
-* \code{\link{create_label_matrix}} for creating basic label similarity matrices
+Expands the similarity between labels based on a precomputed similarity matrix, `sim_mat`, with either above-threshold or below-threshold values depending on the value of the `above` parameter.
 }

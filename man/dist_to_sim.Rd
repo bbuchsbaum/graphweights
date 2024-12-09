@@ -17,11 +17,3 @@ A similarity matrix.
 \description{
 Convert distance to similarity
 }
-\examples{
-# Create a distance matrix
-dist <- matrix(c(0, 1, 2, 1, 0, 3, 2, 3, 0), nrow = 3)
-
-# Convert distance to similarity
-sim <- dist_to_sim(dist)
-
-}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/temporal_weights.R
 \name{temporal_laplacian}
 \alias{temporal_laplacian}
-\title{Compute Temporal Laplacian Matrix}
+\title{Compute the temporal Laplacian matrix of a time series}
 \usage{
 temporal_laplacian(
   time,
@@ -12,71 +12,26 @@ temporal_laplacian(
 )
 }
 \arguments{
-\item{time}{A numeric vector representing time points. Values should be ordered
-and typically represent equally spaced time intervals.}
+\item{time}{A numeric vector representing a time series}
 
-\item{weight_mode}{Character string specifying the weighting scheme:
-* "heat": Gaussian heat kernel weights (exponential decay with distance)
-* "binary": Binary weights (1 for points within window, 0 otherwise)
-Default is "heat".}
+\item{weight_mode}{Character, the mode for computing weights, either "heat" or "binary" (default is "heat")}
 
-\item{sigma}{Numeric value controlling the width of the Gaussian kernel when
-weight_mode = "heat". Larger values create broader temporal connections.
-Only used when weight_mode = "heat". Default is 1.}
+\item{sigma}{Numeric, the sigma parameter for the heat kernel (default is 1)}
 
-\item{window}{Integer specifying the size of the temporal window. Determines
-how many adjacent time points are connected. Must be >= 1. Default is 2.}
+\item{window}{Integer, the window size for computing adjacency (default is 2)}
 }
 \value{
-A sparse symmetric Matrix object representing the temporal Laplacian.
-  The matrix has dimensions length(time) x length(time). The Laplacian
-  has special spectral properties useful for various analyses:
-  * It is positive semi-definite
-  * Its eigenvalues provide information about the temporal structure
-  * The smallest non-zero eigenvalue indicates temporal connectivity
+A sparse symmetric matrix representing the computed temporal Laplacian
 }
 \description{
-Constructs a temporal Laplacian matrix from a time series, representing the
-difference between the degree matrix and the adjacency matrix. This matrix
-captures the temporal structure and can be used for various time series
-analysis tasks.
-}
-\details{
-The temporal Laplacian is computed as L = D - A, where:
-* D is the diagonal degree matrix (row sums of adjacency matrix)
-* A is the temporal adjacency matrix
-
-The Laplacian matrix is useful for:
-* Temporal clustering
-* Dimensionality reduction
-* Signal processing
-* Pattern detection in time series
-
-The structure of the Laplacian depends on the chosen weight mode and parameters
-used to construct the underlying adjacency matrix.
+This function computes the temporal Laplacian matrix of a given time series using a specified weight mode,
+sigma, and window size.
 }
 \examples{
-\dontrun{
-# Create evenly spaced time points
-time <- seq(0, 10, by = 0.5)
+# Create an example time series
+time <- 1:10
 
-# Compute Laplacian with binary weights
-lap_binary <- temporal_laplacian(time, 
-                                weight_mode = "binary",
-                                window = 2)
+# Compute the temporal Laplacian matrix using the heat weight mode
+result <- temporal_laplacian(time, weight_mode = "heat", sigma = 1, window = 2)
 
-# Compute Laplacian with heat kernel weights
-lap_heat <- temporal_laplacian(time,
-                              weight_mode = "heat",
-                              sigma = 1.5,
-                              window = 3)
-
-# Analyze eigenvalues for temporal structure
-eigenvals <- eigen(lap_heat)$values
-}
-
-}
-\seealso{
-* \code{\link{temporal_adjacency}} for computing temporal adjacency matrices
-* \code{\link{temporal_autocor}} for computing temporal autocorrelation
 }

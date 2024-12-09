@@ -2,25 +2,22 @@
 % Please edit documentation in R/all_generic.R
 \name{neighbors}
 \alias{neighbors}
-\title{Get Neighbors of Graph Vertices}
+\title{Neighbors of a Set of Nodes}
 \usage{
 neighbors(x, i, ...)
 }
 \arguments{
 \item{x}{The graph or graph-like object in which to find the neighbors.}
 
-\item{i}{The vertex or vertices for which to find the neighbors. Can be a single vertex 
-index or a vector of vertex indices.}
+\item{i}{The vertex or vertices for which to find the neighbors. Can be a single vertex index or a vector of vertex indices.}
 
-\item{...}{Additional arguments passed to methods.}
+\item{...}{Additional arguments to be passed to specific implementations of the neighbors method.}
 }
 \value{
-A list where each element contains the indices of neighbors for the corresponding 
-        input vertex. The length of the list equals the length of input `i`.
+A list of vertex indices representing the neighbors of the specified vertices. The length of the list is equal to the number of input vertices, and each element in the list contains the neighbor indices for the corresponding input vertex.
 }
 \description{
-This function retrieves the indices of neighbors for one or more vertices in a given graph 
-or graph-like object. It is a generic method that can work with various graph representations.
+This function retrieves the indices of neighbors of one or more vertices in a given graph or graph-like object.
 }
 \examples{
 # Create an example graph
@@ -29,8 +26,4 @@ g <- neighbor_graph(make_ring(5))
 
 # Get neighbors of vertex 1
 n <- neighbors(g, 1)
-
-# Get neighbors of multiple vertices
-n_multi <- neighbors(g, c(1, 2))
-
 }

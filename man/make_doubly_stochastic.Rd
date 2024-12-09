@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{make_doubly_stochastic}
 \alias{make_doubly_stochastic}
-\title{Compute the Doubly Stochastic Matrix from a Given Matrix}
+\title{Compute the doubly stochastic matrix from a given matrix}
 \usage{
 make_doubly_stochastic(A, iter = 30)
 }
@@ -15,9 +15,7 @@ make_doubly_stochastic(A, iter = 30)
 A numeric matrix representing the computed doubly stochastic matrix
 }
 \description{
-Iteratively computes the doubly stochastic matrix from a given input matrix.
-}
-\details{
+This function iteratively computes the doubly stochastic matrix from a given input matrix.
 A doubly stochastic matrix is a matrix in which both row and column elements sum to 1.
 }
 \examples{
