@@ -52,6 +52,7 @@
 #' @param deterministic_first_edge Logical, if TRUE selects the first edge in the candidate set for the first iteration.
 #'   This is primarily for testing purposes. Default is FALSE.
 #' @param verbose Logical, if TRUE prints debug information during the coarsening process.
+#' @param use_cpp Logical. If TRUE, uses the C++ implementation for faster computation. Default is FALSE.
 #' 
 #' @return A list with elements:
 #' \describe{
@@ -75,7 +76,8 @@
 #' 
 #' @export
 #' @importFrom Matrix Diagonal isSymmetric
-rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL, deterministic_first_edge=FALSE, verbose=FALSE) {
+rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL, deterministic_first_edge=FALSE, 
+                        verbose=FALSE, use_cpp=FALSE) {
   if(!inherits(W, "dgCMatrix") && !inherits(W, "dgTMatrix") && !inherits(W, "dsCMatrix")) {
     W <- as(W, "dgCMatrix")
   }
@@ -87,6 +89,11 @@ rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL, deterministic_first_edge=
   
   # Ensure symmetry
   if(!isSymmetric(W)) stop("W must be symmetric.")
+  
+  if(use_cpp) {
+    if(verbose) cat("Using C++ implementation...\n")
+    return(rec_coarsen_impl(W, T, phi, deterministic_first_edge, verbose, seed))
+  }
   
   # Extract edges (i < j to avoid duplicates)
   # We'll store edges in a data.frame: (i,j,w,phi)

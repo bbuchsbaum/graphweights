@@ -96,3 +96,48 @@ test_that("Coarsening a star graph preserves dimension and basic structure", {
   # Loose check on spectral approximation
   expect_true(abs(orig_eigs[2] - coars_eigs[2]) < 0.8 * orig_eigs[2] + 1e-1)
 })
+
+test_that("C++ implementation matches R implementation", {
+  # Create a test graph
+  set.seed(42)
+  N <- 20
+  W <- rsparsematrix(N, N, density=0.2, symmetric=TRUE, rand.x=function(n) runif(n,0,1))
+  diag(W) <- 0
+  W <- as(W, "dgCMatrix")
+  
+  # Run both implementations with same seed
+  seed <- 123
+  r_result <- rec_coarsen(W, T=10, seed=seed, use_cpp=FALSE)
+  cpp_result <- rec_coarsen(W, T=10, seed=seed, use_cpp=TRUE)
+  
+  # Check dimensions match
+  expect_equal(dim(r_result$C), dim(cpp_result$C))
+  expect_equal(dim(r_result$W_c), dim(cpp_result$W_c))
+  
+  # Check mappings are equivalent (may need permutation)
+  # Since the vertex IDs might be assigned differently but still represent the same grouping
+  r_groups <- split(seq_len(N), r_result$mapping)
+  cpp_groups <- split(seq_len(N), cpp_result$mapping)
+  
+  # Check same number of groups
+  expect_equal(length(r_groups), length(cpp_groups))
+  
+  # Check group sizes match after sorting
+  expect_equal(sort(sapply(r_groups, length)), 
+              sort(sapply(cpp_groups, length)))
+  
+  # Check that matrices are equivalent up to permutation
+  # We can check this by comparing eigenvalues of W_c
+  r_eigs <- sort(eigen(r_result$W_c, symmetric=TRUE, only.values=TRUE)$values)
+  cpp_eigs <- sort(eigen(cpp_result$W_c, symmetric=TRUE, only.values=TRUE)$values)
+  expect_equal(r_eigs, cpp_eigs, tolerance=1e-12)
+  
+  # Test with deterministic first edge
+  r_result_det <- rec_coarsen(W, T=10, seed=seed, deterministic_first_edge=TRUE, use_cpp=FALSE)
+  cpp_result_det <- rec_coarsen(W, T=10, seed=seed, deterministic_first_edge=TRUE, use_cpp=TRUE)
+  
+  # Check eigenvalues match for deterministic case
+  r_eigs_det <- sort(eigen(r_result_det$W_c, symmetric=TRUE, only.values=TRUE)$values)
+  cpp_eigs_det <- sort(eigen(cpp_result_det$W_c, symmetric=TRUE, only.values=TRUE)$values)
+  expect_equal(r_eigs_det, cpp_eigs_det, tolerance=1e-12)
+})
