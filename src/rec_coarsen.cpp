@@ -1,5 +1,6 @@
 #include <RcppArmadillo.h>
 #include <unordered_set>
+#define ARMA_64BIT_WORD
 
 // [[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
