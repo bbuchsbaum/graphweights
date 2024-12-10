@@ -127,8 +127,12 @@ List rec_coarsen_impl(const S4& W, int T,
     }
     double total_phi = fenw.total_sum();
 
+    std::string stop_reason;
     for (int iter=1; iter<=T; iter++) {
-        if (total_phi<=0) break;
+        if (total_phi<=0) {
+            stop_reason = "No more edges with positive potential (total_phi <= 0)";
+            break;
+        }
 
         int chosen_edge_id=-1;
         if (deterministic_first_edge && iter==1) {
@@ -139,6 +143,7 @@ List rec_coarsen_impl(const S4& W, int T,
                 }
             }
             if (chosen_edge_id<0) {
+                stop_reason = "No valid edge found in deterministic first step";
                 continue;
             }
         } else {
@@ -146,8 +151,9 @@ List rec_coarsen_impl(const S4& W, int T,
             int fenw_idx = fenw.find(r);
             chosen_edge_id = fenw_idx-1;
             if (!cand[chosen_edge_id] || phi[chosen_edge_id]<=0) {
-                // Should not happen if fenw is maintained correctly,
-                // but in worst case just continue
+                if (iter == T) {
+                    stop_reason = "Reached maximum iterations (T) without finding valid edges";
+                }
                 continue;
             }
         }
@@ -185,6 +191,10 @@ List rec_coarsen_impl(const S4& W, int T,
                 phi[chosen_edge_id]=0.0;
             }
         }
+    }
+
+    if (stop_reason.empty()) {
+        stop_reason = "Completed normally";
     }
 
     // final compression
@@ -340,7 +350,8 @@ List rec_coarsen_impl(const S4& W, int T,
             _["C"]=C_out,
             _["W_c"]=W_c,
             _["L_c"]=L_c,
-            _["mapping"]=mapping
+            _["mapping"]=mapping,
+            _["stop_reason"]=stop_reason
         );
     }
 }

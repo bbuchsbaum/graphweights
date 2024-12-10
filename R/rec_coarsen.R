@@ -53,6 +53,7 @@
 #'   This is primarily for testing purposes. Default is FALSE.
 #' @param verbose Logical, if TRUE prints debug information during the coarsening process.
 #' @param use_cpp Logical. If TRUE, uses the C++ implementation for faster computation. Default is FALSE.
+#' @param allow_multiple_passes Logical. If TRUE, allows multiple passes of coarsening. Default is FALSE.
 #' 
 #' @return A list with elements:
 #' \describe{
@@ -77,7 +78,7 @@
 #' @export
 #' @importFrom Matrix Diagonal isSymmetric
 rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL, deterministic_first_edge=FALSE, 
-                        verbose=FALSE, use_cpp=FALSE) {
+                        verbose=FALSE, use_cpp=FALSE, allow_multiple_passes=FALSE) {
   if(!inherits(W, "dgCMatrix") && !inherits(W, "dgTMatrix") && !inherits(W, "dsCMatrix")) {
     W <- as(W, "dgCMatrix")
   }
@@ -90,226 +91,345 @@ rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL, deterministic_first_edge=
   # Ensure symmetry
   if(!isSymmetric(W)) stop("W must be symmetric.")
   
-  if(use_cpp) {
-    if(verbose) cat("Using C++ implementation...\n")
-    return(rec_coarsen_impl(W, T, phi, deterministic_first_edge, verbose, seed))
-  }
-  
-  # Extract edges (i < j to avoid duplicates)
-  # We'll store edges in a data.frame: (i,j,w,phi)
-  # i,j are 1-based indices of vertices
-  # Convert sparse matrix to a triplet form
-  Wi <- W@i + 1L
-  Wp <- W@p
-  Wj <- integer(length(Wi))
-  for (col in seq_len(N)) {
-    start_idx <- Wp[col] + 1L
-    end_idx <- Wp[col+1L]
-    if (start_idx <= end_idx) {
-      Wj[start_idx:end_idx] <- col
+  if(!allow_multiple_passes) {
+    if(use_cpp) {
+      if(verbose) cat("Using C++ implementation...\n")
+      result <- rec_coarsen_impl(W, T, phi, deterministic_first_edge, verbose, seed)
+      if(verbose) cat("Algorithm stopped because:", result$stop_reason, "\n")
+      result$stop_reason <- NULL
+      return(result)
     }
-  }
-  
-  # Edges with i<j only
-  sel <- Wi < Wj
-  e_i <- Wi[sel]
-  e_j <- Wj[sel]
-  w_e <- W@x[sel]
-  
-  edges <- data.frame(
-    i = e_i,
-    j = e_j,
-    w = w_e,
-    stringsAsFactors = FALSE
-  )
-  
-  # If phi is NULL, use heavy-edge potentials phi_ij = w_ij
-  # Otherwise, phi must correspond to each edge in edges
-  if(is.null(phi)) {
-    phi <- edges$w
-  } else {
-    # Check length
-    if(length(phi) != nrow(edges)) stop("phi length must match the number of edges.")
-  }
-  edges$phi <- phi
-  
-  # Initially, each vertex is its own group
-  # We'll perform edge contractions by merging groups
-  parent <- seq_len(N) # union-find structure
-  size <- rep(1L, N)
-  
-  # Union-Find helper functions
-  find_set <- function(x) {
-    if (parent[x] != x) {
-      parent[x] <- find_set(parent[x])  # Path compression
-    }
-    parent[x]
-  }
-  
-  union_set <- function(a, b) {
-    a_root <- find_set(a)
-    b_root <- find_set(b)
     
-    if (a_root != b_root) {
-      if (size[a_root] < size[b_root]) {
-        # Swap to ensure a_root is the larger set
-        tmp <- a_root
-        a_root <- b_root
-        b_root <- tmp
-      }
-      # Merge b into a
-      parent[b_root] <<- a_root  # Use <<- to modify parent in parent environment
-      size[a_root] <<- size[a_root] + size[b_root]  # Use <<- to modify size in parent environment
-      if(verbose) {
-        cat("After union: parent =", parent, "\n")
-        cat("After union: size =", size, "\n")
+    # Extract edges (i < j to avoid duplicates)
+    # We'll store edges in a data.frame: (i,j,w,phi)
+    # i,j are 1-based indices of vertices
+    # Convert sparse matrix to a triplet form
+    Wi <- W@i + 1L
+    Wp <- W@p
+    Wj <- integer(length(Wi))
+    for (col in seq_len(N)) {
+      start_idx <- Wp[col] + 1L
+      end_idx <- Wp[col+1L]
+      if (start_idx <= end_idx) {
+        Wj[start_idx:end_idx] <- col
       }
     }
-  }
-  
-  # Candidate set C initially all edges
-  cand <- rep(TRUE, nrow(edges))
-  
-  # Precompute neighborhood sets
-  vertex_edge_map <- vector("list", N)
-  for(eid in seq_len(nrow(edges))) {
-    vertex_edge_map[[edges$i[eid]]] <- c(vertex_edge_map[[edges$i[eid]]], eid)
-    vertex_edge_map[[edges$j[eid]]] <- c(vertex_edge_map[[edges$j[eid]]], eid)
-  }
-  
-  total_phi <- sum(edges$phi[cand])
-  
-  # Perform up to T iterations
-  for(iter in seq_len(T)) {
-    cands_idx <- which(cand)
-    if(length(cands_idx) == 0) break
     
-    chosen_edge_id <- NA_integer_
+    # Edges with i<j only
+    sel <- Wi < Wj
+    e_i <- Wi[sel]
+    e_j <- Wj[sel]
+    w_e <- W@x[sel]
     
-    if(deterministic_first_edge && iter == 1) {
-      chosen_edge_id <- cands_idx[1]
-      if(verbose) cat("Deterministically chose edge", chosen_edge_id, 
-                     "connecting vertices", edges$i[chosen_edge_id], "and", edges$j[chosen_edge_id], "\n")
+    edges <- data.frame(
+      i = e_i,
+      j = e_j,
+      w = w_e,
+      stringsAsFactors = FALSE
+    )
+    
+    # If phi is NULL, use heavy-edge potentials phi_ij = w_ij
+    # Otherwise, phi must correspond to each edge in edges
+    if(is.null(phi)) {
+      phi <- edges$w
     } else {
-      p <- edges$phi[cands_idx] / total_phi
-      r <- runif(1)
-      cum_p <- cumsum(p)
+      # Check length
+      if(length(phi) != nrow(edges)) stop("phi length must match the number of edges.")
+    }
+    edges$phi <- phi
+    
+    # Initially, each vertex is its own group
+    # We'll perform edge contractions by merging groups
+    parent <- seq_len(N) # union-find structure
+    size <- rep(1L, N)
+    
+    # Union-Find helper functions
+    find_set <- function(x) {
+      if (parent[x] != x) {
+        parent[x] <- find_set(parent[x])  # Path compression
+      }
+      parent[x]
+    }
+    
+    union_set <- function(a, b) {
+      a_root <- find_set(a)
+      b_root <- find_set(b)
       
-      if(r <= cum_p[length(cum_p)]) {
-        chosen_edge_id <- cands_idx[which(r <= cum_p)[1]]
-        if(verbose) cat("Probabilistically chose edge", chosen_edge_id, 
+      if (a_root != b_root) {
+        if (size[a_root] < size[b_root]) {
+          # Swap to ensure a_root is the larger set
+          tmp <- a_root
+          a_root <- b_root
+          b_root <- tmp
+        }
+        # Merge b into a
+        parent[b_root] <<- a_root  # Use <<- to modify parent in parent environment
+        size[a_root] <<- size[a_root] + size[b_root]  # Use <<- to modify size in parent environment
+        if(verbose) {
+          cat("After union: parent =", parent, "\n")
+          cat("After union: size =", size, "\n")
+        }
+      }
+    }
+    
+    # Candidate set C initially all edges
+    cand <- rep(TRUE, nrow(edges))
+    
+    # Precompute neighborhood sets
+    vertex_edge_map <- vector("list", N)
+    for(eid in seq_len(nrow(edges))) {
+      vertex_edge_map[[edges$i[eid]]] <- c(vertex_edge_map[[edges$i[eid]]], eid)
+      vertex_edge_map[[edges$j[eid]]] <- c(vertex_edge_map[[edges$j[eid]]], eid)
+    }
+    
+    total_phi <- sum(edges$phi[cand])
+    
+    # Perform up to T iterations
+    for(iter in seq_len(T)) {
+      cands_idx <- which(cand)
+      if(length(cands_idx) == 0) break
+      
+      chosen_edge_id <- NA_integer_
+      
+      if(deterministic_first_edge && iter == 1) {
+        chosen_edge_id <- cands_idx[1]
+        if(verbose) cat("Deterministically chose edge", chosen_edge_id, 
                        "connecting vertices", edges$i[chosen_edge_id], "and", edges$j[chosen_edge_id], "\n")
       } else {
-        if(verbose) cat("No edge selected in iteration", iter, "\n")
-        next
+        p <- edges$phi[cands_idx] / total_phi
+        r <- runif(1)
+        cum_p <- cumsum(p)
+        
+        if(r <= cum_p[length(cum_p)]) {
+          chosen_edge_id <- cands_idx[which(r <= cum_p)[1]]
+          if(verbose) cat("Probabilistically chose edge", chosen_edge_id, 
+                         "connecting vertices", edges$i[chosen_edge_id], "and", edges$j[chosen_edge_id], "\n")
+        } else {
+          if(verbose) cat("No edge selected in iteration", iter, "\n")
+          next
+        }
+      }
+      
+      # Contract chosen edge
+      ei <- edges$i[chosen_edge_id]
+      ej <- edges$j[chosen_edge_id]
+      
+      # Find leaders of sets
+      pi <- find_set(ei)
+      pj <- find_set(ej)
+      
+      if(verbose) {
+        cat("Before merge: parent =", parent, "\n")
+        cat("Before merge: size =", size, "\n")
+      }
+      
+      if(pi != pj) {
+        if(verbose) cat("Merging sets with leaders", pi, "and", pj, "\n")
+        union_set(pi, pj)
+        
+        # Remove neighborhood edges from candidate set
+        Ni <- vertex_edge_map[[ei]]
+        Nj <- vertex_edge_map[[ej]]
+        Nij <- unique(c(Ni, Nj))
+        cand[Nij] <- FALSE
+        
+        if(verbose) cat("Removed edges", Nij, "from candidate set\n")
+        
+        total_phi <- sum(edges$phi[cand])
+        if(total_phi == 0) break
+      } else {
+        if(verbose) cat("Vertices", ei, "and", ej, "already in same set\n")
       }
     }
     
-    # Contract chosen edge
-    ei <- edges$i[chosen_edge_id]
-    ej <- edges$j[chosen_edge_id]
+    # After contraction, ensure all paths are compressed
+    if(verbose) {
+      cat("\nBefore final compression: parent =", parent, "\n")
+      cat("Before final compression: size =", size, "\n")
+    }
     
-    # Find leaders of sets
-    pi <- find_set(ei)
-    pj <- find_set(ej)
+    # Compress paths and create mapping
+    for(v in seq_len(N)) {
+      parent[v] <- find_set(v)
+    }
     
     if(verbose) {
-      cat("Before merge: parent =", parent, "\n")
-      cat("Before merge: size =", size, "\n")
+      cat("After final compression: parent =", parent, "\n")
+      cat("Final size array:", size, "\n")
     }
     
-    if(pi != pj) {
-      if(verbose) cat("Merging sets with leaders", pi, "and", pj, "\n")
-      union_set(pi, pj)
-      
-      # Remove neighborhood edges from candidate set
-      Ni <- vertex_edge_map[[ei]]
-      Nj <- vertex_edge_map[[ej]]
-      Nij <- unique(c(Ni, Nj))
-      cand[Nij] <- FALSE
-      
-      if(verbose) cat("Removed edges", Nij, "from candidate set\n")
-      
-      total_phi <- sum(edges$phi[cand])
-      if(total_phi == 0) break
-    } else {
-      if(verbose) cat("Vertices", ei, "and", ej, "already in same set\n")
+    # Get unique sets and create mapping
+    unique_sets <- unique(parent)
+    new_id_map <- seq_along(unique_sets)
+    names(new_id_map) <- as.character(unique_sets)
+    
+    mapping <- integer(N)
+    for(v in seq_len(N)) {
+      mapping[v] <- new_id_map[as.character(parent[v])]
     }
-  }
-  
-  # After contraction, ensure all paths are compressed
-  if(verbose) {
-    cat("\nBefore final compression: parent =", parent, "\n")
-    cat("Before final compression: size =", size, "\n")
-  }
-  
-  # Compress paths and create mapping
-  for(v in seq_len(N)) {
-    parent[v] <- find_set(v)
-  }
-  
-  if(verbose) {
-    cat("After final compression: parent =", parent, "\n")
-    cat("Final size array:", size, "\n")
-  }
-  
-  # Get unique sets and create mapping
-  unique_sets <- unique(parent)
-  new_id_map <- seq_along(unique_sets)
-  names(new_id_map) <- as.character(unique_sets)
-  
-  mapping <- integer(N)
-  for(v in seq_len(N)) {
-    mapping[v] <- new_id_map[as.character(parent[v])]
-  }
-  
-  if(verbose) {
-    cat("\nFinal mapping:", mapping, "\n")
-    cat("Unique sets:", unique_sets, "\n")
-    cat("Number of coarse vertices:", length(unique_sets), "\n")
-  }
-  
-  n <- length(unique_sets) # number of coarse vertices
-  
-  # Construct coarsening matrix C
-  # For each coarse vertex, find the vertices merged into it
-  groups <- split(seq_len(N), mapping)
-  
-  # Each block c_j is 1/sqrt(n_j) for vertices in that coarse vertex, 0 elsewhere.
-  # We'll construct C as a sparse matrix
-  # C is n x N
-  # The i-th row of C corresponds to coarse vertex i
-  row_idx <- integer(N)
-  col_idx <- integer(N)
-  x_vals <- numeric(N)
-  
-  pos <- 1L
-  for(ci in seq_along(groups)) {
-    grp <- groups[[ci]]
-    sz <- length(grp)
-    val <- 1/sqrt(sz)
-    row_idx[pos:(pos+sz-1)] <- ci
-    col_idx[pos:(pos+sz-1)] <- grp
-    x_vals[pos:(pos+sz-1)] <- val
-    pos <- pos + sz
-  }
-  
-  C <- sparseMatrix(i=row_idx[1:(pos-1)], j=col_idx[1:(pos-1)], 
+    
+    if(verbose) {
+      cat("\nFinal mapping:", mapping, "\n")
+      cat("Unique sets:", unique_sets, "\n")
+      cat("Number of coarse vertices:", length(unique_sets), "\n")
+    }
+    
+    n <- length(unique_sets) # number of coarse vertices
+    
+    # Construct coarsening matrix C
+    # For each coarse vertex, find the vertices merged into it
+    groups <- split(seq_len(N), mapping)
+    
+    # Each block c_j is 1/sqrt(n_j) for vertices in that coarse vertex, 0 elsewhere.
+    # We'll construct C as a sparse matrix
+    # C is n x N
+    # The i-th row of C corresponds to coarse vertex i
+    row_idx <- integer(N)
+    col_idx <- integer(N)
+    x_vals <- numeric(N)
+    
+    pos <- 1L
+    for(ci in seq_along(groups)) {
+      grp <- groups[[ci]]
+      sz <- length(grp)
+      val <- 1/sqrt(sz)
+      row_idx[pos:(pos+sz-1)] <- ci
+      col_idx[pos:(pos+sz-1)] <- grp
+      x_vals[pos:(pos+sz-1)] <- val
+      pos <- pos + sz
+    }
+    
+    C <- sparseMatrix(i=row_idx[1:(pos-1)], j=col_idx[1:(pos-1)], 
                     x=x_vals[1:(pos-1)], dims=c(n,N))
+    
+    # Construct coarsened adjacency W_c = C W C^T
+    CW <- C %*% W
+    W_c <- CW %*% t(C)
+    
+    # Compute L_c = C L C^T
+    d <- rowSums(W)
+    L <- Diagonal(x=d) - W
+    L_c <- C %*% L %*% t(C)
+    
+    list(
+      C = C,
+      W_c = W_c,
+      L_c = L_c,
+      mapping = mapping
+    )
+  } else {
+    # Multiple passes logic
+    remaining_T <- T
+    current_W <- W
+    current_result <- NULL
+    pass <- 1
+    
+    while(remaining_T > 0) {
+      if(verbose) cat(sprintf("\nStarting pass %d with T=%d\n", pass, remaining_T))
+      
+      # Run one pass
+      pass_result <- if(use_cpp) {
+        result <- rec_coarsen_impl(current_W, remaining_T, phi, 
+                                 deterministic_first_edge, verbose, seed)
+        if(verbose) cat("Pass", pass, "stopped because:", result$stop_reason, "\n")
+        result$stop_reason <- NULL
+        result
+      } else {
+        # Call the R implementation with remaining_T
+        rec_coarsen(current_W, T=remaining_T, phi=phi, seed=seed,
+                   deterministic_first_edge=deterministic_first_edge,
+                   verbose=verbose, use_cpp=FALSE, allow_multiple_passes=FALSE)
+      }
+      
+      # If no further coarsening possible or only one vertex remains, stop
+      if(nrow(pass_result$W_c) == nrow(current_W) || nrow(pass_result$W_c) == 1) {
+        if(verbose) cat("No further coarsening possible\n")
+        break
+      }
+      
+      # Compose with previous results if they exist
+      if(is.null(current_result)) {
+        current_result <- pass_result
+      } else {
+        current_result <- compose_coarsening(current_result, pass_result)
+      }
+      
+      # Update for next pass
+      current_W <- pass_result$W_c
+      remaining_T <- remaining_T - 1
+      pass <- pass + 1
+      
+      if(verbose) {
+        cat(sprintf("After pass %d: vertices reduced from %d to %d\n",
+                  pass-1, nrow(W), nrow(current_W)))
+      }
+    }
+    
+    return(current_result)
+  }
+}
+
+
+#' Compose Two Coarsening Passes
+#'
+#' Given the results of two consecutive passes of the REC coarsening, this function composes
+#' them to produce a single equivalent coarsening mapping and corresponding coarsened matrices.
+#'
+#' @param pass1 A list containing `C`, `W_c`, `L_c`, and `mapping` from the first coarsening pass.
+#' @param pass2 A list containing `C`, `W_c`, `L_c`, and `mapping` from the second coarsening pass.
+#'
+#' @return A list with elements:
+#' \describe{
+#'   \item{C_final}{The final coarsening matrix mapping from the original graph to the final coarsened graph.}
+#'   \item{W_c_final}{The final coarsened adjacency matrix.}
+#'   \item{L_c_final}{The final coarsened Laplacian matrix.}
+#'   \item{mapping_final}{An integer vector mapping original vertices directly to the final coarsened vertices.}
+#' }
+#'
+#' @examples
+#' # Suppose you have run:
+#' # result1 <- rec_coarsen(W, T=..., ...)
+#' # result2 <- rec_coarsen(result1$W_c, T=..., ...)
+#' # Now compose:
+#' # composed_result <- compose_coarsening(result1, result2)
+#'
+compose_coarsening <- function(pass1, pass2) {
+  # Extract components from pass1
+  C1 <- pass1$C
+  W_c1 <- pass1$W_c
+  L_c1 <- pass1$L_c
+  mapping1 <- pass1$mapping
   
-  # Construct coarsened adjacency W_c = C W C^T
-  CW <- C %*% W
-  W_c <- CW %*% t(C)
+  # Extract components from pass2
+  C2 <- pass2$C
+  W_c2 <- pass2$W_c
+  L_c2 <- pass2$L_c
+  mapping2 <- pass2$mapping
   
-  # Compute L_c = C L C^T
-  d <- rowSums(W)
-  L <- Diagonal(x=d) - W
-  L_c <- C %*% L %*% t(C)
+  # Compose the coarsening matrices
+  # Dimensions:
+  # C1 is (n1 x N), C2 is (n2 x n1)
+  # So C_final is (n2 x N)
+  C_final <- C2 %*% C1
+  
+  # Compute W_c_final and L_c_final
+  # Instead of recomputing from original W, we can use the relationships:
+  # W_c_final = C2 * W_c1 * C2^T
+  # L_c_final = C2 * L_c1 * C2^T
+  W_c_final <- C2 %*% W_c1 %*% t(C2)
+  L_c_final <- C2 %*% L_c1 %*% t(C2)
+  
+  # Compose the mappings:
+  # mapping1: original vertices -> intermediate vertices
+  # mapping2: intermediate vertices -> final vertices
+  # mapping_final[i] = mapping2[mapping1[i]]
+  
+  mapping_final <- mapping2[mapping1]
   
   list(
-    C = C,
-    W_c = W_c,
-    L_c = L_c,
-    mapping = mapping
+    C = C_final,
+    W_c = W_c_final,
+    L_c = L_c_final,
+    mapping = mapping_final
   )
 }
