@@ -2,19 +2,19 @@
 #'
 #' This code implements the GraphZoom framework as per the given paper:
 #' "GraphZoom: A Multi-level Spectral Approach for Accurate and Scalable Graph Embedding"
-#' by Chenhui Deng*, Zhiqiang Zhao*, Yongyu Wang, Zhiru Zhang, Zhuo Feng.
+#'
+#' Added Feature:
+#' - You can now provide a precomputed feature graph (A_feat). If provided, it will be used directly.
+#'   Otherwise, if X is provided, it will construct the feature graph from X. If neither is provided,
+#'   it will rely solely on the topology graph.
 #'
 #' The four phases are:
 #' 1) Graph Fusion (Sec. 3.1)
-#' 2) Spectral Graph Coarsening (Sec. 3.2, Eqs.(1)-(3))
+#' 2) Spectral Graph Coarsening (Sec. 3.2)
 #' 3) Graph Embedding on the Coarsest Graph (Sec. 3.3)
-#' 4) Embedding Refinement (Sec. 3.4, Eqs.(4)-(7))
+#' 4) Embedding Refinement (Sec. 3.4)
 #'
-#' Changes:
-#' - Uses RcppHNSW for the k-NN graph construction on node attributes.
-#' - Properly computes k-NN with L2 distance, then assigns edge weights based on cosine similarity.
-#'
-#' @references GraphZoom paper; RcppHNSW package documentation.
+#' @references GraphZoom paper; RcppHNSW documentation
 #' @import Matrix
 #' @import RSpectra
 #' @import RcppHNSW
@@ -45,22 +45,17 @@
 }
 
 .apply_graph_filter <- function(A, E, H, k=2, sigma=1e-3) {
-  # Add self-loops to reduce high-frequency noise
   N <- nrow(A)
   A_tilde <- A + sigma * Matrix::Diagonal(n=N, x=1)
   
-  # Normalize A_tilde
   A_norm <- .normalize_adjacency(A_tilde)
+  E_hat <- if(!is.null(H)) t(H) %*% E else E
   
-  E_hat <- if(!is.null(H)) H %*% E else E
-  
-  # Apply (A_norm)^k as a low-pass filter approximation
-  E_ref <- E_hat
   for (iter in seq_len(k)) {
-    E_ref <- A_norm %*% E_ref
+    E_hat <- A_norm %*% E_hat
   }
   
-  return(E_ref)
+  return(E_hat)
 }
 
 
@@ -68,86 +63,96 @@
 ### Graph Fusion (Phase 1)
 ### Sec. 3.1
 ###############################
-# Construct fused graph: 
-# A_fusion = A_topo + beta * A_feat
-# Where A_feat is from kNN on X (l2 distance) and weights from cosine similarity.
-
-.fuse_graph <- function(A_topo, X, k=10, beta=1.0) {
-  if(is.null(X)) {
-    # No features available, return A_topo directly
-    return(A_topo)
+.fuse_graph <- function(A_topo, X, A_feat=NULL, k=10, beta=1.0, verbose=FALSE) {
+  N <- nrow(A_topo)
+  
+  # If A_feat is provided directly, use it.
+  if(!is.null(A_feat)) {
+    if(verbose) cat("Feature graph provided directly. Using A_feat.\n")
+    # Check dimensions
+    if(nrow(A_feat) != N || ncol(A_feat) != N) {
+      stop("Provided A_feat must be of dimension N x N, matching A_topo.")
+    }
+    A_fusion <- A_topo + beta * A_feat
+    return(A_fusion)
   }
   
-  # Ensure X is a numeric matrix
-  X <- as.matrix(X)
-  N <- nrow(X)
-  
-  # Compute k-NN using RcppHNSW (l2 distance)
-  # According to the paper, we first find k-nearest neighbors based on l2-norm distance.
-  # Use hnsw_knn: returns a list with $item and $distance
-  # items: matrix of indices of neighbors (N x k)
-  # distance: N x k matrix of distances
-  # By default hnsw_knn expects row-wise data: each row is an item
-  all_knn <- RcppHNSW::hnsw_knn(X, k = k+1, distance = "l2") 
-  # Often the nearest neighbor includes the point itself. We must remove self:
-  # The first column typically is the item itself (distance=0). Remove it.
-  # Check if first column of all_knn$item is the item itself:
-  # Usually hnsw_knn returns the queried vector as nearest neighbor with distance 0.
-  # We'll assume so and remove the first column.
-  
-  items <- all_knn$item[,-1,drop=FALSE]      # Nxk matrix of neighbors
-  # distances <- all_knn$distance[,-1,drop=FALSE] # Nxk (not needed except for indexing check)
-  
-  # Compute weights based on cosine similarity:
-  # w_{i,j} = (X_i . X_j)/(||X_i|| * ||X_j||)
-  # Precompute norms
-  norms <- sqrt(rowSums(X * X) + 1e-12)
-  
-  # We'll construct A_feat as a sparse matrix
-  # i-th row: neighbors given by items[i,]
-  # w_{i, items[i,j]} = cosine similarity
-  i_idx <- integer(N*k)
-  j_idx <- integer(N*k)
-  vals <- numeric(N*k)
-  
-  idx <- 1
-  for (i in seq_len(N)) {
-    nbrs <- items[i,]
-    # Dot products with neighbors:
-    # X_i . X_j = sum over dimension
-    # Instead of computing full dot products from scratch, do:
-    # Actually just do a matrix multiplication since k might be large:
-    Xi <- X[i,,drop=FALSE]
-    Xnbrs <- X[nbrs,,drop=FALSE]
-    dotp <- Xi %*% t(Xnbrs) # 1 x k
+  # If no A_feat is provided, but X is given, construct A_feat from X
+  if(!is.null(X)) {
+    if(verbose) {
+      cat("Computing k-NN graph with k =", k, "\n")
+      cat("Input feature matrix dimensions:", dim(X), "\n")
+    }
     
-    # cos_sim
-    cos_sim <- as.numeric(dotp) / (norms[i]*norms[nbrs])
+    X <- as.matrix(X)
     
-    len_nbrs <- length(nbrs)
-    i_idx[idx:(idx+len_nbrs-1)] <- i
-    j_idx[idx:(idx+len_nbrs-1)] <- nbrs
-    vals[idx:(idx+len_nbrs-1)] <- cos_sim
-    idx <- idx+len_nbrs
+    all_knn <- RcppHNSW::hnsw_knn(X, k = k+1, distance = "l2")
+    if(verbose) {
+      cat("k-NN computation complete\n")
+      cat("Processing k-NN results...\n")
+    }
+    
+    items <- all_knn$idx[,-1,drop=FALSE]
+    norms <- sqrt(rowSums(X * X) + 1e-12)
+    
+    if(verbose) cat("Computing cosine similarities...\n")
+    
+    i_idx <- integer(N*k)
+    j_idx <- integer(N*k)
+    vals <- numeric(N*k)
+    
+    idx_ptr <- 1
+    for (i in seq_len(N)) {
+      nbrs <- items[i,]
+      if(length(nbrs) == 0) {
+        if(verbose) cat("Warning: No neighbors found for node", i, "\n")
+        next
+      }
+      
+      Xi <- X[i,,drop=FALSE]
+      Xnbrs <- X[nbrs,,drop=FALSE]
+      dotp <- Xi %*% t(Xnbrs)
+      
+      cos_sim <- as.numeric(dotp) / (norms[i]*norms[nbrs])
+      
+      len_nbrs <- length(nbrs)
+      i_idx[idx_ptr:(idx_ptr+len_nbrs-1)] <- i
+      j_idx[idx_ptr:(idx_ptr+len_nbrs-1)] <- nbrs
+      vals[idx_ptr:(idx_ptr+len_nbrs-1)] <- cos_sim
+      idx_ptr <- idx_ptr+len_nbrs
+    }
+    
+    actual_size <- idx_ptr - 1
+    i_idx <- i_idx[1:actual_size]
+    j_idx <- j_idx[1:actual_size]
+    vals <- vals[1:actual_size]
+    
+    if(verbose) cat("Constructing feature graph...\n")
+    A_feat <- Matrix::sparseMatrix(i=i_idx, j=j_idx, x=vals, dims=c(N,N))
+    A_feat <- (A_feat + t(A_feat))/2
+    
+    if(verbose) cat("Computing fused graph...\n")
+    A_fusion <- A_topo + beta * A_feat
+    
+    if(verbose) {
+      cat("Graph fusion complete\n")
+      cat("Final graph dimensions:", dim(A_fusion), "\n")
+      cat("Number of non-zero entries:", length(A_fusion@x), "\n")
+    }
+    return(A_fusion)
   }
   
-  # Construct A_feat (N x N)
-  A_feat <- Matrix::sparseMatrix(i=i_idx, j=j_idx, x=vals, dims=c(N,N))
-  # Symmetrize since it's kNN and we want an undirected graph
-  A_feat <- (A_feat + t(A_feat))/2
-  
-  # Now A_fusion = A_topo + beta * A_feat
-  A_fusion <- A_topo + beta * A_feat
-  return(A_fusion)
+  # If neither A_feat nor X is provided, just return A_topo
+  if(verbose) cat("No features or feature graph provided. Using topology only.\n")
+  return(A_topo)
 }
 
 
 ###############################
 ### Spectral Coarsening (Phase 2)
-### Sec. 3.2, Eqs.(1)-(3)
+### Sec. 3.2
 ###############################
-
-.spectral_coarsening <- function(A_fusion, levels=2, t=10) {
+.spectral_coarsening <- function(A_fusion, levels=2, t=10, verbose=FALSE) {
   graphs <- list(A_fusion)
   H_list <- list()
   
@@ -156,14 +161,11 @@
     N <- nrow(A_curr)
     L_curr <- .laplacian_matrix(A_curr)
     
-    # Create t random vectors orthogonal to all-one vector
     x_init <- matrix(rnorm(N*t), nrow=N, ncol=t)
     for(i in seq_len(t)) {
-      x_init[,i] <- x_init[,i] - mean(x_init[,i]) # orthogonalize against all-one
+      x_init[,i] <- x_init[,i] - mean(x_init[,i])
     }
     
-    # Smoothing step (Eq.1 - low-pass filtering)
-    # We'll apply a few smoothing iterations:
     max_iter <- 5
     alpha <- 0.001
     for(iter in seq_len(max_iter)) {
@@ -171,11 +173,7 @@
       x_init <- x_init - alpha * Lx
     }
     
-    # Compute spectral node affinity (Eq.2)
-    # a_{p,q} = |(T_{p,:}, T_{q,:})|^2 / (||T_{p,:}||^2 * ||T_{q,:}||^2)
     norms <- sqrt(rowSums(x_init^2) + 1e-12)
-    
-    # We'll form node clusters by maximal matching on edges sorted by affinity
     A_trp <- summary(A_curr)
     sel <- A_trp$i < A_trp$j
     i_list <- A_trp$i[sel]
@@ -185,7 +183,6 @@
     aff <- (dot_products^2)/((norms[i_list]^2)*(norms[j_list]^2))
     
     order_idx <- order(aff, decreasing=TRUE)
-    
     matched <- rep(FALSE, N)
     parent <- rep(0, N)
     c_id <- 0
@@ -201,7 +198,7 @@
         matched[q] <- TRUE
       }
     }
-    # Unmatched become singletons
+    
     unmatched <- which(!matched)
     for (u in unmatched) {
       c_id <- c_id + 1
@@ -211,7 +208,6 @@
     H <- Matrix::sparseMatrix(i=parent, j=1:N, x=1, dims=c(c_id,N))
     H_list[[level]] <- H
     
-    # Coarsen graph: A_{i+1} = H * A_i * H^T
     A_coarse <- H %*% A_curr %*% Matrix::t(H)
     graphs[[level+1]] <- A_coarse
   }
@@ -224,55 +220,34 @@
 ### Graph Embedding (Phase 3)
 ### Sec. 3.3
 ###############################
-
 .embed_coarsest_graph <- function(A_coarse, dim=16) {
-  # Compute the normalized Laplacian L = I - D^{-1/2} A D^{-1/2}
-  # Then find the smallest `dim` eigenvectors of L.
-  
   N <- nrow(A_coarse)
   if (N < dim) {
-    # If coarsest graph is extremely small, just return random embeddings
     return(matrix(rnorm(N * dim), nrow = N, ncol = dim))
   }
   
-  # Compute normalized adjacency:
   D <- Matrix::Diagonal(x = Matrix::rowSums(A_coarse))
   d_inv_sqrt <- 1 / sqrt(Matrix::diag(D) + .Machine$double.eps)
   D_inv_sqrt <- Matrix::Diagonal(x = d_inv_sqrt)
   A_norm <- D_inv_sqrt %*% A_coarse %*% D_inv_sqrt
   
-  # Normalized Laplacian: L = I - A_norm
   L <- Matrix::Diagonal(n=N, x=1) - A_norm
+  L <- (L + Matrix::t(L))/2
+  eig_res <- RSpectra::eigs(L, k=dim+1, which="SM")
   
-  # Use RSpectra to compute the first `dim+1` eigenvectors
-  # We skip the trivial eigenvector corresponding to eigenvalue 0 (the all-ones vector),
-  # and select the next `dim` eigenvectors as embeddings.
-  # Note: Ensure L is symmetric. If needed, symmetrize: L <- (L + t(L))/2
-  
-  L <- (L + Matrix::t(L))/2  # ensure symmetry
-  # smallest eigenvalues
-  # opts=list() can be tuned for accuracy/performance
-  eig_res <- RSpectra::eigs(L, k=dim+1, which="SM") # "SM" = smallest magnitude eigenvalues
-  
-  # The eigenvectors are in eig_res$vectors, columns = eigenvectors
-  # The first eigenvector often corresponds to the trivial eigenvalue ~0.
-  # We skip that and use the next `dim` eigenvectors as embeddings.
   E_coarse <- eig_res$vectors[, 2:(dim+1)]
-  
   return(E_coarse)
 }
 
 
 ###############################
 ### Embedding Refinement (Phase 4)
-### Sec.3.4, Eqs.(4)-(7)
+### Sec.3.4
 ###############################
-
 .refine_embeddings <- function(graphs, H_list, E_coarse, k=2, sigma=1e-3) {
   levels <- length(H_list)
   E_curr <- E_coarse
   
-  # Refinement from coarsest back to the original
   for (level in seq(levels, 1, by=-1)) {
     A_finer <- graphs[[level]]
     H <- H_list[[level]]
@@ -286,19 +261,23 @@
 ###############################
 ### Main User-facing Function
 ###############################
-
-#' @title GraphZoom Main Function (with RcppHNSW-based kNN)
-#' @description Perform GraphZoom pipeline as described in the paper, using RcppHNSW for k-NN.
+#' @title GraphZoom Main Function with Optional Direct Feature Graph
+#' @description Perform GraphZoom pipeline as described in the paper.
+#'
+#' If `A_feat` is provided, it will be used directly for graph fusion instead of computing
+#' a feature graph from X. If both `A_feat` and `X` are provided, `A_feat` takes precedence.
 #'
 #' @param A Sparse adjacency matrix (N x N) of the original graph topology.
-#' @param X Node feature matrix (N x K). If NULL, no fusion is done and only topology is used.
+#' @param X Node feature matrix (N x K). If NULL, no fusion from features is done unless A_feat is provided.
+#' @param A_feat Optional precomputed feature graph (N x N). If provided, used directly for fusion.
 #' @param levels Number of coarsening levels.
 #' @param t Dimension for local spectral embedding during coarsening.
-#' @param kNN Number of nearest neighbors for feature-based kNN graph construction.
+#' @param kNN Number of nearest neighbors for feature-based kNN (ignored if A_feat is given).
 #' @param beta Weight to balance topology and feature graph in fusion.
 #' @param embed_dim Dimension of embeddings at coarsest level.
 #' @param filter_power The power k in Eq.(7) for refinement.
 #' @param sigma Self-loop factor in refinement filter.
+#' @param verbose If TRUE, print progress messages.
 #'
 #' @return A list:
 #' \item{E_original}{Refined embeddings for the original graph (N x embed_dim).}
@@ -315,27 +294,57 @@
 #' A <- (A + t(A))/2
 #' diag(A) <- 0
 #' X <- matrix(rnorm(N*20), nrow=N, ncol=20)
+#' # Run with computed feature graph:
 #' result <- graph_zoom(A, X, levels=2, embed_dim=8, kNN=5)
+#'
+#' # If you have your own A_feat:
+#' # Suppose A_feat is a NxN matrix you constructed from features externally:
+#' # result <- graph_zoom(A, A_feat=my_feature_graph, levels=2, embed_dim=8)
+#'
 #' E <- result$E_original
 #'
-#' @references GraphZoom Paper (Sections 3.1-3.4, Eqs.1-7); RcppHNSW docs for k-NN.
+#' @references GraphZoom Paper (Sections 3.1-3.4)
 #' @export
-graph_zoom <- function(A, X=NULL, levels=2, t=10, kNN=10, beta=1.0, 
-                       embed_dim=16, filter_power=2, sigma=1e-3) {
+graph_zoom <- function(A, X=NULL, A_feat=NULL, levels=2, t=10, kNN=10, beta=1.0, 
+                       embed_dim=16, filter_power=2, sigma=1e-3, verbose=FALSE) {
+  if(verbose) cat("Starting GraphZoom pipeline...\n")
+  
   # Phase 1: Graph Fusion
-  A_fusion <- .fuse_graph(A, X, k=kNN, beta=beta)
+  if(verbose) {
+    cat("Phase 1: Graph Fusion\n")
+    cat("Input dimensions - A:", dim(A), "\n")
+    cat("X:", if(!is.null(X)) dim(X) else "NULL", "\n")
+    if(!is.null(A_feat)) cat("A_feat provided directly\n")
+    cat("Parameters - kNN:", kNN, "beta:", beta, "\n")
+  }
+  A_fusion <- .fuse_graph(A, X, A_feat=A_feat, k=kNN, beta=beta, verbose=verbose)
   
   # Phase 2: Spectral Coarsening
-  coarsen_res <- .spectral_coarsening(A_fusion, levels=levels, t=t)
+  if(verbose) {
+    cat("Phase 2: Spectral Coarsening\n")
+    cat("Parameters - levels:", levels, "t:", t, "\n")
+  }
+  coarsen_res <- .spectral_coarsening(A_fusion, levels=levels, t=t, verbose=verbose)
   graphs <- coarsen_res$graphs
   H_list <- coarsen_res$H_list
   
-  # Phase 3: Embed Coarsest Graph
+  # Phase 3: Embedding the Coarsest Graph
+  if(verbose) {
+    cat("Phase 3: Embedding Coarsest Graph\n")
+    cat("Coarsest graph dimensions:", dim(graphs[[levels+1]]), "\n")
+    cat("Target embedding dimension:", embed_dim, "\n")
+  }
   A_coarsest <- graphs[[levels+1]]
   E_coarse <- .embed_coarsest_graph(A_coarsest, dim=embed_dim)
   
   # Phase 4: Refinement
+  if(verbose) {
+    cat("Phase 4: Refinement\n")
+    cat("Parameters - filter_power:", filter_power, "sigma:", sigma, "\n")
+  }
   E_original <- .refine_embeddings(graphs, H_list, E_coarse, k=filter_power, sigma=sigma)
+  
+  if(verbose) cat("GraphZoom pipeline completed.\n")
   
   return(list(E_original=E_original, graphs=graphs, H_list=H_list, E_coarse=E_coarse))
 }

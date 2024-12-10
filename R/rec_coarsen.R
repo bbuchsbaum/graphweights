@@ -49,6 +49,9 @@
 #' @param phi A vector or matrix of the same dimension as W (or length = number of edges) that encodes the edge potentials \eqn{\phi_{ij}}. 
 #'   If \code{NULL}, defaults to heavy-edge potentials \eqn{\phi_{ij} = w_{ij}}.
 #' @param seed An integer seed for reproducibility of random sampling.
+#' @param deterministic_first_edge Logical, if TRUE selects the first edge in the candidate set for the first iteration.
+#'   This is primarily for testing purposes. Default is FALSE.
+#' @param verbose Logical, if TRUE prints debug information during the coarsening process.
 #' 
 #' @return A list with elements:
 #' \describe{
@@ -71,7 +74,8 @@
 #' str(result)
 #' 
 #' @export
-rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL) {
+#' @importFrom Matrix Diagonal isSymmetric
+rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL, deterministic_first_edge=FALSE, verbose=FALSE) {
   if(!inherits(W, "dgCMatrix") && !inherits(W, "dgTMatrix") && !inherits(W, "dsCMatrix")) {
     W <- as(W, "dgCMatrix")
   }
@@ -100,9 +104,9 @@ rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL) {
   }
   
   # Edges with i<j only
-  sel <- Wi < (Wj+1L)
+  sel <- Wi < Wj
   e_i <- Wi[sel]
-  e_j <- (Wj+1L)[sel]
+  e_j <- Wj[sel]
   w_e <- W@x[sel]
   
   edges <- data.frame(
@@ -129,37 +133,43 @@ rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL) {
   
   # Union-Find helper functions
   find_set <- function(x) {
-    while(parent[x] != x) {
-      parent[x] <- parent[parent[x]]
-      x <- parent[x]
+    if (parent[x] != x) {
+      parent[x] <- find_set(parent[x])  # Path compression
     }
-    x
+    parent[x]
   }
   
   union_set <- function(a, b) {
-    if(size[a] < size[b]) {
-      tmp <- a; a <- b; b <- tmp
+    a_root <- find_set(a)
+    b_root <- find_set(b)
+    
+    if (a_root != b_root) {
+      if (size[a_root] < size[b_root]) {
+        # Swap to ensure a_root is the larger set
+        tmp <- a_root
+        a_root <- b_root
+        b_root <- tmp
+      }
+      # Merge b into a
+      parent[b_root] <<- a_root  # Use <<- to modify parent in parent environment
+      size[a_root] <<- size[a_root] + size[b_root]  # Use <<- to modify size in parent environment
+      if(verbose) {
+        cat("After union: parent =", parent, "\n")
+        cat("After union: size =", size, "\n")
+      }
     }
-    parent[b] <- a
-    size[a] <- size[a] + size[b]
   }
   
   # Candidate set C initially all edges
-  # We'll store a logical vector indicating which edges are still candidate
   cand <- rep(TRUE, nrow(edges))
   
-  # Precompute neighborhood sets: for each edge, which edges share a vertex?
-  # This can be large, so we do it efficiently.
-  # We'll create adjacency lists for edges indexed by vertex
-  # vertex_edge_map[[v]] gives the indices of edges incident on vertex v
+  # Precompute neighborhood sets
   vertex_edge_map <- vector("list", N)
   for(eid in seq_len(nrow(edges))) {
     vertex_edge_map[[edges$i[eid]]] <- c(vertex_edge_map[[edges$i[eid]]], eid)
     vertex_edge_map[[edges$j[eid]]] <- c(vertex_edge_map[[edges$j[eid]]], eid)
   }
   
-  # total_phi = sum of phi over candidate edges
-  # We'll update total_phi at each iteration if an edge is contracted
   total_phi <- sum(edges$phi[cand])
   
   # Perform up to T iterations
@@ -167,22 +177,25 @@ rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL) {
     cands_idx <- which(cand)
     if(length(cands_idx) == 0) break
     
-    # Probability of picking each candidate edge
-    p <- edges$phi[cands_idx] / total_phi
-    # We may also continue with no edge selection
-    # Probability that no edge is selected = 1 - sum(p)
-    # Draw a random number
-    r <- runif(1)
-    cum_p <- cumsum(p)
-    
     chosen_edge_id <- NA_integer_
-    if(r <= cum_p[length(cum_p)]) {
-      # An edge is selected
-      chosen_edge_id <- cands_idx[which(r <= cum_p)[1]]
+    
+    if(deterministic_first_edge && iter == 1) {
+      chosen_edge_id <- cands_idx[1]
+      if(verbose) cat("Deterministically chose edge", chosen_edge_id, 
+                     "connecting vertices", edges$i[chosen_edge_id], "and", edges$j[chosen_edge_id], "\n")
     } else {
-      # continue without contraction
-      # no edge selected this iteration
-      next
+      p <- edges$phi[cands_idx] / total_phi
+      r <- runif(1)
+      cum_p <- cumsum(p)
+      
+      if(r <= cum_p[length(cum_p)]) {
+        chosen_edge_id <- cands_idx[which(r <= cum_p)[1]]
+        if(verbose) cat("Probabilistically chose edge", chosen_edge_id, 
+                       "connecting vertices", edges$i[chosen_edge_id], "and", edges$j[chosen_edge_id], "\n")
+      } else {
+        if(verbose) cat("No edge selected in iteration", iter, "\n")
+        next
+      }
     }
     
     # Contract chosen edge
@@ -192,43 +205,61 @@ rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL) {
     # Find leaders of sets
     pi <- find_set(ei)
     pj <- find_set(ej)
+    
+    if(verbose) {
+      cat("Before merge: parent =", parent, "\n")
+      cat("Before merge: size =", size, "\n")
+    }
+    
     if(pi != pj) {
-      # Perform union (merge) of these sets
+      if(verbose) cat("Merging sets with leaders", pi, "and", pj, "\n")
       union_set(pi, pj)
       
       # Remove neighborhood edges from candidate set
-      # Neighborhood edges are all edges incident on ei or ej
-      # Actually, we must consider the representative sets of ei and ej before merging
-      # but since we just merged them, we consider old references
       Ni <- vertex_edge_map[[ei]]
       Nj <- vertex_edge_map[[ej]]
       Nij <- unique(c(Ni, Nj))
+      cand[Nij] <- FALSE
       
-      # Mark these edges as not candidate
-      for(ne in Nij) {
-        if(cand[ne]) {
-          cand[ne] <- FALSE
-        }
-      }
+      if(verbose) cat("Removed edges", Nij, "from candidate set\n")
       
-      # Update total_phi
       total_phi <- sum(edges$phi[cand])
       if(total_phi == 0) break
+    } else {
+      if(verbose) cat("Vertices", ei, "and", ej, "already in same set\n")
     }
-    # else if pi == pj, the edge chosen connects vertices already in same set
-    # effectively a self-loop in the coarse representation, we can ignore
   }
   
-  # After contraction, we have a partition of the original vertices
-  # Let's assign new IDs to each coarse vertex
-  for(v in seq_len(N)) find_set(v) # path compression
+  # After contraction, ensure all paths are compressed
+  if(verbose) {
+    cat("\nBefore final compression: parent =", parent, "\n")
+    cat("Before final compression: size =", size, "\n")
+  }
+  
+  # Compress paths and create mapping
+  for(v in seq_len(N)) {
+    parent[v] <- find_set(v)
+  }
+  
+  if(verbose) {
+    cat("After final compression: parent =", parent, "\n")
+    cat("Final size array:", size, "\n")
+  }
+  
+  # Get unique sets and create mapping
   unique_sets <- unique(parent)
   new_id_map <- seq_along(unique_sets)
   names(new_id_map) <- as.character(unique_sets)
   
-  mapping <- parent
+  mapping <- integer(N)
   for(v in seq_len(N)) {
     mapping[v] <- new_id_map[as.character(parent[v])]
+  }
+  
+  if(verbose) {
+    cat("\nFinal mapping:", mapping, "\n")
+    cat("Unique sets:", unique_sets, "\n")
+    cat("Number of coarse vertices:", length(unique_sets), "\n")
   }
   
   n <- length(unique_sets) # number of coarse vertices
@@ -256,28 +287,14 @@ rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL) {
     pos <- pos + sz
   }
   
-  C <- sparseMatrix(i=row_idx, j=col_idx, x=x_vals, dims=c(n,N))
+  C <- sparseMatrix(i=row_idx[1:(pos-1)], j=col_idx[1:(pos-1)], 
+                    x=x_vals[1:(pos-1)], dims=c(n,N))
   
-  # Construct coarsened adjacency W_c
-  # W_c = C W C^T
-  # We could compute W_c directly by merging groups:
-  # sum of edge weights between sets forms W_c.
-  # An alternative: directly compute W_c from W and mapping.
-  
-  # Let's do a group-based approach:
-  # The weight between two coarse vertices a,b is sum of w_ij for i in group a, j in group b.
-  # We'll use a hash-based approach
-  # NOTE: Since we often want L_c = C L C^T, 
-  # W_c can also be computed as: W_c = C W C^T.
-  # Direct multiplication might be expensive for large graphs, but let's do it straightforwardly.
-  
-  # Compute W_c = C W C^T
-  # C W is n x N, then (C W) C^T is n x n
+  # Construct coarsened adjacency W_c = C W C^T
   CW <- C %*% W
   W_c <- CW %*% t(C)
   
   # Compute L_c = C L C^T
-  # L = D - W, where D = diag(rowSums(W))
   d <- rowSums(W)
   L <- Diagonal(x=d) - W
   L_c <- C %*% L %*% t(C)
