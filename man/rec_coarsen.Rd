@@ -10,7 +10,8 @@ rec_coarsen(
   phi = NULL,
   seed = NULL,
   deterministic_first_edge = FALSE,
-  verbose = FALSE
+  verbose = FALSE,
+  use_cpp = FALSE
 )
 }
 \arguments{
@@ -27,6 +28,8 @@ If \code{NULL}, defaults to heavy-edge potentials \eqn{\phi_{ij} = w_{ij}}.}
 This is primarily for testing purposes. Default is FALSE.}
 
 \item{verbose}{Logical, if TRUE prints debug information during the coarsening process.}
+
+\item{use_cpp}{Logical. If TRUE, uses the C++ implementation for faster computation. Default is FALSE.}
 }
 \value{
 A list with elements:
