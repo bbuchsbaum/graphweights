@@ -139,7 +139,6 @@ rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL, deterministic_first_edge=
     edges$phi <- phi
     
     # Initially, each vertex is its own group
-    # We'll perform edge contractions by merging groups
     parent <- seq_len(N) # union-find structure
     size <- rep(1L, N)
     
@@ -184,8 +183,13 @@ rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL, deterministic_first_edge=
     
     total_phi <- sum(edges$phi[cand])
     
+    # Track iterations used
+    iterations_used <- 0
+    
     # Perform up to T iterations
     for(iter in seq_len(T)) {
+      iterations_used <- iter  # Track current iteration
+      
       cands_idx <- which(cand)
       if(length(cands_idx) == 0) break
       
@@ -315,7 +319,8 @@ rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL, deterministic_first_edge=
       C = C,
       W_c = W_c,
       L_c = L_c,
-      mapping = mapping
+      mapping = mapping,
+      iterations_used = iterations_used
     )
   } else {
     # Multiple passes logic
@@ -332,7 +337,9 @@ rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL, deterministic_first_edge=
         result <- rec_coarsen_impl(current_W, remaining_T, phi, 
                                  deterministic_first_edge, verbose, seed)
         if(verbose) cat("Pass", pass, "stopped because:", result$stop_reason, "\n")
+        iterations_used <- result$iterations_used
         result$stop_reason <- NULL
+        result$iterations_used <- NULL
         result
       } else {
         # Call the R implementation with remaining_T
@@ -356,12 +363,12 @@ rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL, deterministic_first_edge=
       
       # Update for next pass
       current_W <- pass_result$W_c
-      remaining_T <- remaining_T - 1
+      remaining_T <- remaining_T - iterations_used
       pass <- pass + 1
       
       if(verbose) {
-        cat(sprintf("After pass %d: vertices reduced from %d to %d\n",
-                  pass-1, nrow(W), nrow(current_W)))
+        cat(sprintf("After pass %d: vertices reduced from %d to %d, remaining T: %d\n",
+                  pass-1, nrow(W), nrow(current_W), remaining_T))
       }
     }
     
