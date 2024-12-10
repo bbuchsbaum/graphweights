@@ -11,7 +11,8 @@ rec_coarsen(
   seed = NULL,
   deterministic_first_edge = FALSE,
   verbose = FALSE,
-  use_cpp = FALSE
+  use_cpp = FALSE,
+  allow_multiple_passes = FALSE
 )
 }
 \arguments{
@@ -30,6 +31,8 @@ This is primarily for testing purposes. Default is FALSE.}
 \item{verbose}{Logical, if TRUE prints debug information during the coarsening process.}
 
 \item{use_cpp}{Logical. If TRUE, uses the C++ implementation for faster computation. Default is FALSE.}
+
+\item{allow_multiple_passes}{Logical. If TRUE, allows multiple passes of coarsening. Default is FALSE.}
 }
 \value{
 A list with elements:
