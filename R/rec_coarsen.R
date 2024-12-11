@@ -188,7 +188,7 @@ rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL, deterministic_first_edge=
     
     # Perform up to T iterations
     for(iter in seq_len(T)) {
-      iterations_used <- iter  # Track current iteration
+      iterations_used <- iter  # Track every iteration attempt
       
       cands_idx <- which(cand)
       if(length(cands_idx) == 0) break
@@ -337,16 +337,15 @@ rec_coarsen <- function(W, T=100, phi=NULL, seed=NULL, deterministic_first_edge=
         result <- rec_coarsen_impl(current_W, remaining_T, phi, 
                                  deterministic_first_edge, verbose, seed)
         if(verbose) cat("Pass", pass, "stopped because:", result$stop_reason, "\n")
-        iterations_used <- result$iterations_used
         result$stop_reason <- NULL
-        result$iterations_used <- NULL
         result
       } else {
-        # Call the R implementation with remaining_T
         rec_coarsen(current_W, T=remaining_T, phi=phi, seed=seed,
                    deterministic_first_edge=deterministic_first_edge,
                    verbose=verbose, use_cpp=FALSE, allow_multiple_passes=FALSE)
       }
+      
+      iterations_used <- pass_result$iterations_used
       
       # If no further coarsening possible or only one vertex remains, stop
       if(nrow(pass_result$W_c) == nrow(current_W) || nrow(pass_result$W_c) == 1) {
@@ -437,6 +436,7 @@ compose_coarsening <- function(pass1, pass2) {
     C = C_final,
     W_c = W_c_final,
     L_c = L_c_final,
-    mapping = mapping_final
+    mapping = mapping_final,
+    iterations_used = pass1$iterations_used + pass2$iterations_used
   )
 }

@@ -128,6 +128,8 @@ List rec_coarsen_impl(const S4& W, int T,
     double total_phi = fenw.total_sum();
 
     std::string stop_reason;
+    int iterations_used = 0;
+
     for (int iter=1; iter<=T; iter++) {
         if (total_phi<=0) {
             stop_reason = "No more edges with positive potential (total_phi <= 0)";
@@ -165,6 +167,7 @@ List rec_coarsen_impl(const S4& W, int T,
         int pj=uf.find_set(ej);
 
         if (pi!=pj) {
+            iterations_used = iter;
             uf.union_set(pi,pj);
             // Remove neighborhood
             std::unordered_set<int> neigh;
@@ -351,7 +354,8 @@ List rec_coarsen_impl(const S4& W, int T,
             _["W_c"]=W_c,
             _["L_c"]=L_c,
             _["mapping"]=mapping,
-            _["stop_reason"]=stop_reason
+            _["stop_reason"]=stop_reason,
+            _["iterations_used"]=iterations_used
         );
     }
 }
