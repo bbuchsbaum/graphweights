@@ -33,6 +33,7 @@ A sparse adjacency matrix representing the smoothed data.
 This function computes a bilateral smoothing of the input data, which combines spatial and feature information to provide a smoothed representation of the data.
 }
 \examples{
+set.seed(123)
 coord_mat <- as.matrix(expand.grid(1:10, 1:10))
 feature_mat <- matrix(rnorm(100*10), 100, 10)
 S <- bilateral_smoother(coord_mat, feature_mat, nnk=8)

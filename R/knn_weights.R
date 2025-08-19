@@ -50,6 +50,8 @@ indices_to_sparse <- function(nn.index, hval, return_triplet=FALSE,
 heat_kernel <- function(x, sigma=1) {
   exp((-x^2)/(2*sigma^2))
 }
+
+
 #' inverse_heat_kernel
 #'
 #' @param x the distances
@@ -89,24 +91,18 @@ cosine_kernel <- function(x, sigma=1) {
 
 
 #' @keywords internal
-get_neighbor_fun <- function(weight_mode=c("heat", "binary", "normalized", "euclidean", "cosine", "correlation"),
-                             len,sigma) {
-
-  weight_mode <- match.arg(weight_mode)
-
-  wfun <- if (weight_mode == "heat") {
-    function(x) heat_kernel(x, sigma)
-  } else if (weight_mode == "binary") {
-    function(x) (x>0) * 1
-  } else if (weight_mode == "normalized") {
-    function(x) normalized_heat_kernel(x,sigma=sigma,len=len)
-  } else if (weight_mode == "euclidean") {
-    function(x) x
-  } else if (weight_mode == "cosine") {
-    function(x) cosine_kernel(x)
-  } else if (weight_mode == "correlation") {
-    function(x) correlation_kernel(x,len)
-  }
+get_neighbor_fun <- function(weight_mode = c("heat", "binary", "normalized",
+                                             "euclidean", "cosine",
+                                             "correlation"),
+                             len, sigma) {
+  switch(match.arg(weight_mode),
+    heat        = function(x) heat_kernel(x, sigma),
+    binary      = function(x) rep_len(1, length(x)),
+    normalized  = function(x) normalized_heat_kernel(x, sigma, len),
+    euclidean   = identity,
+    cosine      = cosine_kernel,
+    correlation = function(x) correlation_kernel(x, len)
+  )
 }
 
 
@@ -144,13 +140,13 @@ get_neighbor_fun <- function(weight_mode=c("heat", "binary", "normalized", "eucl
 #'
 #' # Compute similarity matrix using Dice method
 #' sim_dice <- factor_sim(des, method = "Dice")
-factor_sim <- function(des, method=c("Jaccard", "Rogers", "simple matching", "Dice")) {
-  Fmat <- do.call(cbind, lapply(1:ncol(des), function(i) {
-    nam <- colnames(des)[i]
-    model.matrix(as.formula(paste("~ ", nam, " -1")), data=des)
-  }))
+factor_sim <- function(des,
+                       method = c("Jaccard", "Rogers", "simple matching", "Dice")) {
 
-  proxy::simil(Fmat, method=method)
+  method <- match.arg(method)
+  mm <- lapply(names(des), function(nm) model.matrix(~ . - 1, data = des[nm]))
+  mat <- do.call(cbind, mm)
+  proxy::simil(mat, method = method)
 }
 
 
@@ -175,15 +171,12 @@ factor_sim <- function(des, method=c("Jaccard", "Rogers", "simple matching", "Di
 #'
 #' # Compute similarity matrix with custom weights
 #' sim_custom_weights <- weighted_factor_sim(des, wts = c(0.7, 0.3))
-weighted_factor_sim <- function(des, wts=rep(1, ncol(des))/ncol(des)) {
-  wts <- wts/sum(wts)
-  Fmat <- lapply(1:ncol(des), function(i) {
-    nam <- colnames(des)[i]
-    labs <- des[[nam]]
-    label_matrix(labs, labs) * wts[i]
-  })
-
-  Reduce("+", Fmat)
+weighted_factor_sim <- function(des, wts = rep(1, ncol(des)) / ncol(des)) {
+  wts <- wts / sum(wts)
+  mats <- Map(function(nm, wt) {
+    label_matrix(des[[nm]], des[[nm]]) * wt
+  }, names(des), wts)
+  Reduce(`+`, mats)
 }
 
 
@@ -208,25 +201,16 @@ weighted_factor_sim <- function(des, wts=rep(1, ncol(des))/ncol(des)) {
 #'
 #' # Estimate sigma with custom quantile and number of samples
 #' sigma_custom <- estimate_sigma(X, prop=0.3, nsamples=300)
-estimate_sigma <- function(X, prop=.25, nsamples=500, normalized=FALSE) {
-  ## estimate sigma
-  if (nrow(X) <= 500) {
-    nsamples <- nrow(X)
-    sam <- 1:nrow(X)
+estimate_sigma <- function(X, prop = .25, nsamples = 500, normalized = FALSE) {
+  if (nrow(X) > nsamples) {
+    sam <- sample.int(nrow(X), nsamples)
   } else {
-    nsamples <- min(nsamples, nrow(X))
-    sam <- sample(1:nrow(X), nsamples)
+    sam <- seq_len(nrow(X))
   }
-
-  d <- dist(X[sam,])
-
-  qs <- quantile(d[d!=0],seq(prop, 1,by=.1))
-  if (all(is.na(qs))) {
-    stop("could not estimate sigma, all quantiles are NA ...")
-  } else {
-    qs <- qs[!is.na(qs)]
-    qs[1]
-  }
+  d <- stats::dist(X[sam, ])
+  q  <- stats::quantile(d[d > 0], probs = prop, na.rm = TRUE)
+  if (is.na(q) || q == 0) stop("Unable to estimate sigma (all distances zero)")
+  unname(q)
 }
 
 
@@ -325,27 +309,23 @@ graph_weights <- function(X, k=5, neighbor_mode=c("knn", "epsilon"),
 #' @importFrom parallel mclapply
 #' @importFrom Matrix sparseMatrix
 #' @export
-threshold_adjacency <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
-  assert_that(k > 0 && k <= nrow(A))
-
+threshold_adjacency <- function(A, k = 5,
+                                type = c("normal", "mutual"),
+                                ncores = 1) {
+  assertthat::assert_that(k > 0, k <= nrow(A))
   type <- match.arg(type)
 
-  jind <- 1:nrow(A)
+  rows <- parallel::mclapply(seq_len(nrow(A)), mc.cores = ncores, function(i) {
+    ord <- order(A[i, ], decreasing = TRUE)[seq_len(k)]
+    cbind(i = i, j = ord, x = A[i, ord])
+  })
+  rows <- do.call(rbind, rows)
 
-  A2 <- do.call(rbind, parallel::mclapply(1:nrow(A), function(i) {
-    ord <- order(A[i,], decreasing=TRUE)
-    cbind(i=i, j=jind[ord[1:k]],x=A[i, ord[1:k]])
-  }, mc.cores=ncores))
+  m <- Matrix::sparseMatrix(i = rows[, 1], j = rows[, 2], x = rows[, 3],
+                            dims = dim(A))
 
-  m <- sparseMatrix(i=A2[,1], j=A2[,2], x=A2[,3], dims=c(nrow(A), nrow(A)))
-
-  m <- if (type == "normal") {
-    psparse(m, pmax)
-  } else {
-    psparse(m, pmin)
-  }
+  psparse(m, if (type == "normal") pmax else pmin)
 }
-
 
 
 #' Cross Adjacency
@@ -364,44 +344,38 @@ threshold_adjacency <- function(A, k=5, type=c("normal", "mutual"), ncores=1) {
 #'         If 'as' is "igraph", an igraph object representing the cross adjacency graph.
 #'         If 'as' is "sparse", a sparse adjacency matrix.
 #' @export
-cross_adjacency <- function(X, Y, k=5, FUN=heat_kernel, type=c("normal", "mutual", "asym"),
-                          as=c("igraph", "sparse", "index_sim")) {
+cross_adjacency <- function(X, Y, k = 5, FUN = heat_kernel,
+                            type = c("normal", "mutual", "asym"),
+                            as   = c("igraph", "sparse", "index_sim")) {
 
-  assert_that(k > 0 && k <= nrow(X))
-
-  as <- match.arg(as)
+  stopifnot(k > 0, k <= nrow(X))
   type <- match.arg(type)
+  as   <- match.arg(as)
 
-  nn <- rflann::Neighbour(as.matrix(Y), X, k=k+1)
-  nnd <- sqrt(nn$distances[, 2:ncol(nn$distances),drop=FALSE] + 1e-16)
-  nni <- nn$indices[, 2:ncol(nn$indices),drop=FALSE]
-  hval <- FUN(nnd)
+  nn  <- rflann::Neighbour(as.matrix(Y), X, k = k + 1L)
+  idx <- nn$indices[, -1, drop = FALSE]
+  dst <- sqrt(nn$distances[, -1, drop = FALSE])
 
-  if (as == "index_sim") {
-    return(cbind(as.vector(nni), as.vector(hval)))
-  }
+  ## 0‑based safety
+  if (min(idx) == 0L) idx <- idx + 1L
 
+  sim <- FUN(dst)
 
-  W <- if (k == 1) {
-    indices_to_sparse(as.matrix(nni), as.matrix(hval), idim=nrow(X), jdim=nrow(X))
-  } else {
-    indices_to_sparse(nni, hval, idim=nrow(X), jdim=nrow(X))
-  }
+  if (as == "index_sim")
+    return(cbind(as.vector(idx), as.vector(sim)))
 
-  gg <- if (type == "normal") {
-    igraph::graph_from_adjacency_matrix(W, weighted=TRUE, mode="max")
-  } else if (type == "mutual") {
-    igraph::graph_from_adjacency_matrix(W, weighted=TRUE, mode="min")
-  } else if (type == "asym") {
-    igraph::graph_from_adjacency_matrix(W, weighted=TRUE, mode="directed")
-  }
+  W <- indices_to_sparse(idx, sim,
+                         idim = nrow(Y),
+                         jdim = nrow(X))
 
-  if (as == "sparse") {
-    igraph::as_adjacency_matrix(gg, attr="weight")
-  } else {
-    gg
-  }
+  g <- switch(type,
+    normal = igraph::graph_from_adjacency_matrix(W, weighted = TRUE, mode = "max"),
+    mutual = igraph::graph_from_adjacency_matrix(W, weighted = TRUE, mode = "min"),
+    asym   = igraph::graph_from_adjacency_matrix(W, weighted = TRUE,
+                                                 mode = "directed")
+  )
 
+  if (as == "sparse") igraph::as_adjacency_matrix(g, attr = "weight") else g
 }
 
 #' Weighted k-Nearest Neighbors
@@ -429,48 +403,31 @@ cross_adjacency <- function(X, Y, k=5, FUN=heat_kernel, type=c("normal", "mutual
 #' @importFrom Matrix sparseMatrix
 #' @importFrom rflann Neighbour
 #' @export
-weighted_knn <- function(X, k=5, FUN=heat_kernel,
-                         type=c("normal", "mutual", "asym"),
-                         as=c("igraph", "sparse"),
-                         ...) {
-  assert_that(k > 0 && k <= nrow(X))
-  as <- match.arg(as)
+weighted_knn <- function(X, k = 5, FUN = heat_kernel,
+                         type = c("normal", "mutual", "asym"),
+                         as   = c("igraph", "sparse"), ...) {
 
-
+  stopifnot(k > 0, k <= nrow(X))
   type <- match.arg(type)
-  #nn <- FNN::get.knn(X, k=k)
-  #nn <- nabor::knn(X, k=k)
-  nn <- rflann::Neighbour(X, X,k=min(k+1, nrow(X)), ...)
-  #nnd <- nn$nn.dist + 1e-16
+  as   <- match.arg(as)
 
-  nnd <- sqrt(nn$distances[, 2:ncol(nn$distances),drop=FALSE] + 1e-16)
-  nni <- nn$indices[, 2:ncol(nn$indices), drop=FALSE]
-  hval <- FUN(nnd)
+  nn <- rflann::Neighbour(X, X, k = min(k + 1L, nrow(X)), ...)
+  idx <- nn$indices[, -1, drop = FALSE]
+  dst <- sqrt(nn$distances[, -1, drop = FALSE])
 
-  #W <- indices_to_sparse(nn$nn.index, hval)
-  W <- if (k == 1) {
-    indices_to_sparse(as.matrix(nni), as.matrix(hval), idim=nrow(X), jdim=nrow(X))
-  } else {
-    indices_to_sparse(nni, hval, idim=nrow(X), jdim=nrow(X))
-  }
+  ## 0‑based safety ----------------------------------------------------------
+  if (min(idx) == 0L) idx <- idx + 1L
 
-  ##bW <- W != 0
-  ##tmp <- as(x$G, "dgTMatrix")
-  ## should return the raw distances?
+  W <- indices_to_sparse(idx, FUN(dst), idim = nrow(X), jdim = nrow(X))
 
-  gg <- if (type == "normal") {
-    igraph::graph_from_adjacency_matrix(W, weighted=TRUE, mode="max")
-  } else if (type == "mutual") {
-    igraph::graph_from_adjacency_matrix(W, weighted=TRUE, mode="min")
-  } else if (type == "asym") {
-    igraph::graph_from_adjacency_matrix(W, weighted=TRUE, mode="directed")
-  }
+  g <- switch(type,
+    normal = igraph::graph_from_adjacency_matrix(W, weighted = TRUE, mode = "max"),
+    mutual = igraph::graph_from_adjacency_matrix(W, weighted = TRUE, mode = "min"),
+    asym   = igraph::graph_from_adjacency_matrix(W, weighted = TRUE,
+                                                 mode = "directed")
+  )
 
-  if (as == "sparse") {
-    igraph::as_adjacency_matrix(gg, attr="weight")
-  } else {
-    gg
-  }
+  if (as == "sparse") igraph::as_adjacency_matrix(g, attr = "weight") else g
 }
 
 #' Apply a Function to Non-Zero Elements in a Sparse Matrix
@@ -492,53 +449,59 @@ weighted_knn <- function(X, k=5, FUN=heat_kernel,
 #' psparse_max <- psparse(M, FUN = max)
 #' psparse_sum_triplet <- psparse(M, FUN = `+`, return_triplet = TRUE)
 #' @export
-psparse <- function(M, FUN, return_triplet=FALSE) {
-  ind <- which(M != 0, arr.ind=TRUE)
-  x1 <- M[ind]
-  x2 <- M[cbind(ind[,2], ind[,1])]
+psparse <- function(M, FUN, return_triplet = FALSE) {
+  if (!inherits(M, "dgTMatrix")) M <- as(M, "TsparseMatrix")
 
-  if (return_triplet) {
-    cbind(i=c(ind[,1],ind[,2]), j=c(ind[,2],ind[,1]), x=rep(FUN(x1,x2),2))
-  } else {
-    sm <- sparseMatrix(i=c(ind[,1],ind[,2]), j=c(ind[,2],ind[,1]), x=rep(FUN(x1,x2),2),
-                       dims=dim(M), use.last.ij=TRUE)
-    sm
+  tri <- cbind(i = M@i + 1L, j = M@j + 1L, x = M@x)
+  tri_sym <- tri[tri[, 1] < tri[, 2], , drop = FALSE]
+
+  if (nrow(tri_sym) == 0) {
+    # No off-diagonal elements to process
+    if (return_triplet) return(tri)
+    return(M)
   }
+
+  # Fixed: Proper row-wise matching using vectorized lookup
+  # Create lookup for (i,j) -> position in tri
+  tri_lookup <- paste(tri[, 1], tri[, 2], sep = ",")
+  target_lookup <- paste(tri_sym[, 2], tri_sym[, 1], sep = ",")  # Reversed pairs
+  
+  # Find positions of reversed pairs
+  match_indices <- match(target_lookup, tri_lookup)
+  
+  # Handle case where some reversed pairs don't exist (asymmetric matrix)
+  valid_matches <- !is.na(match_indices)
+  
+  if (sum(valid_matches) == 0) {
+    # No symmetric pairs found - return original matrix
+    if (return_triplet) return(tri)
+    return(M)
+  }
+  
+  # Only process valid symmetric pairs
+  valid_tri_sym <- tri_sym[valid_matches, , drop = FALSE]
+  valid_match_indices <- match_indices[valid_matches]
+
+  new_x <- FUN(
+    valid_tri_sym[, 3],
+    M@x[valid_match_indices]
+  )
+
+  out_tri <- rbind(
+    cbind(i = valid_tri_sym[, 1], j = valid_tri_sym[, 2], x = new_x),
+    cbind(i = valid_tri_sym[, 2], j = valid_tri_sym[, 1], x = new_x)
+  )
+
+  # Add back the diagonal and unmatched elements
+  processed_positions <- c(which(tri[,1] < tri[,2])[valid_matches], valid_match_indices)
+  unprocessed_mask <- !(1:nrow(tri) %in% processed_positions)
+  diag_and_unmatched <- tri[unprocessed_mask, , drop = FALSE]
+  
+  if (nrow(diag_and_unmatched) > 0) {
+    out_tri <- rbind(out_tri, diag_and_unmatched)
+  }
+
+  if (return_triplet) return(out_tri)
+
+  triplet_to_matrix(out_tri, dim(M))
 }
-
-
-
-# psparse <- function(..., fun=c("max", "min"), na.rm=FALSE, return_triplet=FALSE) {
-#   fun <- match.arg(fun)
-#   # check that all matrices have conforming sizes
-#   num.rows <- unique(sapply(list(...), nrow))
-#   num.cols <- unique(sapply(list(...), ncol))
-#   stopifnot(length(num.rows) == 1)
-#   stopifnot(length(num.cols) == 1)
-#
-#   cat.summary <- do.call(rbind, lapply(list(...), summary))
-#
-#
-#   out.summary <- if (fun == "min") {
-#     aggregate(x ~ i + j, data = cat.summary, FUN=function(x) {
-#       if (length(x) == 1) 0 else x[1]
-#     })
-#   } else {
-#     aggregate(x ~ i + j, data = cat.summary, FUN=max, na.rm)
-#   }
-#
-#   if (return_triplet) {
-#     cbind(i=out.summary$i, j=out.summary$j, x=out.summary$x)
-#   } else {
-#     sparseMatrix(i = out.summary$i,
-#                  j = out.summary$j,
-#                  x = out.summary$x,
-#                  dims = c(num.rows, num.cols))
-#   }
-# }
-#
-# pmin.sparse <- function(..., na.rm = FALSE, return_triplet=FALSE) { psparse(..., fun="min", return_triplet=return_triplet) }
-#
-# pmax.sparse <- function(..., na.rm = FALSE, return_triplet=FALSE) { psparse(..., fun="max", return_triplet=return_triplet ) }
-#
-

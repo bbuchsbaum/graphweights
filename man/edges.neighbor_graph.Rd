@@ -2,7 +2,7 @@
 % Please edit documentation in R/neighbor_graph.R
 \name{edges.neighbor_graph}
 \alias{edges.neighbor_graph}
-\title{Edges for neighbor_graph Objects}
+\title{Extract edges from neighbor_graph object}
 \usage{
 \method{edges}{neighbor_graph}(x)
 }
@@ -10,8 +10,15 @@
 \item{x}{A neighbor_graph object.}
 }
 \value{
-A matrix containing the edges of the neighbor_graph object.
+A two-column matrix containing the edges, where each row represents an edge between two nodes.
 }
 \description{
 Retrieve the edges of a neighbor_graph object.
+}
+\examples{
+adj_matrix <- Matrix::Matrix(c(0, 1, 1, 0, 1, 0, 1, 0, 0), 
+                            nrow = 3, byrow = TRUE, sparse = TRUE)
+ng <- neighbor_graph(adj_matrix)
+edge_list <- edges(ng)
+
 }

@@ -2,47 +2,96 @@
 % Please edit documentation in R/repulsion.R
 \name{repulsion_graph}
 \alias{repulsion_graph}
-\title{This function creates a repulsion graph, which is a graph where edges between vertices of different classes are emphasized, while edges within the same class are suppressed.}
+\title{Create a Repulsion Graph}
 \usage{
 repulsion_graph(
   W,
   cg,
-  method = c("binary", "weighted"),
+  method = c("weighted", "binary"),
   threshold = 0,
   norm_fac = 1
 )
 }
 \arguments{
-\item{W}{The adjacency matrix (weighted or binary) representing the relationships between vertices in the input graph.}
+\item{W}{An input graph object. Can be a `Matrix` object (e.g., `dgCMatrix`) representing
+the adjacency matrix, or a `neighbor_graph` object. Edge weights are used if `method="weighted"`.}
 
-\item{cg}{The class graph indicating the pairwise relationships among node classes.}
+\item{cg}{A `class_graph` object defining the class membership of the nodes in `W`.
+Must have the same dimensions as `W`.}
 
-\item{method}{A character string indicating the method used to create the repulsion graph. Can be either "binary" or "weighted". Default is "binary".}
+\item{method}{`character`. Specifies how to handle the weights of the remaining (between-class) edges:
+- `"weighted"` (default): Retains the original weights from `W`.
+- `"binary"`: Sets the weight of all remaining edges to 1.}
 
-\item{threshold}{A numeric value used to filter the adjacency matrix. Edges with weights below this threshold will be ignored. Default is 0.}
+\item{threshold}{`numeric`. A threshold applied to the input graph `W` *before* filtering by class.
+Edges in `W` with weights strictly below this value are discarded. Default is 0.}
 
-\item{norm_fac}{A numeric value used to normalize the weights in the adjacency matrix when the method is set to "weighted". Default is 1.}
+\item{norm_fac}{`numeric`. A normalization factor applied *only* if `method = "weighted"`.
+The weights of the retained edges are divided by this factor. Default is 1 (no normalization).}
 }
 \value{
-A `neighbor_graph` object representing the repulsion graph.
+A `repulsion_graph` object (inheriting from `neighbor_graph`), representing the filtered graph
+  containing only between-class edges.
 }
 \description{
-This function creates a repulsion graph, which is a graph where edges between vertices of different classes are emphasized, while edges within the same class are suppressed.
+Constructs a "repulsion graph" derived from an input graph `W` and a class structure graph `cg`.
+The resulting graph retains only the edges from `W` that connect nodes belonging to *different* classes
+according to `cg`. Edges connecting nodes within the same class are removed (or "repulsed").
+}
+\details{
+This function takes an existing graph `W` (representing similarities, connections, etc.)
+and filters it based on class labels. The `class_graph` object `cg` provides a binary
+adjacency matrix where `1` indicates nodes belong to the *same* class. By taking the
+complement (`!adjacency(cg)`), we get a mask where `1` indicates nodes belong to *different*
+classes. Element-wise multiplication (`W * !adjacency(cg)`) effectively removes
+within-class edges from `W`.
+
+The `method` argument controls whether the remaining edge weights are kept as is (`"weighted"`)
+or converted to binary indicators (`"binary"`).
+
+This type of graph is useful when focusing on interactions *between* distinct groups or
+classes within a larger network or dataset.
 }
 \examples{
-# Example with random data
-X <- matrix(rnorm(100*100), 100, 100)
-labels <- factor(rep(1:5, each=20))
-cg <- class_graph(labels)
-W <- graph_weights(X, k=10)
-R <- repulsion_graph(W, cg, method="weighted")
+library(Matrix)
 
-# Example with iris dataset
-data(iris)
-X2 <- as.matrix(iris[, 1:4])
-labels <- iris[, 5]
+# --- Example 1: Simple Random Data ---
+set.seed(123)
+N <- 50
+# Create a base graph (e.g., from features)
+X <- matrix(rnorm(N * 5), N, 5)
+W_adj <- Matrix(rsparsematrix(N, N, 0.1, symmetric = TRUE)) # Base adjacency
+diag(W_adj) <- 0
+W_ng <- neighbor_graph(W_adj) # Convert to neighbor_graph
+
+# Define class labels
+labels <- factor(sample(1:3, N, replace = TRUE))
 cg <- class_graph(labels)
-W <- graph_weights(X2, k=6)
-R <- repulsion_graph(W, cg, method="weighted")
+
+# Create a weighted repulsion graph
+R_weighted <- repulsion_graph(W_ng, cg, method = "weighted")
+print(R_weighted)
+plot(R_weighted$G, vertex.color = labels, vertex.size=8, vertex.label=NA)
+title("Weighted Repulsion Graph (Edges only between classes)")
+
+# Create a binary repulsion graph
+R_binary <- repulsion_graph(W_ng, cg, method = "binary")
+print(R_binary)
+
+# --- Example 2: Iris Dataset ---
+data(iris)
+X_iris <- as.matrix(iris[, 1:4])
+labels_iris <- iris[, 5]
+cg_iris <- class_graph(labels_iris)
+
+# Build a kNN graph first
+W_iris_knn <- graph_weights(X_iris, k = 5, weight_mode = "heat", sigma = 0.7)
+
+# Create repulsion graph (weighted)
+R_iris <- repulsion_graph(W_iris_knn, cg_iris, method = "weighted")
+print(R_iris)
+# Edges should primarily connect different iris species
+plot(R_iris$G, vertex.color = as.numeric(labels_iris), vertex.size=5, vertex.label=NA)
+title("Iris Repulsion Graph (k=5, heat weights)")
 
 }

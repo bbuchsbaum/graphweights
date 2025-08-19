@@ -9,7 +9,6 @@ label_matrix(
   b,
   type = c("s", "d"),
   return_matrix = TRUE,
-  simfun = NULL,
   dim1 = length(a),
   dim2 = length(b)
 )
@@ -22,8 +21,6 @@ label_matrix(
 \item{type}{The type of matrix to construct, either a similarity ('s') or distance ('d') matrix.}
 
 \item{return_matrix}{A logical flag indicating whether to return the result as a sparse matrix (default: TRUE) or a triplet.}
-
-\item{simfun}{An optional user-provided similarity function. If not provided, a default similarity function will be used.}
 
 \item{dim1}{The length of the first dimension.}
 

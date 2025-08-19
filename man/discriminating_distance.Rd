@@ -9,7 +9,7 @@ discriminating_distance(X, k = length(labels)/2, sigma, labels)
 \arguments{
 \item{X}{A numeric matrix or data frame containing the data points.}
 
-\item{k}{An integer representing the number of nearest neighbors to consider. Default is the number of unique labels divided by 2.}
+\item{k}{An integer representing the number of nearest neighbors to consider.}
 
 \item{sigma}{A numeric value representing the scaling factor for the heat kernel. If not provided, it will be estimated.}
 

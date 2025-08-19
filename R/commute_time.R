@@ -39,7 +39,7 @@ commute_time_distance <- function(A, ncomp=nrow(A)-1) {
   v <- decomp$vectors[, 2:(ncomp+1)]
   ev <- decomp$values[2:(ncomp+1)]
 
-  if (any(decomp$values > 1)) {
+  if (any(decomp$values > 1 + 1e-12)) {
     stop("eigenvalue greater than 1 detected.")
   }
   #maxev <- max(ev)

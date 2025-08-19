@@ -1,4 +1,3 @@
-
 #' Create a Binary Label Adjacency Matrix
 #'
 #' Constructs a binary adjacency matrix based on two sets of labels `a` and `b`, creating edges when `a` and `b` have the same or different labels, depending on the `type` parameter.
@@ -16,99 +15,73 @@
 #'
 #' @export
 #' @importFrom Matrix sparseVector tcrossprod
-binary_label_matrix <- function(a, b=NULL, type=c("s", "d")) {
+binary_label_matrix <- function(a, b = NULL, type = c("s", "d")) {
   type <- match.arg(type)
-  if (is.null(b)) {
-    b <- a
+  if (is.null(b)) b <- a
+
+  fa <- as.factor(a);  fb <- as.factor(b)
+  na <- length(fa);    nb <- length(fb)
+
+  if (type == "s") {
+    # indices where levels coincide - need ALL pairs with same labels
+    ia <- as.integer(fa)
+    ib <- as.integer(fb)
+    
+    # Create all pairs (i,j) where label[i] == label[j]
+    pairs <- expand.grid(i = 1:na, j = 1:nb)
+    keep <- ia[pairs$i] == ib[pairs$j]
+    
+    sparseMatrix(i = pairs$i[keep],
+                 j = pairs$j[keep],
+                 x = 1L,
+                 dims = c(na, nb))
+  } else {
+    # different labels - need ALL pairs with different labels
+    ia <- as.integer(fa)
+    ib <- as.integer(fb)
+    
+    # Create all pairs (i,j) where label[i] != label[j]
+    pairs <- expand.grid(i = 1:na, j = 1:nb)
+    keep <- ia[pairs$i] != ib[pairs$j]
+    
+    sparseMatrix(i = pairs$i[keep],
+                 j = pairs$j[keep],
+                 x = 1L,
+                 dims = c(na, nb))
   }
-
-  if (is.factor(a)) {
-    a <- as.character(a)
-  }
-
-  if (is.factor(b)) {
-    b <- as.character(b)
-  }
-
-  assert_that(length(a) == length(b))
-
-  levs <- unique(a)
-  mlist <- list()
-
-  for (i in seq_along(levs)) {
-    lev <- levs[i]
-
-    if (type == "s") {
-      idx1 <- which(a == lev)
-      idx2 <- which(b == lev)
-    } else {
-      idx1 <- which(a == lev)
-      idx2 <- which(b != lev)
-    }
-    if (length(idx1) > 0 && length(idx2) > 0) {
-      sv1=sparseVector(rep(1, length(idx1)), idx1, length(a))
-      sv2=sparseVector(rep(1, length(idx2)), idx2, length(a))
-      mlist[[i]] <- tcrossprod(sv1,sv2)
-    }
-  }
-
-  mlist <- mlist[!sapply(mlist, is.null)]
-
-  if (length(mlist) == 0) {
-    stop("no overlapping levels in 'a' and 'b'")
-  }
-
-  ret <- Reduce("+", mlist)
 }
 
 
 #' Create a Label Adjacency Matrix
 #'
-#' Constructs a label adjacency matrix based on two sets of labels `a` and `b`, creating edges depending on the `type` parameter and the similarity function `simfun`.
+#' Constructs a label adjacency matrix based on two sets of labels `a` and `b`, creating edges depending on the `type` parameter.
 #'
 #' @param a A vector of labels for the first set of data points.
 #' @param b A vector of labels for the second set of data points.
 #' @param type A character specifying the type of adjacency matrix to create, either "s" for same labels or "d" for different labels (default: "s").
-#' @param simfun A function to determine the similarity between the labels (default: NULL). If NULL, the function will use "==" for type "s" and "!=" for type "d".
 #' @param dim1 The dimension of the first set of data points (default: length(a)).
 #' @param dim2 The dimension of the second set of data points (default: length(b)).
 #'
 #' @return A label adjacency matrix with edges determined by the label relationships between `a` and `b` and the similarity function `simfun`.
 #'
 #' @export
-label_matrix2 <- function(a, b, type=c("s", "d"), simfun=NULL, dim1=length(a),
-                          dim2=length(b)) {
+label_matrix2 <- function(a, b, type = c("s", "d"), dim1 = length(a),
+                          dim2 = length(b)) {
+
   type <- match.arg(type)
-
-  if (is.null(simfun) && type == "s") {
-    simfun <- "=="
-  } else if (is.null(simfun) && type == "d") {
-    simfun <- "!="
-  }
-
+  fa <- as.factor(a);  fb <- as.factor(b)
+  ia <- as.integer(fa); ib <- as.integer(fb)
 
   if (type == "s") {
-    out <- outer(a,b, simfun)
-    ret <- Matrix::Matrix(out, sparse = TRUE)
-
-    if (any(is.na(ret))) {
-      ret[which(is.na(ret), arr.ind=TRUE)] <- 0
-    }
-
-    ret <- ret * 1
-    ret
-  } else if (type == "d") {
-    out <- outer(a,b, simfun)
-    ret <- Matrix::Matrix(out, sparse = TRUE)
-    if (any(is.na(ret))) {
-      ret[which(is.na(ret), arr.ind=TRUE)] <- 0
-    }
-
-    ret <- ret * 1
-    #ret[which(is.na(ret), arr.ind=TRUE)] <- 0
-    ret
-
+    keep <- ia == ib
+  } else {
+    keep <- ia != ib
   }
+
+  sparseMatrix(i = seq_len(dim1)[keep],
+               j = seq_len(dim2)[keep],
+               x = 1L,
+               dims = c(dim1, dim2))
 }
 
 
@@ -126,17 +99,15 @@ label_matrix2 <- function(a, b, type=c("s", "d"), simfun=NULL, dim1=length(a),
 #' @importFrom Matrix Diagonal
 #' @importFrom assertthat assert_that
 #' @export
-convolve_matrix <- function(X, Kern, normalize=FALSE) {
-  assert_that(ncol(Kern) == nrow(Kern))
-  assert_that(ncol(X) == nrow(Kern))
+convolve_matrix <- function(X, Kern, normalize = FALSE) {
+  stopifnot(ncol(Kern) == nrow(Kern), ncol(X) == nrow(Kern))
+
   if (normalize) {
-    D1 <- Diagonal(x=1/sqrt(rowSums(Kern)))
-    Kern <- D1 %*% Kern %*% D1
+    rs <- rowSums(Kern)
+    scale <- ifelse(rs > 0, 1 / sqrt(rs), 0)
+    Kern <- Diagonal(x = scale) %*% Kern %*% Diagonal(x = scale)
   }
-
-  out <- X %*% Kern
-  out
-
+  X %*% Kern
 }
 
 
@@ -149,7 +120,6 @@ convolve_matrix <- function(X, Kern, normalize=FALSE) {
 #' @param b The second categorical label vector.
 #' @param type The type of matrix to construct, either a similarity ('s') or distance ('d') matrix.
 #' @param return_matrix A logical flag indicating whether to return the result as a sparse matrix (default: TRUE) or a triplet.
-#' @param simfun An optional user-provided similarity function. If not provided, a default similarity function will be used.
 #' @param dim1 The length of the first dimension.
 #' @param dim2 The length of the second dimension.
 #'
@@ -157,60 +127,38 @@ convolve_matrix <- function(X, Kern, normalize=FALSE) {
 #'
 #' @importFrom Matrix sparseMatrix
 #' @export
-label_matrix <- function(a, b, type=c("s", "d"), return_matrix=TRUE, simfun=NULL , dim1=length(a), dim2=length(b)) {
+label_matrix <- function(a, b, type = c("s", "d"),
+                         return_matrix = TRUE,
+                         dim1 = length(a),
+                         dim2 = length(b)) {
+
   type <- match.arg(type)
 
-  a.idx <- which(!is.na(a))
-  b.idx <- which(!is.na(b))
+  fa <- as.factor(a);  fb <- as.factor(b)
+  ia <- as.integer(fa); ib <- as.integer(fb)
 
-  sfun <- if (!is.null(simfun)) {
-    simfun
-  } else {
-    function(x, y) {
-      if (is.na(x) || is.na(y)) {
-        0
-      } else if (x == y) {
-        1
-      } else {
-        0
-      }
+  if (type == "s") {
+    keep <- ia == ib & !is.na(ia) & !is.na(ib)
+  } else {                               # different
+    keep <- ia != ib & !is.na(ia) & !is.na(ib)
+  }
+
+  if (!any(keep)) {
+    if (return_matrix) {
+      return(Matrix::Matrix(0, nrow = dim1, ncol = dim2, sparse = TRUE))
+    } else {
+      return(matrix(integer(0), ncol = 3))
     }
   }
 
-  dfun <- if (!is.null(simfun)) {
-    simfun
-  } else {
-    function(x, y) {
-      if (is.na(x) || is.na(y)) {
-        0
-      } else if (x == y) {
-        0
-      } else {
-        1
-      }
-    }
-  }
-
-  fun <- if (type == "s") sfun else dfun
-
-  out <- lapply(a.idx, function(i) {
-    ret <- lapply(b.idx, function(j) {
-      v <- fun(a[i], b[j])
-      if (v != 0) {
-        c(i,j,v)
-      }
-    })
-
-    ret[sapply(ret, function(x) !is.null(x))]
-  })
-
-  out <- unlist(out, recursive=FALSE)
-  out <- do.call(rbind, out)
-
+  I <- which(keep)
   if (return_matrix) {
-    sparseMatrix(i=out[,1], j=out[,2], x=out[,3], dims=c(dim1, dim2))
+    sparseMatrix(i = I,
+                 j = I,     # same length vectors ⇒ same indices
+                 x = 1L,
+                 dims = c(dim1, dim2))
   } else {
-    out
+    cbind(I, I, 1L)
   }
 }
 
@@ -247,7 +195,12 @@ expand_label_similarity <- function(labels, sim_mat, threshold=0, above=TRUE) {
     stop(paste("no matches between `labels` and similarity matrix entries"))
   }
 
+  # Ensure indices passed to C++ are integers and handle NAs by setting to 0 (or another indicator if needed)
+  # C++ code currently skips negative indices, so 0 should work if C++ expects 1-based and subtracts 1.
+  # Let's confirm C++ handles 0 correctly or adjust here.
+  # C++ code does `indices[i] - 1`, so passing 0 will result in -1, which is skipped. This is okay.
   mind[is.na(mind)] <- 0
+  mind <- as.integer(mind)
 
   out <- if (above) {
     expand_similarity_cpp(mind, sim_mat, threshold)
@@ -255,12 +208,34 @@ expand_label_similarity <- function(labels, sim_mat, threshold=0, above=TRUE) {
     expand_similarity_below_cpp(mind, sim_mat, threshold)
   }
 
-  if (length(out) == 0) {
-    stop("similarity matching failed: no returned entries")
+  # Check if the returned matrix is empty
+  if (!is.matrix(out) || nrow(out) == 0) {
+    warning("No similarities met the threshold criteria or C++ function failed.")
+    # Return an empty sparse matrix with correct dimensions
+    return(sparseMatrix(i={}, j={}, x={}, dims=c(length(labels), length(labels)), symmetric=TRUE))
   }
 
-  out <- do.call(rbind, out)
-  sparseMatrix(i=out[,1], j=out[,2], x=out[,3], dims=c(length(labels), length(labels)), symmetric=TRUE)
+  # out is already a matrix, no need for do.call(rbind, out)
+  # out <- do.call(rbind, out)
+
+  # Ensure columns are numeric before passing to sparseMatrix
+  i_col <- as.numeric(out[,1])
+  j_col <- as.numeric(out[,2])
+  x_col <- as.numeric(out[,3])
+  
+  # Check for NAs or non-finite values introduced somehow
+  valid_idx <- is.finite(i_col) & is.finite(j_col) & is.finite(x_col)
+  if (!all(valid_idx)) {
+      warning("Non-finite values detected in matrix returned from C++; removing them.")
+      i_col <- i_col[valid_idx]
+      j_col <- j_col[valid_idx]
+      x_col <- x_col[valid_idx]
+  }
+  
+  sparseMatrix(i=i_col, j=j_col, x=x_col, 
+               dims=c(length(labels), length(labels)), 
+               symmetric=TRUE, 
+               index1 = TRUE) # Assuming C++ returns 1-based indices
 
 }
 

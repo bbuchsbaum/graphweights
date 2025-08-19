@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{cross_weighted_spatial_adjacency}
 \alias{cross_weighted_spatial_adjacency}
-\title{Compute the adjacency between two adjacency matrices weighted by two corresponding feature matrices.}
+\title{Cross-adjacency matrix with feature weighting}
 \usage{
 cross_weighted_spatial_adjacency(
   coord_mat1,
@@ -36,15 +36,19 @@ cross_weighted_spatial_adjacency(
 
 \item{maxk}{the maximum number of neighbors to include within spatial window}
 
+\item{weight_mode}{the type of weighting to use: "binary" or "heat" (default: "binary")}
+
+\item{sigma}{the spatial sigma for the heat kernel weighting (default: 1)}
+
 \item{dthresh}{the threshold for the spatial distance}
 
 \item{normalized}{whether to normalize the rows to sum to 1}
 }
 \description{
-Compute the adjacency between two adjacency matrices weighted by two corresponding feature matrices.
+Cross-adjacency matrix with feature weighting
 }
 \examples{
-
+set.seed(123)
 coords <- as.matrix(expand.grid(1:5, 1:5))
 fmat1 <- matrix(rnorm(5*25), 25, 5)
 fmat2 <- matrix(rnorm(5*25), 25, 5)

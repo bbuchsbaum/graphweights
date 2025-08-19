@@ -2,18 +2,26 @@
 % Please edit documentation in R/neighbor_graph.R
 \name{neighbors.neighbor_graph}
 \alias{neighbors.neighbor_graph}
-\title{Neighbors for neighbor_graph Objects}
+\title{Get neighbors for neighbor_graph object}
 \usage{
 \method{neighbors}{neighbor_graph}(x, i)
 }
 \arguments{
 \item{x}{A neighbor_graph object.}
 
-\item{i}{An integer specifying the index of the node for which neighbors should be retrieved.}
+\item{i}{An integer specifying the index of the node for which neighbors should be retrieved. If missing, returns neighbors for all nodes.}
 }
 \value{
-A list of neighbors.
+If i is provided, a list containing the neighbors of node i. If i is missing, a list with neighbors for all nodes.
 }
 \description{
 Retrieve the neighbors of a specific node or all nodes in a neighbor_graph object.
+}
+\examples{
+adj_matrix <- Matrix::Matrix(c(0, 1, 1, 0, 1, 0, 1, 0, 0), 
+                            nrow = 3, byrow = TRUE, sparse = TRUE)
+ng <- neighbor_graph(adj_matrix)
+neighbors(ng, 1)  # Neighbors of node 1
+neighbors(ng)     # All neighbors
+
 }

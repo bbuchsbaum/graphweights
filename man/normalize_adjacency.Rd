@@ -19,6 +19,7 @@ This function normalizes an adjacency matrix by dividing each element by the pro
 Optionally, it can also symmetrize the normalized matrix by averaging it with its transpose.
 }
 \examples{
+set.seed(123)
 A <- matrix(runif(100), 10, 10)
 A_normalized <- normalize_adjacency(A)
 

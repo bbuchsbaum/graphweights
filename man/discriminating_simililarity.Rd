@@ -4,18 +4,12 @@
 \alias{discriminating_simililarity}
 \title{Compute Similarity Graph Weighted by Class Structure}
 \usage{
-discriminating_simililarity(
-  X,
-  k = length(labels)/2,
-  sigma,
-  cg,
-  threshold = 0.01
-)
+discriminating_simililarity(X, k, sigma, cg, threshold = 0.01)
 }
 \arguments{
 \item{X}{A numeric matrix or data frame containing the data points.}
 
-\item{k}{An integer representing the number of nearest neighbors to consider. Default is the number of unique labels divided by 2.}
+\item{k}{An integer representing the number of nearest neighbors to consider.}
 
 \item{sigma}{A numeric value representing the scaling factor for the heat kernel.}
 

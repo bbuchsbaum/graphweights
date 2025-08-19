@@ -2,7 +2,7 @@
 % Please edit documentation in R/neighbor_graph.R
 \name{non_neighbors.neighbor_graph}
 \alias{non_neighbors.neighbor_graph}
-\title{Non-neighbors for neighbor_graph Objects}
+\title{Get non-neighbors for neighbor_graph object}
 \usage{
 \method{non_neighbors}{neighbor_graph}(x, i)
 }
@@ -12,8 +12,15 @@
 \item{i}{The index of the node for which non-neighboring nodes will be returned.}
 }
 \value{
-A list of node indices that are not neighbors of the given node.
+A numeric vector of node indices that are not neighbors of the given node (excluding the node itself).
 }
 \description{
 Retrieve the non-neighboring nodes of a given node in a neighbor_graph object.
+}
+\examples{
+adj_matrix <- Matrix::Matrix(c(0, 1, 1, 0, 1, 0, 1, 0, 0), 
+                            nrow = 3, byrow = TRUE, sparse = TRUE)
+ng <- neighbor_graph(adj_matrix)
+non_neighbors(ng, 1)  # Non-neighbors of node 1
+
 }

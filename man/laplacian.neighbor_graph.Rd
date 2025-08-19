@@ -2,18 +2,31 @@
 % Please edit documentation in R/neighbor_graph.R
 \name{laplacian.neighbor_graph}
 \alias{laplacian.neighbor_graph}
-\title{Laplacian Matrix for neighbor_graph Objects}
+\title{Compute Laplacian matrix for neighbor_graph object}
 \usage{
 \method{laplacian}{neighbor_graph}(x, normalized = FALSE)
 }
 \arguments{
 \item{x}{A neighbor_graph object.}
 
-\item{normalized}{A logical value indicating whether the normalized Laplacian should be computed.}
+\item{normalized}{A logical value indicating whether the normalized Laplacian should be computed (default: FALSE).}
 }
 \value{
-A Matrix object representing the Laplacian matrix.
+A sparse Matrix object representing the Laplacian matrix.
 }
 \description{
 Compute the Laplacian matrix of a neighbor_graph object.
+}
+\details{
+The unnormalized Laplacian is computed as L = D - A where D is the degree matrix
+and A is the adjacency matrix. The normalized Laplacian is computed as 
+L_sym = I - D^(-1/2) A D^(-1/2).
+}
+\examples{
+adj_matrix <- Matrix::Matrix(c(0, 1, 1, 0, 1, 0, 1, 0, 0), 
+                            nrow = 3, byrow = TRUE, sparse = TRUE)
+ng <- neighbor_graph(adj_matrix)
+L <- laplacian(ng)
+L_norm <- laplacian(ng, normalized = TRUE)
+
 }

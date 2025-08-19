@@ -2,18 +2,26 @@
 % Please edit documentation in R/neighbor_graph.R
 \name{adjacency.neighbor_graph}
 \alias{adjacency.neighbor_graph}
-\title{Adjacency Matrix for neighbor_graph Objects}
+\title{Extract adjacency matrix from neighbor_graph object}
 \usage{
 \method{adjacency}{neighbor_graph}(x, attr = "weight")
 }
 \arguments{
 \item{x}{A neighbor_graph object.}
 
-\item{attr}{A character string specifying the attribute to use for the adjacency matrix.}
+\item{attr}{A character string specifying the edge attribute to use for weights (default: "weight").}
 }
 \value{
-A Matrix object representing the adjacency matrix.
+A sparse Matrix object representing the adjacency matrix.
 }
 \description{
 Extract the adjacency matrix from a neighbor_graph object.
+}
+\examples{
+# Create example neighbor_graph
+adj_matrix <- Matrix::Matrix(c(0, 1, 1, 0, 1, 0, 1, 0, 0), 
+                            nrow = 3, byrow = TRUE, sparse = TRUE)
+ng <- neighbor_graph(adj_matrix)
+adj <- adjacency(ng)
+
 }

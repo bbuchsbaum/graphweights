@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_weights.R
 \name{spatial_lap_of_gauss}
 \alias{spatial_lap_of_gauss}
-\title{Compute the spatial Laplacian of Gaussian for a coordinate matrix}
+\title{Spatial Laplacian of Gaussian for coordinates}
 \usage{
 spatial_lap_of_gauss(coord_mat, sigma = 2)
 }

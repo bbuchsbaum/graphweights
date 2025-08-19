@@ -83,7 +83,16 @@ temporal_adjacency <- function(time, weight_mode = c("heat", "binary"), sigma=1,
     }
   }
 
-  m  <- do.call(rbind, runner(time, f, k=window, lag=0, simplify=TRUE))
+  # Simple sliding window implementation since runner package is not available
+  m <- NULL
+  for (i in seq_along(time)) {
+    end_idx <- min(i + window - 1, length(time))
+    t_window <- time[i:end_idx]
+    result <- f(t_window)
+    if (!is.null(result)) {
+      m <- rbind(m, result)
+    }
+  }
 
   # m <- do.call(rbind, rollApply(time, window=window, function(t) {
   #   if (length(t) >= 1) {

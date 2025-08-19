@@ -4,14 +4,7 @@
 \alias{label_matrix2}
 \title{Create a Label Adjacency Matrix}
 \usage{
-label_matrix2(
-  a,
-  b,
-  type = c("s", "d"),
-  simfun = NULL,
-  dim1 = length(a),
-  dim2 = length(b)
-)
+label_matrix2(a, b, type = c("s", "d"), dim1 = length(a), dim2 = length(b))
 }
 \arguments{
 \item{a}{A vector of labels for the first set of data points.}
@@ -19,8 +12,6 @@ label_matrix2(
 \item{b}{A vector of labels for the second set of data points.}
 
 \item{type}{A character specifying the type of adjacency matrix to create, either "s" for same labels or "d" for different labels (default: "s").}
-
-\item{simfun}{A function to determine the similarity between the labels (default: NULL). If NULL, the function will use "==" for type "s" and "!=" for type "d".}
 
 \item{dim1}{The dimension of the first set of data points (default: length(a)).}
 
@@ -30,5 +21,5 @@ label_matrix2(
 A label adjacency matrix with edges determined by the label relationships between `a` and `b` and the similarity function `simfun`.
 }
 \description{
-Constructs a label adjacency matrix based on two sets of labels `a` and `b`, creating edges depending on the `type` parameter and the similarity function `simfun`.
+Constructs a label adjacency matrix based on two sets of labels `a` and `b`, creating edges depending on the `type` parameter.
 }

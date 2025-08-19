@@ -1,122 +1,124 @@
-# Install and load the necessary packages
 
-# Define the function to compute the Markov diffusion kernel
-compute_markov_diffusion_kernel <- function(A, t) {
-  # Convert the adjacency matrix A into a transition probability matrix P
-  P <- A / rowSums(A)
+#' Compute Markov diffusion kernel via eigen decomposition
+#'
+#' Efficient computation of the Markov diffusion kernel for a graph represented by
+#' a sparse adjacency matrix. For large graphs, uses RSpectra to compute only the
+#' leading k eigenpairs of the normalized transition matrix.
+#'
+#' @param A Square sparse adjacency matrix (dgCMatrix) of an undirected, weighted graph with non-negative entries.
+#' @param t Diffusion time parameter (positive scalar).
+#' @param k Number of leading eigenpairs to compute. If NULL, performs full eigendecomposition.
+#' @param symmetric If TRUE (default), uses symmetric normalization to guarantee real eigenvalues.
+#' @return dgCMatrix representing the diffusion kernel matrix.
+#' @examples
+#' library(Matrix)
+#' # Create a simple 3x3 adjacency matrix
+#' A <- sparseMatrix(i = c(1, 1, 2, 2, 3, 3), 
+#'                   j = c(2, 3, 1, 3, 1, 2), 
+#'                   x = c(1, 1, 1, 1, 1, 1), dims = c(3, 3))
+#' 
+#' # Compute diffusion kernel with t = 0.5
+#' K <- compute_diffusion_kernel(A, t = 0.5)
+#' print(K)
+#' 
+#' # Use only top 2 eigenpairs for efficiency
+#' K_approx <- compute_diffusion_kernel(A, t = 0.5, k = 2)
+#' @importFrom Matrix Diagonal crossprod
+#' @importFrom RSpectra eigs
+#' @export
+compute_diffusion_kernel <- function(A, t, k = NULL, symmetric = TRUE) {
+  if (!inherits(A, "dgCMatrix")) A <- as(A, "dgCMatrix")
+  n <- nrow(A)
+  if (ncol(A) != n) stop("A must be square.")
 
-  # Compute the matrix exponential for P^t
-  P_t <- expm(P * t)
+  # Degree vector
+  d <- Matrix::rowSums(A)
+  if (any(d == 0)) warning("Isolated nodes present; they will remain isolated in kernel.")
 
-  # Compute Z(t) matrix
-  Z <- (diag(nrow(P)) - P) ^ (-1) * (diag(nrow(P)) - P_t) * P / t
-
-  # Compute the Markov diffusion kernel
-  K_MD <- Z %*% t(Z)
-
-  return(K_MD)
-}
-
-compute_markov_diffusion_kernel_eigen <- function(A, t) {
-  # Convert the adjacency matrix A into a transition probability matrix P
-  P <- A / rowSums(A)
-
-  # Compute the eigenvectors (U) and eigenvalues (L) of the matrix P
-  eigen_decomp <- eigen(P)
-  U <- eigen_decomp$vectors
-  L <- diag(eigen_decomp$values)
-
-  # Compute the matrix power of L using the input parameter t
-  L_t <- L ^ t
-
-  # Compute the Markov diffusion kernel (K_MD) as a product of the eigenvectors and the matrix power of eigenvalues
-  K_MD <- U %*% L_t %*% t(U)
-
-  return(K_MD)
-}
-
-#
-# # Create a large sparse adjacency matrix (replace this with your actual matrix)
-# A <- rsparsematrix(1000, 1000, density = 0.01)
-#
-# # Set the number of steps for the diffusion process
-# t <- 10
-#
-# # Compute the Markov diffusion kernel for the given adjacency matrix
-# K_MD <- compute_markov_diffusion_kernel(A, t)
-#
-# # Show the result
-# print(K_MD)
-#
-#
-#
-# # Create a large sparse adjacency matrix (replace this with your actual matrix)
-# A <- rsparsematrix(1000, 1000, density = 0.01)
-#
-# # Set the number of steps for the diffusion process
-# t <- 10
-#
-# # Compute the Markov diffusion kernel for the given adjacency matrix
-# K_MD <- compute_markov_diffusion_kernel(A, t)
-#
-# # Show the result
-# print(K_MD)
-#
-#
-# library(Matrix)
-# library(igraph)
-
-# Function to compute the diffusion distance and diffusion map
-compute_diffusion <- function(adj_matrix, t) {
-  # Convert the adjacency matrix to a graph
-  g <- graph_from_adjacency_matrix(adj_matrix, mode = "undirected", weighted = TRUE)
-
-  # Compute the degree matrix
-  deg_matrix <- diag(degree(g, mode = "all"))
-
-  # Compute the Laplacian matrix
-  laplacian_matrix <- deg_matrix - adj_matrix
-
-  # Compute the normalized Laplacian matrix
-  norm_laplacian_matrix <- diag(1/sqrt(diag(deg_matrix))) %*% laplacian_matrix %*% diag(1/sqrt(diag(deg_matrix)))
-
-  # Compute the eigenvectors and eigenvalues of the normalized Laplacian matrix
-  eigen_decomposition <- eigen(norm_laplacian_matrix)
-  eigenvalues <- eigen_decomposition$values
-  eigenvectors <- eigen_decomposition$vectors
-
-  # Sort eigenvectors and eigenvalues by eigenvalues (ascending)
-  sorted_indices <- order(eigenvalues)
-  sorted_eigenvalues <- eigenvalues[sorted_indices]
-  sorted_eigenvectors <- eigenvectors[, sorted_indices]
-
-  # Compute the diffusion map
-  diffusion_map <- t(sorted_eigenvectors) %*% diag(sorted_eigenvalues^t) %*% t(sorted_eigenvectors)
-
-  # Compute the diffusion distance matrix
-  diffusion_distance_matrix <- matrix(0, nrow = nrow(diffusion_map), ncol = nrow(diffusion_map))
-  for (i in 1:nrow(diffusion_map)) {
-    for (j in 1:nrow(diffusion_map)) {
-      diffusion_distance_matrix[i, j] <- sum((diffusion_map[i, ] - diffusion_map[j, ])^2)
-    }
+  # Build transition matrix P
+  if (symmetric) {
+    Dm12 <- Diagonal(x = 1 / sqrt(d))
+    P <- Dm12 %*% A %*% Dm12
+  } else {
+    Dinv <- Diagonal(x = 1 / d)
+    P <- Dinv %*% A
   }
 
-  list(diffusion_map = diffusion_map, diffusion_distance_matrix = diffusion_distance_matrix)
+  # Eigen decomposition
+  if (!is.null(k) && k < n) {
+    # compute top k eigenpairs
+    eig <- RSpectra::eigs(P, k = k, which = "LA")
+    U <- eig$vectors    # n×k
+    L <- eig$values     # length k
+  } else {
+    eig <- eigen(as.matrix(P), symmetric = symmetric)
+    U <- eig$vectors    # n×n
+    L <- eig$values     # length n
+  }
+
+  # Diffusion kernel: K = U diag(L^t) U^T
+  Lt <- L^t
+  K <- U %*% Diagonal(x = Lt) %*% t(U)
+
+  # Return sparse
+  return(as(K, "dgCMatrix"))
 }
 
-# # Example adjacency matrix
-# adj_matrix <- matrix(c(0, 1, 0, 0,
-#                        1, 0, 1, 0,
-#                        0, 1, 0, 1,
-#                        0, 0, 1, 0), nrow = 4, ncol = 4)
-#
-# # Set the time 't'
-# t <- 1
-#
-# # Compute the diffusion distance and diffusion map
-# result <- compute_diffusion(adj_matrix, t)
-#
-# # Print the diffusion map and diffusion distance matrix
-# print(result$diffusion_map)
-# print(result$diffusion_distance_matrix)
-#
+#' Diffusion map embedding and distance
+#'
+#' Computes the diffusion map embedding of a graph and the pairwise diffusion distances
+#' based on the leading eigenvectors of the normalized transition matrix.
+#'
+#' @param A Square sparse adjacency matrix (dgCMatrix) of an undirected, weighted graph.
+#' @param t Diffusion time parameter (positive scalar).
+#' @param k Number of diffusion coordinates to compute, excluding the trivial first coordinate.
+#' @return A list with two components:
+#'   \item{embedding}{n×k matrix of diffusion coordinates where n is the number of nodes.}
+#'   \item{distances}{n×n matrix of squared diffusion distances between all node pairs.}
+#' @examples
+#' library(Matrix)
+#' # Create a simple 4x4 adjacency matrix (path graph)
+#' A <- sparseMatrix(i = c(1, 2, 3), j = c(2, 3, 4), x = c(1, 1, 1), dims = c(4, 4))
+#' A <- A + t(A)  # Make symmetric
+#' 
+#' # Compute diffusion map with 2 coordinates
+#' result <- compute_diffusion_map(A, t = 1.0, k = 2)
+#' 
+#' # View the embedding coordinates
+#' print(result$embedding)
+#' 
+#' # Check diffusion distances
+#' print(result$distances[1, ])  # distances from node 1
+#' @importFrom RSpectra eigs
+#' @importFrom Matrix Diagonal
+#' @export
+compute_diffusion_map <- function(A, t, k = 10) {
+  if (!inherits(A, "dgCMatrix")) A <- as(A, "dgCMatrix")
+  n <- nrow(A)
+  if (ncol(A) != n) stop("A must be square.")
+
+  # Build symmetric transition P
+  d <- Matrix::rowSums(A)
+  Dm12 <- Diagonal(x = 1 / sqrt(d))
+  P <- Dm12 %*% A %*% Dm12
+
+  # Compute k+1 eigenpairs (first eigenvalue = 1)
+  eig <- RSpectra::eigs(P, k = k + 1, which = "LM")
+  lambdas <- eig$values
+  U <- eig$vectors  # n × (k+1)
+
+  # Sort in descending order
+  ord <- order(Re(lambdas), decreasing = TRUE)
+  lambdas <- Re(lambdas[ord])[2:(k+1)]
+  U <- Re(U[, ord])[ ,2:(k+1), drop=FALSE]
+
+  # Diffusion coordinates: psi_j = lambda_j^t * U[,j]
+  coords <- t( t(U) * (lambdas^t) )
+
+  # Squared diffusion distances: D_ij = sum_j (psi_j(i) - psi_j(j))^2
+  # We can compute as: rowSums((coords[i,]-coords[j,])^2)
+  # Efficient via crossprod: use matrix operations
+  D2 <- as.matrix(dist(coords))^2
+
+  list(embedding = coords, distances = D2)
+}

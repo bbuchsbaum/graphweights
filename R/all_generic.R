@@ -53,6 +53,7 @@ neighbors <- function(x, i, ...) UseMethod("neighbors")
 #' get weights of all neighbors of a set of nodes
 #'
 #' @param x the neighbor graph
+#' @param ... additional arguments passed to methods
 #' @export
 adjacency <- function(x,...) UseMethod("adjacency")
 
@@ -64,7 +65,16 @@ adjacency <- function(x,...) UseMethod("adjacency")
 #' @export
 non_neighbors<- function(x,...) UseMethod("non_neighbors")
 
-# node_density <- function(x, i, ...) UseMethod("node_density")
+#' Node Density
+#'
+#' Compute the local density around each node in a graph.
+#'
+#' @param x A graph-like object.
+#' @param ... Additional arguments passed to specific methods.
+#'
+#' @return A numeric vector of node densities.
+#' @export
+node_density <- function(x, ...) UseMethod("node_density")
 
 #' Class Means
 #'
@@ -169,16 +179,6 @@ dist_to_sim <- function(x, ...) {
   UseMethod("dist_to_sim")
 }
 
-#' Create an adjacency matrix
-#'
-#' @param x An object representing nearest neighbors.
-#' @param ... Further arguments passed to or from other methods.
-#'
-#' @return An adjacency matrix.
-#' @export
-adjacency <- function(x, ...) {
-  UseMethod("adjacency")
-}
 
 #' Find nearest neighbors
 #'

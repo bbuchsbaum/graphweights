@@ -1,3 +1,7 @@
+#' @useDynLib neighborweights, .registration=TRUE
+#' @importFrom Rcpp sourceCpp
+NULL
+
 #' Compute a spatial autocorrelation matrix
 #'
 #' This function computes a spatial autocorrelation matrix using a radius-based nearest neighbor search.
@@ -12,6 +16,7 @@
 #' @return A sparse matrix representing the spatial autocorrelation matrix for the input data.
 #'
 #' @importFrom mgcv gam
+#' @importFrom Matrix Diagonal
 #' @importFrom rflann RadiusSearch
 #' @importFrom Matrix sparseMatrix
 #' @importFrom assertthat assert_that
@@ -142,7 +147,7 @@ spatial_laplacian <- function(coord_mat, dthresh=1.42, nnk=27,weight_mode=c("bin
 }
 
 
-#' Compute the spatial Laplacian of Gaussian for a coordinate matrix
+#' Spatial Laplacian of Gaussian for coordinates
 #'
 #' This function computes the spatial Laplacian of Gaussian for a given coordinate matrix using a specified sigma value.
 #'
@@ -213,9 +218,7 @@ difference_of_gauss <- function(coord_mat, sigma1=2, sigma2=sigma1 * 1.6, nnk=3^
 #' # Compute the spatial smoother matrix with sigma = 5
 #' result <- spatial_smoother(coord_mat, sigma = 5, nnk = 3^(ncol(coord_mat)), stochastic = TRUE)
 #'
-#' coord_mat <- as.matrix(expand.grid(x=1:10, y=1:10))
-#' sm <- spatial_smoother(coord_mat, sigma=3)
-#' sm2 <- spatial_smoother(coord_mat, sigma=6, stochastic=FALSE,nnk=50)
+#' @export
 spatial_smoother <- function(coord_mat, sigma=5, nnk=3^(ncol(coord_mat)), stochastic=TRUE) {
   adj <- spatial_adjacency(coord_mat, dthresh=sigma*1, nnk=nnk,weight_mode="heat", sigma,
                            include_diagonal=TRUE, normalized=FALSE, stochastic=FALSE)
@@ -339,6 +342,7 @@ make_doubly_stochastic <- function(A, iter=30) {
 #' @return A normalized and, if requested, symmetrized adjacency matrix.
 #'
 #' @examples
+#' set.seed(123)
 #' A <- matrix(runif(100), 10, 10)
 #' A_normalized <- normalize_adjacency(A)
 #'
@@ -357,7 +361,7 @@ normalize_adjacency <- function(sm, symmetric=TRUE) {
   sm
 }
 
-#' Compute the adjacency between two adjacency matrices weighted by two corresponding feature matrices.
+#' Cross-adjacency matrix with feature weighting
 #'
 #' @param coord_mat1 the first coordinate matrix (the query)
 #' @param coord_mat2 the second coordinate matrix (the reference)
@@ -367,13 +371,15 @@ normalize_adjacency <- function(sm, symmetric=TRUE) {
 #' @param nnk the maximum number of spatial nearest neighbors to include
 #' @param maxk the maximum number of neighbors to include within spatial window
 #' @param alpha the mixing weight for the spatial distance (1=all spatial weighting, 0=all feature weighting)
+#' @param weight_mode the type of weighting to use: "binary" or "heat" (default: "binary")
+#' @param sigma the spatial sigma for the heat kernel weighting (default: 1)
 #' @param dthresh the threshold for the spatial distance
 #' @param normalized whether to normalize the rows to sum to 1
 #' @importFrom assertthat assert_that
 #' @export
 #'
 #' @examples
-#'
+#' set.seed(123)
 #' coords <- as.matrix(expand.grid(1:5, 1:5))
 #' fmat1 <- matrix(rnorm(5*25), 25, 5)
 #' fmat2 <- matrix(rnorm(5*25), 25, 5)
@@ -410,8 +416,8 @@ cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
 
   triplet <- cross_fspatial_weights(full_nn$indices, lapply(full_nn$distances, sqrt),
                                     feature_mat1, feature_mat2,
-                                    nels, sigma, wsigma, alpha,
-                                    maxk=maxk,
+                                    sigma, wsigma, alpha,
+                                    maxk,
                                     weight_mode == "binary")
 
   sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3],
@@ -441,6 +447,7 @@ cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
 #' @return A sparse adjacency matrix representing the smoothed data.
 #'
 #' @examples
+#' set.seed(123)
 #' coord_mat <- as.matrix(expand.grid(1:10, 1:10))
 #' feature_mat <- matrix(rnorm(100*10), 100, 10)
 #' S <- bilateral_smoother(coord_mat, feature_mat, nnk=8)
@@ -456,7 +463,7 @@ bilateral_smoother <- function(coord_mat, feature_mat, nnk=27, s_sigma=2.5, f_si
   nels <- sum(sapply(full_nn$indices, length))
 
   triplet <- bilateral_weights(full_nn$indices, lapply(full_nn$distances, sqrt),
-                              feature_mat, nels, s_sigma, f_sigma)
+                              feature_mat, s_sigma, f_sigma)
 
   sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3], dims=c(nrow(coord_mat), nrow(coord_mat)))
 
@@ -487,10 +494,13 @@ bilateral_smoother <- function(coord_mat, feature_mat, nnk=27, s_sigma=2.5, f_si
 #' @return A sparse adjacency matrix with weighted spatial relationships.
 #'
 #' @examples
+#' \donttest{
+#' set.seed(123)
 #' coord_mat <- as.matrix(expand.grid(x=1:9, y=1:9, z=1:9))
 #' fmat <- matrix(rnorm(nrow(coord_mat) * 100), nrow(coord_mat), 100)
 #' wsa1 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, weight_mode="binary", alpha=1, stochastic=TRUE)
 #' wsa2 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=27, weight_mode="heat", alpha=0, stochastic=TRUE, sigma=2.5)
+#' }
 #' @export
 weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha=.5,
                                        nnk=27,
@@ -515,7 +525,7 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
   nels <- sum(sapply(full_nn$indices, length))
 
   triplet <- fspatial_weights(full_nn$indices, lapply(full_nn$distances, sqrt),
-                              feature_mat, nels, sigma, wsigma, alpha,
+                              feature_mat, sigma, wsigma, alpha,
                               weight_mode == "binary")
 
   sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3], dims=c(nrow(coord_mat), nrow(coord_mat)))
@@ -554,9 +564,11 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
 #' @return A sparse cross adjacency matrix with weighted spatial relationships between the two sets of points.
 #'
 #' @examples
+#' \donttest{
 #' coord_mat1 <- as.matrix(expand.grid(x=1:5, y=1:5, z=1:5))
 #' coord_mat2 <- as.matrix(expand.grid(x=6:10, y=6:10, z=6:10))
 #' csa <- cross_spatial_adjacency(coord_mat1, coord_mat2, nnk=3, weight_mode="binary", sigma=5, normalized=TRUE)
+#' }
 #'
 #' @export
 cross_spatial_adjacency <- function(coord_mat1, coord_mat2, dthresh=sigma*3,
@@ -572,7 +584,7 @@ cross_spatial_adjacency <- function(coord_mat1, coord_mat2, dthresh=sigma*3,
 
   nels <- sum(sapply(full_nn$indices, length))
 
-  triplet <- spatial_weights(full_nn$indices, lapply(full_nn$distances, sqrt), nels, sigma,
+  triplet <- spatial_weights(full_nn$indices, lapply(full_nn$distances, sqrt), sigma,
                              weight_mode == "binary")
 
   sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3],

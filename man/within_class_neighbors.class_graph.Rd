@@ -9,7 +9,7 @@
 \arguments{
 \item{x}{A class_graph object.}
 
-\item{ng}{A neighbor graph object.}
+\item{ng}{A neighbor_graph object.}
 }
 \value{
 A neighbor_graph object representing the within-class neighbors of the input class_graph.

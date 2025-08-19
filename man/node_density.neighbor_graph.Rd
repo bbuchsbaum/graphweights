@@ -2,18 +2,32 @@
 % Please edit documentation in R/neighbor_graph.R
 \name{node_density.neighbor_graph}
 \alias{node_density.neighbor_graph}
-\title{Node Density for neighbor_graph Objects}
+\title{Compute node density for neighbor_graph object}
 \usage{
-node_density.neighbor_graph(x, X)
+\method{node_density}{neighbor_graph}(x, X)
 }
 \arguments{
 \item{x}{A neighbor_graph object.}
 
-\item{X}{A data matrix containing the data points.}
+\item{X}{A data matrix containing the data points, with rows as observations.}
 }
 \value{
 A numeric vector containing the node densities.
 }
 \description{
-Compute the node density for a neighbor_graph object.
+Compute the node density for a neighbor_graph object based on local neighborhoods.
+}
+\details{
+Node density is computed as the average squared distance from each node to its neighbors,
+normalized by the square of the neighborhood size.
+}
+\examples{
+\donttest{
+# Create example data and graph
+X <- matrix(rnorm(30), nrow = 10, ncol = 3)
+adj_matrix <- Matrix::Matrix(diag(10), sparse = TRUE)
+ng <- neighbor_graph(adj_matrix)
+densities <- node_density(ng, X)
+}
+
 }
