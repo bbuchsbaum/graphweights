@@ -48,6 +48,15 @@ neighbor_graph.Matrix <- function(x, params=list(), type=NULL, classes=NULL, ...
     class=c(classes, "neighbor_graph"))
 }
 
+#' @rdname neighbor_graph
+#' @method neighbor_graph matrix
+#' @export
+neighbor_graph.matrix <- function(x, params=list(), type=NULL, classes=NULL, ...) {
+  # Convert regular matrix to sparse Matrix first
+  x_sparse <- Matrix::Matrix(x, sparse = TRUE)
+  neighbor_graph.Matrix(x_sparse, params, type, classes, ...)
+}
+
 
 #' Extract adjacency matrix from neighbor_graph object
 #'
@@ -177,7 +186,7 @@ neighbors.neighbor_graph <- function(x, i, ...) {
 #' @method node_density neighbor_graph
 #' @export
 node_density.neighbor_graph <- function(x, X, ...) {
-  L <- neighbors(x, 1:nrow(x))
+  L <- neighbors(x, 1:nvertices(x))
   d <- sapply(1:length(L), function(i) {
     ind <- L[[i]]
     xi <- X[i,]

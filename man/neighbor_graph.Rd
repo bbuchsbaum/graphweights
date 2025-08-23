@@ -4,6 +4,7 @@
 \alias{neighbor_graph}
 \alias{neighbor_graph.igraph}
 \alias{neighbor_graph.Matrix}
+\alias{neighbor_graph.matrix}
 \title{Neighbor Graph}
 \usage{
 neighbor_graph(x, ...)
@@ -11,6 +12,8 @@ neighbor_graph(x, ...)
 \method{neighbor_graph}{igraph}(x, params = list(), type = NULL, classes = NULL, ...)
 
 \method{neighbor_graph}{Matrix}(x, params = list(), type = NULL, classes = NULL, ...)
+
+\method{neighbor_graph}{matrix}(x, params = list(), type = NULL, classes = NULL, ...)
 }
 \arguments{
 \item{x}{An igraph or Matrix object.}
