@@ -6,3 +6,7 @@
 ^pkgdown$
 ^\.github$
 ^README\.Rmd$
+^\.claude$
+^CLAUDE\.md$
+^dlpge$
+^test_data$

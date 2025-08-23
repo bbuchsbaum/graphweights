@@ -353,8 +353,8 @@ cross_adjacency <- function(X, Y, k = 5, FUN = heat_kernel,
   as   <- match.arg(as)
 
   nn_result <- Rnanoflann::nn(data = as.matrix(X), points = as.matrix(Y), k = k + 1L)
-  idx <- nn_result$nn.idx[, -1, drop = FALSE]
-  dst <- nn_result$nn.dists[, -1, drop = FALSE]
+  idx <- nn_result$indices[, -1, drop = FALSE]
+  dst <- nn_result$distances[, -1, drop = FALSE]
 
   ## 0‑based safety
   if (min(idx) == 0L) idx <- idx + 1L
@@ -412,8 +412,8 @@ weighted_knn <- function(X, k = 5, FUN = heat_kernel,
   as   <- match.arg(as)
 
   nn_result <- Rnanoflann::nn(data = X, points = X, k = min(k + 1L, nrow(X)), ...)
-  idx <- nn_result$nn.idx[, -1, drop = FALSE]
-  dst <- nn_result$nn.dists[, -1, drop = FALSE]
+  idx <- nn_result$indices[, -1, drop = FALSE]
+  dst <- nn_result$distances[, -1, drop = FALSE]
 
   ## 0‑based safety ----------------------------------------------------------
   if (min(idx) == 0L) idx <- idx + 1L

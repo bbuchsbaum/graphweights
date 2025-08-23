@@ -21,7 +21,7 @@ spatial_smoother(
 \item{stochastic}{Logical, whether the adjacency matrix should be doubly stochastic (default is TRUE)}
 }
 \value{
-A sparse symmetric matrix representing the computed spatial smoother
+A sparse matrix representing the computed spatial smoother. If stochastic=TRUE, the matrix is row-stochastic (rows sum to 1) but not symmetric. If stochastic=FALSE, the matrix is symmetric but not row-stochastic.
 }
 \description{
 This function computes the spatial smoother matrix for a given coordinate matrix using specified parameters.

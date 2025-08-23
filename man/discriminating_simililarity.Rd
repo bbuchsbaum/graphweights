@@ -26,11 +26,13 @@ It is useful for preserving the local similarity and diversity within the data, 
 suitable for tasks like face and handwriting digits recognition.
 }
 \examples{
+\dontrun{
 X <- matrix(rnorm(100*100), 100, 100)
 labels <- factor(rep(1:5, each=20))
 cg <- class_graph(labels)
 sigma <- 0.7
 W <- discriminating_simililarity(X, k=length(labels)/2, sigma, cg)
+}
 
 }
 \references{

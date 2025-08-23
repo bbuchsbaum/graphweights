@@ -170,7 +170,7 @@ new_repulsion_graph <- function(adjacency_matrix, params = list(), ...) {
 print.repulsion_graph <- function(x, ...) {
     cat(bold(magenta("Repulsion Graph Object\n")))
     cat("----------------------\n")
-    print.neighbor_graph(x, ...) # Call the parent print method first
+    NextMethod("print") # Call the parent print method first
 
     # Add specific repulsion graph info
     cat(bold("Repulsion Params:\n"))

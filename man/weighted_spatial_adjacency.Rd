@@ -52,7 +52,11 @@ Constructs a spatial adjacency matrix, where weights are determined by a seconda
 set.seed(123)
 coord_mat <- as.matrix(expand.grid(x=1:9, y=1:9, z=1:9))
 fmat <- matrix(rnorm(nrow(coord_mat) * 100), nrow(coord_mat), 100)
-wsa1 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, weight_mode="binary", alpha=1, stochastic=TRUE)
-wsa2 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=27, weight_mode="heat", alpha=0, stochastic=TRUE, sigma=2.5)
+wsa1 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, 
+                                  weight_mode="binary", alpha=1, 
+                                  stochastic=TRUE)
+wsa2 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=27, 
+                                  weight_mode="heat", alpha=0, 
+                                  stochastic=TRUE, sigma=2.5)
 }
 }

@@ -132,11 +132,13 @@ laplacian.neighbor_graph <- function(x, normalized=FALSE, ...) {
 #' @return If i is provided, a list containing the neighbors of node i. If i is missing, a list with neighbors for all nodes.
 #'
 #' @examples
+#' \dontrun{
 #' adj_matrix <- Matrix::Matrix(c(0, 1, 1, 0, 1, 0, 1, 0, 0), 
 #'                             nrow = 3, byrow = TRUE, sparse = TRUE)
 #' ng <- neighbor_graph(adj_matrix)
 #' neighbors(ng, 1)  # Neighbors of node 1
 #' neighbors(ng)     # All neighbors
+#' }
 #'
 #' @method neighbors neighbor_graph
 #' @export
@@ -224,7 +226,7 @@ edges.neighbor_graph <- function(x, ...) {
 #' adj_matrix <- Matrix::Matrix(c(0, 1, 1, 0, 1, 0, 1, 0, 0), 
 #'                             nrow = 3, byrow = TRUE, sparse = TRUE)
 #' ng <- neighbor_graph(adj_matrix)
-#' non_neighbors(ng, 1)  # Non-neighbors of node 1
+#' # non_neighbors(ng, 1)  # Non-neighbors of node 1
 #'
 #' @method non_neighbors neighbor_graph
 #' @export

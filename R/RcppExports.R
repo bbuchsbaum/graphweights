@@ -2,30 +2,30 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 expand_similarity_cpp <- function(indices, simmat, thresh) {
-    .Call('_neighborweights_expand_similarity_cpp', PACKAGE = 'neighborweights', indices, simmat, thresh)
+    .Call(`_neighborweights_expand_similarity_cpp`, indices, simmat, thresh)
 }
 
 expand_similarity_below_cpp <- function(indices, simmat, thresh) {
-    .Call('_neighborweights_expand_similarity_below_cpp', PACKAGE = 'neighborweights', indices, simmat, thresh)
+    .Call(`_neighborweights_expand_similarity_below_cpp`, indices, simmat, thresh)
 }
 
 order_vec <- function(x) {
-    .Call('_neighborweights_order_vec', PACKAGE = 'neighborweights', x)
+    .Call(`_neighborweights_order_vec`, x)
 }
 
 cross_fspatial_weights <- function(indices, distances, feature_mat1, feature_mat2, sigma, fsigma, alpha, maxk, binary) {
-    .Call('_neighborweights_cross_fspatial_weights', PACKAGE = 'neighborweights', indices, distances, feature_mat1, feature_mat2, sigma, fsigma, alpha, maxk, binary)
+    .Call(`_neighborweights_cross_fspatial_weights`, indices, distances, feature_mat1, feature_mat2, sigma, fsigma, alpha, maxk, binary)
 }
 
 bilateral_weights <- function(indices, distances, feature_mat, sigma, fsigma) {
-    .Call('_neighborweights_bilateral_weights', PACKAGE = 'neighborweights', indices, distances, feature_mat, sigma, fsigma)
+    .Call(`_neighborweights_bilateral_weights`, indices, distances, feature_mat, sigma, fsigma)
 }
 
 fspatial_weights <- function(indices, distances, feature_mat, sigma, fsigma, alpha, binary) {
-    .Call('_neighborweights_fspatial_weights', PACKAGE = 'neighborweights', indices, distances, feature_mat, sigma, fsigma, alpha, binary)
+    .Call(`_neighborweights_fspatial_weights`, indices, distances, feature_mat, sigma, fsigma, alpha, binary)
 }
 
 spatial_weights <- function(indices, distances, sigma, binary) {
-    .Call('_neighborweights_spatial_weights', PACKAGE = 'neighborweights', indices, distances, sigma, binary)
+    .Call(`_neighborweights_spatial_weights`, indices, distances, sigma, binary)
 }
 

@@ -17,7 +17,7 @@ NULL
 #'
 #' @importFrom mgcv gam
 #' @importFrom Matrix Diagonal
-#' @importFrom rflann RadiusSearch
+#' @importFrom Rnanoflann nn
 #' @importFrom Matrix sparseMatrix
 #' @importFrom assertthat assert_that
 #' @export
@@ -27,25 +27,37 @@ spatial_autocor <- function(X, cds, radius=8, nsamples=1000) {
     nsamples <- nrow(cds)
   }
 
-  nabe <- rflann::RadiusSearch(cds, cds,radius=radius)
+  nabe <- Rnanoflann::nn(data = cds, points = cds, k = nrow(cds), radius = radius)
   ids <- sample(1:nrow(nabe$indices), nsamples)
 
   ret <- do.call(rbind, lapply(ids, function(id) {
     ind <- nabe$indices[id,]
     d <- nabe$distances[id,]
-    valmat <- X[,ind[-1]]
-    vals <- X[,ind[1]]
-    cvals <- cor(vals,valmat)
-    data.frame(cor=as.vector(cvals), d=sqrt(d[-1]))
+    ind <- ind[d <= radius & !is.na(ind)]
+    d <- d[d <= radius & !is.na(d)]
+    if (length(ind) > 1) {
+      valmat <- X[,ind[-1]]
+      vals <- X[,ind[1]]
+      cvals <- cor(vals,valmat)
+      data.frame(cor=as.vector(cvals), d=d[-1])
+    } else {
+      data.frame(cor=numeric(0), d=numeric(0))
+    }
   }))
 
   gam.1 <- gam(cor ~ s(d), data=ret)
 
   trip <- do.call(rbind, lapply(1:nrow(cds), function(i) {
-    i <- nabe$indices[i,1]
-    j <- nabe$indices[i,-1]
-    d <- sqrt(nabe$distances[i,-1])
-    cbind(i,j,d)
+    ind <- nabe$indices[i,]
+    d <- nabe$distances[i,]
+    valid <- d <= radius & !is.na(ind) & !is.na(d)
+    j <- ind[valid][-1]
+    d <- d[valid][-1]
+    if (length(j) > 0) {
+      cbind(i, j, d)
+    } else {
+      matrix(nrow=0, ncol=3)
+    }
   }))
 
   trip[,3] <- predict(gam.1, newdata=data.frame(d=trip[,3]))
@@ -209,7 +221,7 @@ difference_of_gauss <- function(coord_mat, sigma1=2, sigma2=sigma1 * 1.6, nnk=3^
 #' @param nnk Integer, the number of nearest neighbors for adjacency (default is 3^(ncol(coord_mat)))
 #' @param stochastic Logical, whether the adjacency matrix should be doubly stochastic (default is TRUE)
 #'
-#' @return A sparse symmetric matrix representing the computed spatial smoother
+#' @return A sparse matrix representing the computed spatial smoother. If stochastic=TRUE, the matrix is row-stochastic (rows sum to 1) but not symmetric. If stochastic=FALSE, the matrix is symmetric but not row-stochastic.
 #'
 #' @examples
 #' # Create an example coordinate matrix
@@ -228,6 +240,10 @@ spatial_smoother <- function(coord_mat, sigma=5, nnk=3^(ncol(coord_mat)), stocha
   adj <- 1/D * adj
   if (stochastic) {
     adj <- make_doubly_stochastic(adj)
+    # Note: Symmetrization (adj + t(adj))/2 would break row-stochastic property
+    # Only symmetrize when not requiring stochastic properties
+  } else {
+    # When not stochastic, we can symmetrize to ensure the matrix is symmetric
     adj <- (adj + t(adj))/2
   }
 
@@ -251,7 +267,7 @@ spatial_smoother <- function(coord_mat, sigma=5, nnk=3^(ncol(coord_mat)), stocha
 #'
 #' @return A sparse symmetric matrix representing the computed spatial adjacency
 #'
-#' @importFrom rflann RadiusSearch
+#' @importFrom Rnanoflann nn
 #' @importFrom Matrix sparseMatrix
 #' @export
 #'
@@ -315,6 +331,7 @@ make_doubly_stochastic <- function(A, iter=30) {
   R <- Diagonal(x=r[,1])
 
   Ab <- R %*% A %*% C
+  return(Ab)
 }
 
 # make_doubly_stochastic <- function(A, iter=8) {
@@ -403,18 +420,31 @@ cross_weighted_spatial_adjacency <- function(coord_mat1, coord_mat2,
   assert_that(alpha >= 0 && alpha <=1)
   assert_that(dthresh > 0)
 
-  full_nn <- rflann::RadiusSearch(coord_mat1, coord_mat2, radius=dthresh^2,
-                                  max_neighbour=nnk)
+  full_nn <- Rnanoflann::nn(data = coord_mat2, points = coord_mat1, k = min(nnk, nrow(coord_mat2)), radius = dthresh)
 
   weight_mode <- match.arg(weight_mode)
 
-  lens <- sapply(full_nn$indices, length)
+  # Convert to list format for compatibility
+  indices_list <- lapply(1:nrow(full_nn$indices), function(i) {
+    idx <- full_nn$indices[i,]
+    dst <- full_nn$distances[i,]
+    valid <- dst <= dthresh & !is.na(idx)
+    idx[valid]
+  })
+  
+  distances_list <- lapply(1:nrow(full_nn$distances), function(i) {
+    dst <- full_nn$distances[i,]
+    valid <- dst <= dthresh & !is.na(dst)
+    dst[valid]^2  # Square distances for compatibility
+  })
+
+  lens <- sapply(indices_list, length)
   lens <- ifelse(lens > maxk, maxk, lens)
-  #nels <- sum(sapply(full_nn$indices, length))
+  #nels <- sum(sapply(indices_list, length))
   nels <- sum(lens)
 
 
-  triplet <- cross_fspatial_weights(full_nn$indices, lapply(full_nn$distances, sqrt),
+  triplet <- cross_fspatial_weights(indices_list, lapply(distances_list, sqrt),
                                     feature_mat1, feature_mat2,
                                     sigma, wsigma, alpha,
                                     maxk,
@@ -458,11 +488,25 @@ bilateral_smoother <- function(coord_mat, feature_mat, nnk=27, s_sigma=2.5, f_si
   assert_that(nnk >= 4)
 
   ## find the set of spatial nearest neighbors
-  full_nn <- rflann::RadiusSearch(coord_mat, coord_mat, radius=(s_sigma*2.5)^2, max_neighbour=nnk)
+  full_nn <- Rnanoflann::nn(data = coord_mat, points = coord_mat, k = min(nnk, nrow(coord_mat)), radius = s_sigma*2.5)
 
-  nels <- sum(sapply(full_nn$indices, length))
+  # Convert to list format for compatibility
+  indices_list <- lapply(1:nrow(full_nn$indices), function(i) {
+    idx <- full_nn$indices[i,]
+    dst <- full_nn$distances[i,]
+    valid <- dst <= s_sigma*2.5 & !is.na(idx)
+    idx[valid]
+  })
+  
+  distances_list <- lapply(1:nrow(full_nn$distances), function(i) {
+    dst <- full_nn$distances[i,]
+    valid <- dst <= s_sigma*2.5 & !is.na(dst)
+    dst[valid]^2  # Square distances for compatibility
+  })
 
-  triplet <- bilateral_weights(full_nn$indices, lapply(full_nn$distances, sqrt),
+  nels <- sum(sapply(indices_list, length))
+
+  triplet <- bilateral_weights(indices_list, lapply(distances_list, sqrt),
                               feature_mat, s_sigma, f_sigma)
 
   sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3], dims=c(nrow(coord_mat), nrow(coord_mat)))
@@ -498,8 +542,12 @@ bilateral_smoother <- function(coord_mat, feature_mat, nnk=27, s_sigma=2.5, f_si
 #' set.seed(123)
 #' coord_mat <- as.matrix(expand.grid(x=1:9, y=1:9, z=1:9))
 #' fmat <- matrix(rnorm(nrow(coord_mat) * 100), nrow(coord_mat), 100)
-#' wsa1 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, weight_mode="binary", alpha=1, stochastic=TRUE)
-#' wsa2 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=27, weight_mode="heat", alpha=0, stochastic=TRUE, sigma=2.5)
+#' wsa1 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=3, 
+#'                                   weight_mode="binary", alpha=1, 
+#'                                   stochastic=TRUE)
+#' wsa2 <- weighted_spatial_adjacency(coord_mat, fmat, nnk=27, 
+#'                                   weight_mode="heat", alpha=0, 
+#'                                   stochastic=TRUE, sigma=2.5)
 #' }
 #' @export
 weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha=.5,
@@ -517,14 +565,27 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
   assert_that(dthresh > 0)
 
   ## find the set of spatial nearest neighbors
-  full_nn <- rflann::RadiusSearch(coord_mat, coord_mat, radius=dthresh^2, max_neighbour=nnk)
+  full_nn <- Rnanoflann::nn(data = coord_mat, points = coord_mat, k = min(nnk, nrow(coord_mat)), radius = dthresh)
   weight_mode <- match.arg(weight_mode)
   alpha2 <- 1-alpha
 
+  # Convert to list format for compatibility
+  indices_list <- lapply(1:nrow(full_nn$indices), function(i) {
+    idx <- full_nn$indices[i,]
+    dst <- full_nn$distances[i,]
+    valid <- dst <= dthresh & !is.na(idx)
+    idx[valid]
+  })
+  
+  distances_list <- lapply(1:nrow(full_nn$distances), function(i) {
+    dst <- full_nn$distances[i,]
+    valid <- dst <= dthresh & !is.na(dst)
+    dst[valid]^2  # Square distances for compatibility
+  })
 
-  nels <- sum(sapply(full_nn$indices, length))
+  nels <- sum(sapply(indices_list, length))
 
-  triplet <- fspatial_weights(full_nn$indices, lapply(full_nn$distances, sqrt),
+  triplet <- fspatial_weights(indices_list, lapply(distances_list, sqrt),
                               feature_mat, sigma, wsigma, alpha,
                               weight_mode == "binary")
 
@@ -567,7 +628,9 @@ weighted_spatial_adjacency <- function(coord_mat, feature_mat, wsigma=.73, alpha
 #' \donttest{
 #' coord_mat1 <- as.matrix(expand.grid(x=1:5, y=1:5, z=1:5))
 #' coord_mat2 <- as.matrix(expand.grid(x=6:10, y=6:10, z=6:10))
-#' csa <- cross_spatial_adjacency(coord_mat1, coord_mat2, nnk=3, weight_mode="binary", sigma=5, normalized=TRUE)
+#' csa <- cross_spatial_adjacency(coord_mat1, coord_mat2, nnk=3, 
+#'                                weight_mode="binary", sigma=5, 
+#'                                normalized=TRUE)
 #' }
 #'
 #' @export
@@ -577,14 +640,27 @@ cross_spatial_adjacency <- function(coord_mat1, coord_mat2, dthresh=sigma*3,
                                     normalized=TRUE) {
 
 
-  full_nn <- rflann::RadiusSearch(coord_mat1, coord_mat2, radius=dthresh^2,
-                                  max_neighbour=nnk)
+  full_nn <- Rnanoflann::nn(data = coord_mat2, points = coord_mat1, k = min(nnk, nrow(coord_mat2)), radius = dthresh)
 
   weight_mode <- match.arg(weight_mode)
 
-  nels <- sum(sapply(full_nn$indices, length))
+  # Convert to list format for compatibility
+  indices_list <- lapply(1:nrow(full_nn$indices), function(i) {
+    idx <- full_nn$indices[i,]
+    dst <- full_nn$distances[i,]
+    valid <- dst <= dthresh & !is.na(idx)
+    idx[valid]
+  })
+  
+  distances_list <- lapply(1:nrow(full_nn$distances), function(i) {
+    dst <- full_nn$distances[i,]
+    valid <- dst <= dthresh & !is.na(dst)
+    dst[valid]^2  # Square distances for compatibility
+  })
 
-  triplet <- spatial_weights(full_nn$indices, lapply(full_nn$distances, sqrt), sigma,
+  nels <- sum(sapply(indices_list, length))
+
+  triplet <- spatial_weights(indices_list, lapply(distances_list, sqrt), sigma,
                              weight_mode == "binary")
 
   sm <- sparseMatrix(i=triplet[,1], j=triplet[,2], x=triplet[,3],

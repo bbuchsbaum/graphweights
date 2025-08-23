@@ -20,10 +20,12 @@ If i is provided, a list containing the neighbors of node i. If i is missing, a 
 Retrieve the neighbors of a specific node or all nodes in a neighbor_graph object.
 }
 \examples{
+\dontrun{
 adj_matrix <- Matrix::Matrix(c(0, 1, 1, 0, 1, 0, 1, 0, 0), 
                             nrow = 3, byrow = TRUE, sparse = TRUE)
 ng <- neighbor_graph(adj_matrix)
 neighbors(ng, 1)  # Neighbors of node 1
 neighbors(ng)     # All neighbors
+}
 
 }

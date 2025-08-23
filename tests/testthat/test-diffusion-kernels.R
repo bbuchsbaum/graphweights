@@ -84,7 +84,7 @@ test_that("make_doubly_stochastic produces valid stochastic matrix", {
   expect_true(all(abs(row_sums - 1) < 1e-6))
   
   # Column sums should be approximately 1 (with reasonable tolerance)  
-  col_sums <- colSums(stoch_adj)
+  col_sums <- Matrix::colSums(stoch_adj)
   expect_true(all(abs(col_sums - 1) < 1e-6))
 })
 
@@ -100,6 +100,6 @@ test_that("threshold_adjacency keeps top k values per row", {
   expect_equal(dim(thresh_adj), c(3, 3))
   
   # Each row should have at most k non-zero elements
-  row_nnz <- diff(thresh_adj@p)
+  row_nnz <- Matrix::rowSums(thresh_adj != 0)
   expect_true(all(row_nnz <= 2))
 })

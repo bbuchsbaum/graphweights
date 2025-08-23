@@ -14,7 +14,7 @@ test_that("spatial_adjacency produces valid adjacency matrix", {
   expect_true(inherits(adj, "Matrix"))
   expect_equal(nrow(adj), 4)
   expect_equal(ncol(adj), 4)
-  expect_true(isSymmetric(adj))
+  expect_true(Matrix::isSymmetric(adj))
   expect_true(all(adj@x >= 0))  # Non-negative weights
   
   # Diagonal might not be zero by default - just check structure
@@ -46,7 +46,7 @@ test_that("spatial_adjacency handles edge cases", {
   # Two identical points
   coords_dup <- matrix(c(0, 0, 0, 0), ncol = 2, byrow = TRUE)
   adj_dup <- spatial_adjacency(coords_dup, sigma = 1)
-  expect_true(isSymmetric(adj_dup))
+  expect_true(Matrix::isSymmetric(adj_dup))
   expect_equal(nrow(adj_dup), 2)
 })
 
@@ -73,6 +73,6 @@ test_that("weighted_spatial_adjacency combines spatial and feature similarity", 
   
   expect_true(inherits(adj, "Matrix"))
   expect_equal(dim(adj), c(4, 4))
-  expect_true(isSymmetric(adj))
+  expect_true(Matrix::isSymmetric(adj))
   expect_true(all(adj@x >= 0))
 })

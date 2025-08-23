@@ -63,7 +63,7 @@ R -e "devtools::check()"
 - **Rcpp/RcppArmadillo**: C++ integration and linear algebra
 - **igraph**: Graph data structures and algorithms  
 - **nabor, RcppHNSW**: Nearest neighbor search algorithms
-- **rflann**: Fast approximate nearest neighbor library
+- **Rnanoflann**: Fast exact nearest neighbor library
 - **assertthat**: Input validation
 
 ## Testing Strategy

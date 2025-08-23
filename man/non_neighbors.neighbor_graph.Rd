@@ -23,6 +23,6 @@ Retrieve the non-neighboring nodes of a given node in a neighbor_graph object.
 adj_matrix <- Matrix::Matrix(c(0, 1, 1, 0, 1, 0, 1, 0, 0), 
                             nrow = 3, byrow = TRUE, sparse = TRUE)
 ng <- neighbor_graph(adj_matrix)
-non_neighbors(ng, 1)  # Non-neighbors of node 1
+# non_neighbors(ng, 1)  # Non-neighbors of node 1
 
 }

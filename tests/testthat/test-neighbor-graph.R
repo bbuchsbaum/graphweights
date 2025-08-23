@@ -37,7 +37,7 @@ test_that("adjacency.neighbor_graph extracts adjacency matrix", {
   
   expect_true(inherits(adj_extracted, "Matrix"))
   expect_equal(dim(adj_extracted), c(3, 3))
-  expect_true(isSymmetric(adj_extracted))
+  expect_true(Matrix::isSymmetric(adj_extracted))
 })
 
 test_that("edges.neighbor_graph returns edge information", {
@@ -83,7 +83,7 @@ test_that("laplacian.neighbor_graph computes Laplacian matrix", {
   
   expect_true(inherits(L, "Matrix"))
   expect_equal(dim(L), c(3, 3))
-  expect_true(isSymmetric(L))
+  expect_true(Matrix::isSymmetric(L))
   
   # Laplacian should have zero row sums (up to numerical precision)
   expect_true(all(abs(rowSums(L)) < 1e-12))

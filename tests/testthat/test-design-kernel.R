@@ -25,7 +25,7 @@ test_that("design_kernel creates valid kernel for nominal factors", {
   
   # Check kernel properties
   K <- result$K_cell
-  expect_true(isSymmetric(K))
+  expect_true(Matrix::isSymmetric(K))
   expect_true(all(K >= -1e-10))  # Non-negative (allowing small numerical errors)
   
   # Check positive semi-definite
@@ -54,7 +54,7 @@ test_that("design_kernel handles ordinal factors correctly", {
   # Extract the dose kernel pattern (first 5x5 block structure should show smoothness)
   # Due to Kronecker structure, cells with adjacent dose levels should be more similar
   # This is a basic sanity check
-  expect_true(isSymmetric(K))
+  expect_true(Matrix::isSymmetric(K))
   expect_true(all(eigen(K, symmetric=TRUE, only.values=TRUE)$values >= -1e-10))
 })
 
@@ -69,7 +69,7 @@ test_that("design_kernel handles circular factors correctly", {
   # Check wrap-around: distance from level 1 to level 4 should equal distance from 1 to 2
   # Due to circular topology
   expect_equal(dim(K), c(4, 4))
-  expect_true(isSymmetric(K))
+  expect_true(Matrix::isSymmetric(K))
   
   # In a circular kernel, K[1,4] should be similar to K[1,2] due to wrap-around
   # The exact values depend on length scale, but symmetry should hold
@@ -205,7 +205,7 @@ test_that("example_kernel_5x5 creates correct structure", {
   
   # Test with custom weights
   result2 <- example_kernel_5x5(rhoA=2, rhoB=3, rhoAB=1)
-  expect_true(isSymmetric(result2$K))
+  expect_true(Matrix::isSymmetric(result2$K))
   
   # Check PSD
   eigs <- eigen(result2$K, symmetric=TRUE, only.values=TRUE)$values
@@ -258,7 +258,7 @@ test_that("design_kernel handles edge cases", {
   factors <- list(A = list(L=10, type="nominal"))
   result <- design_kernel(factors)
   expect_equal(dim(result$K), c(10, 10))
-  expect_true(isSymmetric(result$K))
+  expect_true(Matrix::isSymmetric(result$K))
 })
 
 test_that("design_kernel input validation works", {

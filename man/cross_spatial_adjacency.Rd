@@ -39,7 +39,9 @@ Constructs a cross spatial adjacency matrix between two sets of points, where we
 \donttest{
 coord_mat1 <- as.matrix(expand.grid(x=1:5, y=1:5, z=1:5))
 coord_mat2 <- as.matrix(expand.grid(x=6:10, y=6:10, z=6:10))
-csa <- cross_spatial_adjacency(coord_mat1, coord_mat2, nnk=3, weight_mode="binary", sigma=5, normalized=TRUE)
+csa <- cross_spatial_adjacency(coord_mat1, coord_mat2, nnk=3, 
+                               weight_mode="binary", sigma=5, 
+                               normalized=TRUE)
 }
 
 }

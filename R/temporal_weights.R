@@ -35,7 +35,7 @@ temporal_autocor <- function(X, window=3, inverse=FALSE) {
 
   bmat <- matrix(unlist(cvals), nrow(cmat), length(cvals), byrow=TRUE)
   bLis <- as.data.frame(bmat)
-  A <- bandSparse(nrow(cmat), k = 1:window, diag = bLis, symmetric=TRUE)
+  A <- bandSparse(nrow(cmat), k = 1:window, diagonals = bLis, symmetric=TRUE)
   A
 
   #fill cmat as distance matrix()

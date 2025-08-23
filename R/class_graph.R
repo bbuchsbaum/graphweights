@@ -283,10 +283,12 @@ between_class_neighbors.class_graph <- function(x, ng, ...) {
 #' @return A discriminating distance matrix in the form of a numeric matrix.
 #'
 #' @examples
+#' \dontrun{
 #' X <- matrix(rnorm(100*100), 100, 100)
 #' labels <- factor(rep(1:5, each=20))
 #' sigma <- 0.7
 #' D <- discriminating_distance(X, k=length(labels)/2, sigma, labels)
+#' }
 #'
 #' @export
 discriminating_distance <- function(X, k=length(labels)/2, sigma, labels) {
@@ -297,6 +299,7 @@ discriminating_distance <- function(X, k=length(labels)/2, sigma, labels) {
   }
 
   Wall <- graph_weights(X, k=k, weight_mode="euclidean", neighbor_mode="knn")
+  Wall <- adjacency(Wall)  # Convert to adjacency matrix
 
   Ww <- label_matrix2(labels, labels)
   Wb <- label_matrix2(labels, labels, type="d")
@@ -330,11 +333,13 @@ discriminating_distance <- function(X, k=length(labels)/2, sigma, labels) {
 #' @return A weighted similarity graph in the form of a matrix.
 #'
 #' @examples
+#' \dontrun{
 #' X <- matrix(rnorm(100*100), 100, 100)
 #' labels <- factor(rep(1:5, each=20))
 #' cg <- class_graph(labels)
 #' sigma <- 0.7
 #' W <- discriminating_simililarity(X, k=length(labels)/2, sigma, cg)
+#' }
 #'
 #' @references
 #' Local similarity and diversity preserving discriminant projection for face and

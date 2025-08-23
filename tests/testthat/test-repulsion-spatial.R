@@ -84,7 +84,7 @@ test_that("spatial_laplacian produces valid Laplacian", {
   
   expect_true(inherits(result, "Matrix"))
   expect_equal(dim(result), c(4, 4))
-  expect_true(isSymmetric(result))
+  expect_true(Matrix::isSymmetric(result))
   
   # Laplacian should have zero row sums
   row_sums <- rowSums(result)

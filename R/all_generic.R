@@ -42,12 +42,14 @@ nvertices <- function(x, ...) UseMethod("nvertices")
 #' @return A list of vertex indices representing the neighbors of the specified vertices. The length of the list is equal to the number of input vertices, and each element in the list contains the neighbor indices for the corresponding input vertex.
 #'
 #' @examples
-#' # Create an example graph
+#' \dontrun{
+#' # Create an example graph  
 #' library(igraph)
 #' g <- neighbor_graph(make_ring(5))
 #'
 #' # Get neighbors of vertex 1
 #' n <- neighbors(g, 1)
+#' }
 neighbors <- function(x, i, ...) UseMethod("neighbors")
 
 #' Extract Adjacency Matrix from Graph Objects

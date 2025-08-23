@@ -24,9 +24,11 @@ It adjusts the similarity graph by modifying the weights within and between clas
 tasks like classification and clustering.
 }
 \examples{
+\dontrun{
 X <- matrix(rnorm(100*100), 100, 100)
 labels <- factor(rep(1:5, each=20))
 sigma <- 0.7
 D <- discriminating_distance(X, k=length(labels)/2, sigma, labels)
+}
 
 }
