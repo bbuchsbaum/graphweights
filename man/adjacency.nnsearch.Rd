@@ -4,7 +4,13 @@
 \alias{adjacency.nnsearch}
 \title{Create Adjacency Matrix from nnsearch Object}
 \usage{
-\method{adjacency}{nnsearch}(x, idim = nrow(x$idx), jdim = max(x$idx), return_triplet = FALSE)
+\method{adjacency}{nnsearch}(
+  x,
+  idim = nrow(x$idx),
+  jdim = max(x$idx),
+  return_triplet = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{An object of class "nnsearch".}
@@ -14,6 +20,8 @@
 \item{jdim}{The number of columns in the resulting matrix.}
 
 \item{return_triplet}{Logical; whether to return triplet format.}
+
+\item{...}{Additional arguments (currently ignored).}
 }
 \value{
 A sparse Matrix representing the adjacency matrix.

@@ -4,12 +4,14 @@
 \alias{node_density.neighbor_graph}
 \title{Compute node density for neighbor_graph object}
 \usage{
-\method{node_density}{neighbor_graph}(x, X)
+\method{node_density}{neighbor_graph}(x, X, ...)
 }
 \arguments{
 \item{x}{A neighbor_graph object.}
 
 \item{X}{A data matrix containing the data points, with rows as observations.}
+
+\item{...}{Additional arguments (currently ignored).}
 }
 \value{
 A numeric vector containing the node densities.

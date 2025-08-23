@@ -24,7 +24,7 @@ weighted_knn(
 
 \item{as}{A character string specifying the format of the output. One of "igraph" or "sparse" (default: "igraph").}
 
-\item{...}{Additional arguments passed to the nearest neighbor search function (rflann::Neighbour).}
+\item{...}{Additional arguments passed to the nearest neighbor search function (Rnanoflann::nn).}
 }
 \value{
 If 'as' is "igraph", an igraph object representing the weighted k-nearest neighbors graph.

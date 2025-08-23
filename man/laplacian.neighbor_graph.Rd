@@ -4,12 +4,14 @@
 \alias{laplacian.neighbor_graph}
 \title{Compute Laplacian matrix for neighbor_graph object}
 \usage{
-\method{laplacian}{neighbor_graph}(x, normalized = FALSE)
+\method{laplacian}{neighbor_graph}(x, normalized = FALSE, ...)
 }
 \arguments{
 \item{x}{A neighbor_graph object.}
 
 \item{normalized}{A logical value indicating whether the normalized Laplacian should be computed (default: FALSE).}
+
+\item{...}{Additional arguments (currently ignored).}
 }
 \value{
 A sparse Matrix object representing the Laplacian matrix.

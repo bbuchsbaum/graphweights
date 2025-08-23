@@ -2,18 +2,18 @@
 % Please edit documentation in R/all_generic.R
 \name{dist_to_sim}
 \alias{dist_to_sim}
-\title{Convert distance to similarity}
+\title{Convert Distance to Similarity}
 \usage{
 dist_to_sim(x, ...)
 }
 \arguments{
-\item{x}{An object representing a distance matrix.}
+\item{x}{An object representing distances (Matrix, nn_search, etc.).}
 
-\item{...}{Further arguments passed to or from other methods.}
+\item{...}{Additional arguments passed to specific methods.}
 }
 \value{
-A similarity matrix.
+A similarity matrix or object with distances converted to similarities.
 }
 \description{
-Convert distance to similarity
+Convert distance values to similarity values using various transformation methods.
 }

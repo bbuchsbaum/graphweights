@@ -50,20 +50,28 @@ nvertices <- function(x, ...) UseMethod("nvertices")
 #' n <- neighbors(g, 1)
 neighbors <- function(x, i, ...) UseMethod("neighbors")
 
-#' get weights of all neighbors of a set of nodes
+#' Extract Adjacency Matrix from Graph Objects
 #'
-#' @param x the neighbor graph
-#' @param ... additional arguments passed to methods
+#' Extract the adjacency matrix from graph objects such as neighbor_graph or nnsearch objects.
+#'
+#' @param x A graph object (neighbor_graph, nnsearch, etc.).
+#' @param ... Additional arguments passed to specific methods.
+#'
+#' @return A sparse Matrix object representing the adjacency matrix.
 #' @export
 adjacency <- function(x,...) UseMethod("adjacency")
 
 
-#' get indices of the non-neighbors of a set of nodes
+#' Get Indices of Non-neighbors of a Node
 #'
-#' @param x the neighbor graph
-#' @param ... extra args
+#' Retrieve the indices of nodes that are not neighbors of a specified node.
+#'
+#' @param x A neighbor graph object.
+#' @param ... Additional arguments passed to specific methods.
+#'
+#' @return A numeric vector of node indices that are not neighbors of the given node.
 #' @export
-non_neighbors<- function(x,...) UseMethod("non_neighbors")
+non_neighbors <- function(x,...) UseMethod("non_neighbors")
 
 #' Node Density
 #'
@@ -80,14 +88,13 @@ node_density <- function(x, ...) UseMethod("node_density")
 #'
 #' A generic function to compute the mean of each class.
 #'
-#' @param x An object.
-#' @param i The index of the class for which the mean is to be computed.
+#' @param x An object (e.g., class_graph).
 #' @param ... Additional arguments passed to specific methods.
 #'
 #' @return A matrix or data frame representing the means of each class, the structure of which depends on the input object's class.
 #'
 #' @export
-class_means <- function(x, i, ...) UseMethod("class_means")
+class_means <- function(x, ...) UseMethod("class_means")
 
 #' Number of Classes
 #'
@@ -168,12 +175,14 @@ search_result <- function(x, result) {
   UseMethod("search_result")
 }
 
-#' Convert distance to similarity
+#' Convert Distance to Similarity
 #'
-#' @param x An object representing a distance matrix.
-#' @param ... Further arguments passed to or from other methods.
+#' Convert distance values to similarity values using various transformation methods.
 #'
-#' @return A similarity matrix.
+#' @param x An object representing distances (Matrix, nn_search, etc.).
+#' @param ... Additional arguments passed to specific methods.
+#'
+#' @return A similarity matrix or object with distances converted to similarities.
 #' @export
 dist_to_sim <- function(x, ...) {
   UseMethod("dist_to_sim")

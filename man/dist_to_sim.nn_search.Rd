@@ -7,7 +7,8 @@
 \method{dist_to_sim}{nn_search}(
   x,
   method = c("heat", "binary", "normalized", "cosine", "correlation"),
-  sigma = 1
+  sigma = 1,
+  ...
 )
 }
 \arguments{
@@ -16,6 +17,8 @@
 \item{method}{The transformation method for converting distances to similarities.}
 
 \item{sigma}{The bandwidth parameter for the heat kernel method.}
+
+\item{...}{Additional arguments (currently ignored).}
 }
 \value{
 The modified nn_search object with distances converted to similarities.

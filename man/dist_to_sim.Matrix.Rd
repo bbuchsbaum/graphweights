@@ -8,7 +8,8 @@
   x,
   method = c("heat", "binary", "normalized", "cosine", "correlation"),
   sigma = 1,
-  len = 1
+  len = 1,
+  ...
 )
 }
 \arguments{
@@ -19,6 +20,8 @@
 \item{sigma}{The bandwidth parameter for the heat kernel method.}
 
 \item{len}{The length parameter used in transformation calculations.}
+
+\item{...}{Additional arguments (currently ignored).}
 }
 \value{
 The Matrix object with distances converted to similarities.

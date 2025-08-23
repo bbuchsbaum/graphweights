@@ -4,12 +4,14 @@
 \alias{neighbors.neighbor_graph}
 \title{Get neighbors for neighbor_graph object}
 \usage{
-\method{neighbors}{neighbor_graph}(x, i)
+\method{neighbors}{neighbor_graph}(x, i, ...)
 }
 \arguments{
 \item{x}{A neighbor_graph object.}
 
 \item{i}{An integer specifying the index of the node for which neighbors should be retrieved. If missing, returns neighbors for all nodes.}
+
+\item{...}{Additional arguments (currently ignored).}
 }
 \value{
 If i is provided, a list containing the neighbors of node i. If i is missing, a list with neighbors for all nodes.

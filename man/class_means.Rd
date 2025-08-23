@@ -4,12 +4,10 @@
 \alias{class_means}
 \title{Class Means}
 \usage{
-class_means(x, i, ...)
+class_means(x, ...)
 }
 \arguments{
-\item{x}{An object.}
-
-\item{i}{The index of the class for which the mean is to be computed.}
+\item{x}{An object (e.g., class_graph).}
 
 \item{...}{Additional arguments passed to specific methods.}
 }

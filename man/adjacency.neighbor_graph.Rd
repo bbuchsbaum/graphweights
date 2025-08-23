@@ -4,12 +4,14 @@
 \alias{adjacency.neighbor_graph}
 \title{Extract adjacency matrix from neighbor_graph object}
 \usage{
-\method{adjacency}{neighbor_graph}(x, attr = "weight")
+\method{adjacency}{neighbor_graph}(x, attr = "weight", ...)
 }
 \arguments{
 \item{x}{A neighbor_graph object.}
 
 \item{attr}{A character string specifying the edge attribute to use for weights (default: "weight").}
+
+\item{...}{Additional arguments (currently ignored).}
 }
 \value{
 A sparse Matrix object representing the adjacency matrix.

@@ -352,9 +352,9 @@ cross_adjacency <- function(X, Y, k = 5, FUN = heat_kernel,
   type <- match.arg(type)
   as   <- match.arg(as)
 
-  nn  <- rflann::Neighbour(as.matrix(Y), X, k = k + 1L)
-  idx <- nn$indices[, -1, drop = FALSE]
-  dst <- sqrt(nn$distances[, -1, drop = FALSE])
+  nn_result <- Rnanoflann::nn(data = as.matrix(X), points = as.matrix(Y), k = k + 1L)
+  idx <- nn_result$nn.idx[, -1, drop = FALSE]
+  dst <- nn_result$nn.dists[, -1, drop = FALSE]
 
   ## 0‑based safety
   if (min(idx) == 0L) idx <- idx + 1L
@@ -389,7 +389,7 @@ cross_adjacency <- function(X, Y, k = 5, FUN = heat_kernel,
 #' @param FUN A kernel function used to convert Euclidean distances into similarities (default: heat_kernel).
 #' @param type A character string indicating the type of k-nearest neighbors graph to compute. One of "normal", "mutual", or "asym" (default: "normal").
 #' @param as A character string specifying the format of the output. One of "igraph" or "sparse" (default: "igraph").
-#' @param ... Additional arguments passed to the nearest neighbor search function (rflann::Neighbour).
+#' @param ... Additional arguments passed to the nearest neighbor search function (Rnanoflann::nn).
 #'
 #' @return If 'as' is "igraph", an igraph object representing the weighted k-nearest neighbors graph.
 #'         If 'as' is "sparse", a sparse adjacency matrix.
@@ -401,7 +401,7 @@ cross_adjacency <- function(X, Y, k = 5, FUN = heat_kernel,
 #' @importFrom assertthat assert_that
 #' @importFrom igraph graph_from_adjacency_matrix as_adjacency_matrix
 #' @importFrom Matrix sparseMatrix
-#' @importFrom rflann Neighbour
+#' @importFrom Rnanoflann nn
 #' @export
 weighted_knn <- function(X, k = 5, FUN = heat_kernel,
                          type = c("normal", "mutual", "asym"),
@@ -411,9 +411,9 @@ weighted_knn <- function(X, k = 5, FUN = heat_kernel,
   type <- match.arg(type)
   as   <- match.arg(as)
 
-  nn <- rflann::Neighbour(X, X, k = min(k + 1L, nrow(X)), ...)
-  idx <- nn$indices[, -1, drop = FALSE]
-  dst <- sqrt(nn$distances[, -1, drop = FALSE])
+  nn_result <- Rnanoflann::nn(data = X, points = X, k = min(k + 1L, nrow(X)), ...)
+  idx <- nn_result$nn.idx[, -1, drop = FALSE]
+  dst <- nn_result$nn.dists[, -1, drop = FALSE]
 
   ## 0‑based safety ----------------------------------------------------------
   if (min(idx) == 0L) idx <- idx + 1L

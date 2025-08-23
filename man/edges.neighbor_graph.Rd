@@ -4,10 +4,12 @@
 \alias{edges.neighbor_graph}
 \title{Extract edges from neighbor_graph object}
 \usage{
-\method{edges}{neighbor_graph}(x)
+\method{edges}{neighbor_graph}(x, ...)
 }
 \arguments{
 \item{x}{A neighbor_graph object.}
+
+\item{...}{Additional arguments (currently ignored).}
 }
 \value{
 A two-column matrix containing the edges, where each row represents an edge between two nodes.

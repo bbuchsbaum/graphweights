@@ -55,6 +55,7 @@ neighbor_graph.Matrix <- function(x, params=list(), type=NULL, classes=NULL, ...
 #'
 #' @param x A neighbor_graph object.
 #' @param attr A character string specifying the edge attribute to use for weights (default: "weight").
+#' @param ... Additional arguments (currently ignored).
 #'
 #' @return A sparse Matrix object representing the adjacency matrix.
 #'
@@ -67,7 +68,7 @@ neighbor_graph.Matrix <- function(x, params=list(), type=NULL, classes=NULL, ...
 #'
 #' @method adjacency neighbor_graph
 #' @export
-adjacency.neighbor_graph <- function(x, attr="weight") {
+adjacency.neighbor_graph <- function(x, attr="weight", ...) {
   igraph::as_adjacency_matrix(x$G, attr=attr)
 }
 
@@ -79,6 +80,7 @@ adjacency.neighbor_graph <- function(x, attr="weight") {
 #'
 #' @param x A neighbor_graph object.
 #' @param normalized A logical value indicating whether the normalized Laplacian should be computed (default: FALSE).
+#' @param ... Additional arguments (currently ignored).
 #'
 #' @return A sparse Matrix object representing the Laplacian matrix.
 #'
@@ -96,7 +98,7 @@ adjacency.neighbor_graph <- function(x, attr="weight") {
 #'
 #' @method laplacian neighbor_graph
 #' @export
-laplacian.neighbor_graph <- function(x, normalized=FALSE) {
+laplacian.neighbor_graph <- function(x, normalized=FALSE, ...) {
   A <- adjacency(x)
   N <- nrow(A)
   
@@ -125,6 +127,7 @@ laplacian.neighbor_graph <- function(x, normalized=FALSE) {
 #'
 #' @param x A neighbor_graph object.
 #' @param i An integer specifying the index of the node for which neighbors should be retrieved. If missing, returns neighbors for all nodes.
+#' @param ... Additional arguments (currently ignored).
 #'
 #' @return If i is provided, a list containing the neighbors of node i. If i is missing, a list with neighbors for all nodes.
 #'
@@ -137,7 +140,7 @@ laplacian.neighbor_graph <- function(x, normalized=FALSE) {
 #'
 #' @method neighbors neighbor_graph
 #' @export
-neighbors.neighbor_graph <- function(x, i) {
+neighbors.neighbor_graph <- function(x, i, ...) {
   if (!missing(i)) {
     igraph::adjacent_vertices(x$G,i)
   } else {
@@ -152,6 +155,7 @@ neighbors.neighbor_graph <- function(x, i) {
 #'
 #' @param x A neighbor_graph object.
 #' @param X A data matrix containing the data points, with rows as observations.
+#' @param ... Additional arguments (currently ignored).
 #'
 #' @return A numeric vector containing the node densities.
 #'
@@ -170,7 +174,7 @@ neighbors.neighbor_graph <- function(x, i) {
 #'
 #' @method node_density neighbor_graph
 #' @export
-node_density.neighbor_graph <- function(x, X) {
+node_density.neighbor_graph <- function(x, X, ...) {
   L <- neighbors(x, 1:nrow(x))
   d <- sapply(1:length(L), function(i) {
     ind <- L[[i]]
@@ -188,6 +192,7 @@ node_density.neighbor_graph <- function(x, X) {
 #' Retrieve the edges of a neighbor_graph object.
 #'
 #' @param x A neighbor_graph object.
+#' @param ... Additional arguments (currently ignored).
 #'
 #' @return A two-column matrix containing the edges, where each row represents an edge between two nodes.
 #'
@@ -199,7 +204,7 @@ node_density.neighbor_graph <- function(x, X) {
 #'
 #' @method edges neighbor_graph
 #' @export
-edges.neighbor_graph <- function(x) {
+edges.neighbor_graph <- function(x, ...) {
   ret <- igraph::as_data_frame(x$G, what="edges")
   cbind(ret[,1], ret[,2])
 }
@@ -211,6 +216,7 @@ edges.neighbor_graph <- function(x) {
 #'
 #' @param x A neighbor_graph object.
 #' @param i The index of the node for which non-neighboring nodes will be returned.
+#' @param ... Additional arguments (currently ignored).
 #'
 #' @return A numeric vector of node indices that are not neighbors of the given node (excluding the node itself).
 #'
@@ -222,7 +228,7 @@ edges.neighbor_graph <- function(x) {
 #'
 #' @method non_neighbors neighbor_graph
 #' @export
-non_neighbors.neighbor_graph <- function(x, i) {
+non_neighbors.neighbor_graph <- function(x, i, ...) {
   # Get all the vertices in the graph
   all_vertices <- seq_len(igraph::vcount(x$G))
 

@@ -2,15 +2,18 @@
 % Please edit documentation in R/all_generic.R
 \name{non_neighbors}
 \alias{non_neighbors}
-\title{get indices of the non-neighbors of a set of nodes}
+\title{Get Indices of Non-neighbors of a Node}
 \usage{
 non_neighbors(x, ...)
 }
 \arguments{
-\item{x}{the neighbor graph}
+\item{x}{A neighbor graph object.}
 
-\item{...}{extra args}
+\item{...}{Additional arguments passed to specific methods.}
+}
+\value{
+A numeric vector of node indices that are not neighbors of the given node.
 }
 \description{
-get indices of the non-neighbors of a set of nodes
+Retrieve the indices of nodes that are not neighbors of a specified node.
 }

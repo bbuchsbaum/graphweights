@@ -4,12 +4,14 @@
 \alias{non_neighbors.neighbor_graph}
 \title{Get non-neighbors for neighbor_graph object}
 \usage{
-\method{non_neighbors}{neighbor_graph}(x, i)
+\method{non_neighbors}{neighbor_graph}(x, i, ...)
 }
 \arguments{
 \item{x}{A neighbor_graph object.}
 
 \item{i}{The index of the node for which non-neighboring nodes will be returned.}
+
+\item{...}{Additional arguments (currently ignored).}
 }
 \value{
 A numeric vector of node indices that are not neighbors of the given node (excluding the node itself).

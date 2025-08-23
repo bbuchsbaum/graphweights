@@ -4,12 +4,14 @@
 \alias{class_means.class_graph}
 \title{Class Means for class_graph Objects}
 \usage{
-\method{class_means}{class_graph}(x, X)
+\method{class_means}{class_graph}(x, X, ...)
 }
 \arguments{
 \item{x}{A class_graph object.}
 
 \item{X}{The data matrix corresponding to the graph nodes.}
+
+\item{...}{Additional arguments (currently ignored).}
 }
 \value{
 A matrix where each row represents the mean values for each class.

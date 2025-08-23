@@ -16,7 +16,7 @@ Imports:
     nabor,
     RcppHNSW (>= 0.3.0.9001),
     assertthat,
-    rflann,
+    Rnanoflann,
     chk,
     FNN,
     RSpectra,

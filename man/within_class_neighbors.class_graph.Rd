@@ -4,12 +4,14 @@
 \alias{within_class_neighbors.class_graph}
 \title{Within-Class Neighbors for class_graph Objects}
 \usage{
-\method{within_class_neighbors}{class_graph}(x, ng)
+\method{within_class_neighbors}{class_graph}(x, ng, ...)
 }
 \arguments{
 \item{x}{A class_graph object.}
 
-\item{ng}{A neighbor_graph object.}
+\item{ng}{A neighbor graph object.}
+
+\item{...}{Additional arguments (currently ignored).}
 }
 \value{
 A neighbor_graph object representing the within-class neighbors of the input class_graph.

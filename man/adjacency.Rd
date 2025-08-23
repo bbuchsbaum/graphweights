@@ -2,15 +2,18 @@
 % Please edit documentation in R/all_generic.R
 \name{adjacency}
 \alias{adjacency}
-\title{get weights of all neighbors of a set of nodes}
+\title{Extract Adjacency Matrix from Graph Objects}
 \usage{
 adjacency(x, ...)
 }
 \arguments{
-\item{x}{the neighbor graph}
+\item{x}{A graph object (neighbor_graph, nnsearch, etc.).}
 
-\item{...}{additional arguments passed to methods}
+\item{...}{Additional arguments passed to specific methods.}
+}
+\value{
+A sparse Matrix object representing the adjacency matrix.
 }
 \description{
-get weights of all neighbors of a set of nodes
+Extract the adjacency matrix from graph objects such as neighbor_graph or nnsearch objects.
 }

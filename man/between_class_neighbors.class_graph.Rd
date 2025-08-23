@@ -4,12 +4,14 @@
 \alias{between_class_neighbors.class_graph}
 \title{Between-Class Neighbors for class_graph Objects}
 \usage{
-\method{between_class_neighbors}{class_graph}(x, ng)
+\method{between_class_neighbors}{class_graph}(x, ng, ...)
 }
 \arguments{
 \item{x}{A class_graph object.}
 
 \item{ng}{A neighbor_graph object.}
+
+\item{...}{Additional arguments (currently ignored).}
 }
 \value{
 A neighbor_graph object representing the between-class neighbors.

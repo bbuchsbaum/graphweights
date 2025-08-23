@@ -66,12 +66,13 @@ nclasses.class_graph <- function(x) {
 #'
 #' @param x A class_graph object.
 #' @param X The data matrix corresponding to the graph nodes.
+#' @param ... Additional arguments (currently ignored).
 #'
 #' @return A matrix where each row represents the mean values for each class.
 #'
 #' @method class_means class_graph
 #' @export
-class_means.class_graph <- function(x, X) {
+class_means.class_graph <- function(x, X, ...) {
   ret <- do.call(rbind, lapply(x$class_indices, function(i) {
     colMeans(X[i,,drop=FALSE])
   }))
@@ -234,15 +235,13 @@ homogeneous_neighbors <- function(x, X, k, weight_mode="heat", sigma=1, ...) {
 #'
 #' @param x A class_graph object.
 #' @param ng A neighbor graph object.
+#' @param ... Additional arguments (currently ignored).
 #'
 #' @return A neighbor_graph object representing the within-class neighbors of the input class_graph.
 #'
-#' @param x A class_graph object.
-#' @param ng A neighbor_graph object.
-#'
 #' @method within_class_neighbors class_graph
 #' @export
-within_class_neighbors.class_graph <- function(x, ng) {
+within_class_neighbors.class_graph <- function(x, ng, ...) {
   Ac <- adjacency(x)
   An <- adjacency(ng)
   Aout <- Ac * An
@@ -256,12 +255,13 @@ within_class_neighbors.class_graph <- function(x, ng) {
 #'
 #' @param x A class_graph object.
 #' @param ng A neighbor_graph object.
+#' @param ... Additional arguments (currently ignored).
 #'
 #' @return A neighbor_graph object representing the between-class neighbors.
 #'
 #' @method between_class_neighbors class_graph
 #' @export
-between_class_neighbors.class_graph <- function(x, ng) {
+between_class_neighbors.class_graph <- function(x, ng, ...) {
   Ac <- !adjacency(x)
   An <- adjacency(ng)
   Aout <- Ac * An

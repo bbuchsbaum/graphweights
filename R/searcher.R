@@ -80,12 +80,13 @@ search_result.nnsearcher <- function(x, result) {
 #' @param x An object of class "nn_search".
 #' @param method The transformation method for converting distances to similarities.
 #' @param sigma The bandwidth parameter for the heat kernel method.
+#' @param ... Additional arguments (currently ignored).
 #'
 #' @return The modified nn_search object with distances converted to similarities.
 #'
 #' @method dist_to_sim nn_search
 #' @export
-dist_to_sim.nn_search <- function(x, method = c("heat", "binary", "normalized", "cosine", "correlation"), sigma=1) {
+dist_to_sim.nn_search <- function(x, method = c("heat", "binary", "normalized", "cosine", "correlation"), sigma=1, ...) {
   method <- match.arg(method)
   fun <- get_neighbor_fun(method, x$len, x$sigma)
   x$dist <- fun(x$dist)
@@ -101,12 +102,13 @@ dist_to_sim.nn_search <- function(x, method = c("heat", "binary", "normalized", 
 #' @param method The transformation method for converting distances to similarities.
 #' @param sigma The bandwidth parameter for the heat kernel method.
 #' @param len The length parameter used in transformation calculations.
+#' @param ... Additional arguments (currently ignored).
 #'
 #' @return The Matrix object with distances converted to similarities.
 #'
 #' @method dist_to_sim Matrix
 #' @export
-dist_to_sim.Matrix <- function(x, method = c("heat", "binary", "normalized", "cosine", "correlation"), sigma=1, len=1) {
+dist_to_sim.Matrix <- function(x, method = c("heat", "binary", "normalized", "cosine", "correlation"), sigma=1, len=1, ...) {
   method <- match.arg(method)
   fun <- get_neighbor_fun(method, len, sigma)
 
@@ -124,12 +126,13 @@ dist_to_sim.Matrix <- function(x, method = c("heat", "binary", "normalized", "co
 #' @param idim The number of rows in the resulting matrix.
 #' @param jdim The number of columns in the resulting matrix.
 #' @param return_triplet Logical; whether to return triplet format.
+#' @param ... Additional arguments (currently ignored).
 #'
 #' @return A sparse Matrix representing the adjacency matrix.
 #'
 #' @method adjacency nnsearch
 #' @export
-adjacency.nnsearch <- function(x, idim=nrow(x$idx), jdim=max(x$idx), return_triplet=FALSE) {
+adjacency.nnsearch <- function(x, idim=nrow(x$idx), jdim=max(x$idx), return_triplet=FALSE, ...) {
   indices_to_sparse(as.matrix(x$idx), as.matrix(x$dist), return_triplet=FALSE, idim=idim, jdim=jdim)
 }
 
